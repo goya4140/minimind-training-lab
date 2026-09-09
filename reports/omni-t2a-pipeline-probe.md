@@ -39,3 +39,14 @@ Thinker–Bridge–Talker 前向。该探针使用随机初始化的小模型，
 
 结论：真实 T2A 样本的外层 `answer_audios` 按 assistant turn 组织，内部 Mimi code 为帧优先
 交错；当前数据适配器能够正确选择末次 assistant 音频、拆分 8 码本并产生可训练的有限 loss。
+
+## 完整尺寸装配复验
+
+2026-09-09 使用 step 12,000 的真实 63.9M LLM 中期快照装配 8 层 Thinker、4 层 Talker，
+并按正式策略从 Thinker 后四层复制初始化 Talker。完整 Omni 主体共 111,950,082 参数；T2A
+阶段冻结两个 Projector 后，可训练参数为 109,781,762。
+
+真实首条 T2A 样本在 `sequence_length=128` 下得到 104 个文本、748 个音频监督 token；前向
+产生 `[1, 127, 6400]` 文本 logits 和 8 份 `[1, 127, 2112]` 音频 logits，text/audio/total
+loss 分别为 4.765340、7.805069、12.570409，全部为有限值。由此确认正式 LLM state dict、
+Talker 层复制和 8-codebook heads 在完整尺寸下兼容。正式训练仍从最终 LLM SFT 权重开始。
