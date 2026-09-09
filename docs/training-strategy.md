@@ -42,3 +42,23 @@
 - checkpoint 哈希；
 - 定量评估和固定定性样例。
 
+## M4 Pro 正式配置
+
+本机正式路线使用单进程 MPS。显存是统一内存，但仍用 micro-batch + gradient accumulation
+控制激活峰值；下表保持原 CUDA 配置的 effective batch 语义：
+
+| 阶段 | sequence length | micro-batch | accumulation | effective batch |
+|---|---:|---:|---:|---:|
+| LLM pretrain | 340 | 8 | 32 | 256 |
+| LLM SFT | 768 | 4 | 4 | 16 |
+| VLM alignment | 450 | 4 | 4 | 16 |
+| VLM SFT | 768 | 2 | 8 | 16 |
+| Omni T2A | 512 | 8 | 5 | 40 |
+| Omni audio alignment | 640 | 8 | 5 | 40 |
+| Omni A2A SFT | 768 | 4 | 4 | 16 |
+| Omni I2T | 768 | 4 | 4 | 16 |
+
+VLM/Omni 的 batch 是保守起点，正式启动前还会用完整模型做 MPS 峰值和吞吐探针；若需要
+下调 micro-batch，将同比提高 accumulation，保持 effective batch 不变。运行
+`python scripts/preflight_mps_pipeline.py` 可检查设备、数据、冻结组件、阶段 checkpoint 链与
+每阶段 effective batch。`pending` 表示资源齐全但必须等待上游 checkpoint，并非错误。

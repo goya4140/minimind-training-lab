@@ -12,9 +12,9 @@
 
 | 阶段 | 架构 | 训练 | 评估 |
 |---|---|---|---|
-| LLM | ✅ 原生 PyTorch 主干（63,912,192 参数正式配置） | 🚧 正式 MPS 预训练进行中 | 🚧 mini 生成已记录，正式评估待运行 |
-| VLM | ✅ Early-fusion 骨架及冻结策略已实现 | ⏳ 等待 LLM SFT 权重 | ⏳ |
-| Omni | ✅ Thinker–Bridge–Talker 骨架已实现 | ⏳ 等待 LLM/VLM 权重 | ⏳ |
+| LLM | ✅ 原生 PyTorch 主干（63,912,192 参数正式配置） | 🚧 正式 MPS 预训练进行中 | 🚧 step 12,000 中期评估已记录 |
+| VLM | ✅ Early-fusion 与冻结策略已实现 | ⏳ 真实数据/SigLIP2 已验证，等待 LLM SFT | ✅ 固定 6 图评估入口就绪 |
+| Omni | ✅ Thinker–Bridge–Talker 已实现 | ⏳ 真实 T2A/A2A 管线已验证，等待 LLM SFT | ✅ 文本/音频/图像评估入口就绪 |
 
 状态以 [`docs/progress.md`](docs/progress.md) 中的证据为准。
 
@@ -63,24 +63,25 @@ uv run python scripts/evaluate_bpe_llm.py \
   --checkpoint artifacts/checkpoints/llm-64m-pretrain-mps.pt
 ```
 
-VLM 两阶段训练入口（需先准备 SigLIP2 与对应 LLM SFT checkpoint）：
+VLM 两阶段 MPS 训练入口（需先完成 LLM SFT）：
 
 ```bash
-uv run python scripts/train_vlm.py --config configs/vlm/alignment.yaml --resume
-uv run python scripts/train_vlm.py --config configs/vlm/sft.yaml --resume
+uv run python scripts/train_vlm.py --config configs/vlm/alignment-mps.yaml --resume
+uv run python scripts/train_vlm.py --config configs/vlm/sft-mps.yaml --resume
 uv run python scripts/evaluate_vlm.py \
-  --config configs/vlm/sft.yaml \
-  --checkpoint artifacts/checkpoints/vlm-sft.pt
+  --config configs/vlm/sft-mps.yaml \
+  --checkpoint artifacts/checkpoints/vlm-sft-mps.pt
 ```
 
 Omni 四阶段入口依次为 `t2a → a2a-alignment → a2a-sft → i2t`：
 
 ```bash
 uv sync --extra multimodal --extra omni --extra dev
-uv run python scripts/train_omni.py --config configs/omni/t2a.yaml --resume
-uv run python scripts/train_omni.py --config configs/omni/a2a-alignment.yaml --resume
-uv run python scripts/train_omni.py --config configs/omni/a2a-sft.yaml --resume
-uv run python scripts/train_omni.py --config configs/omni/i2t.yaml --resume
+uv run python scripts/preflight_mps_pipeline.py
+uv run python scripts/train_omni.py --config configs/omni/t2a-mps.yaml --resume
+uv run python scripts/train_omni.py --config configs/omni/a2a-alignment-mps.yaml --resume
+uv run python scripts/train_omni.py --config configs/omni/a2a-sft-mps.yaml --resume
+uv run python scripts/train_omni.py --config configs/omni/i2t-mps.yaml --resume
 ```
 
 `smoke.yaml` 是本机链路验证配置，不代表最终模型。当前正式本机复现使用

@@ -1,0 +1,28 @@
+experiment:
+  name: omni-audio-alignment-mps
+  seed: 45
+  device: mps
+
+model:
+  checkpoint: artifacts/checkpoints/omni-t2a-mps.pt
+  audio_encoder: assets/models/SenseVoiceSmall
+
+tokenizer:
+  path: assets/tokenizer
+
+data:
+  path: data/raw/sft_a2a_mini.parquet
+  sequence_length: 640
+  validation_samples: 128
+
+training:
+  stage: audio-projector-only
+  epochs: 1
+  batch_size: 8
+  gradient_accumulation_steps: 5
+  learning_rate: 0.0005
+  weight_decay: 0.1
+  grad_clip: 1.0
+  log_interval: 20
+  save_interval: 1000
+  checkpoint_path: artifacts/checkpoints/omni-audio-alignment-mps.pt

@@ -14,10 +14,10 @@
 |---|---|---|---|
 | M0 | GitHub 仓库与复现规范 | 已完成 | `goya4140/minimind-training-lab` 与首次远端提交 |
 | M1 | LLM 原生架构 | 已完成 | 4 个测试通过；正式配置参数量 63,912,192 |
-| M2 | LLM 从零 Pretrain | 进行中 | step 2000 完整恢复点已校验；训练继续运行 |
+| M2 | LLM 从零 Pretrain | 进行中 | 已超过 step 15,000；step 12,000 中期评估已提交 |
 | M3 | LLM SFT 与评估 | 已准备 | assistant-only 数据管线、配置和训练入口已测试 |
-| M4 | VLM 对齐与 SFT | 架构就绪 | early-fusion、projector 与分阶段冻结测试通过 |
-| M5 | Omni T2A/A2A/I2T | 架构就绪 | Thinker–Bridge–Talker、MTP heads 与三阶段配置测试通过 |
+| M4 | VLM 对齐与 SFT | 管线就绪 | 真实 Parquet + SigLIP2 前向探针通过，等待 LLM SFT |
+| M5 | Omni T2A/A2A/I2T | 管线就绪 | T2A/A2A 数据、SenseVoice、Mimi 与真实前向探针通过 |
 | M6 | 最终 GitHub 展示 | 未开始 | README、报告、模型卡、release |
 
 `artifacts/` 下生成的日志和评估输出默认不提交；经过审核的结果将提炼到 `reports/` 并提交。
