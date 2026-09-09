@@ -79,3 +79,17 @@ def test_empty_audio_targets_have_zero_finite_loss():
     output = model(text_ids, audio_ids, audio_labels=labels)
     assert output.audio_loss.item() == 0.0
     assert torch.isfinite(output.audio_loss)
+
+
+def test_missing_speaker_position_does_not_replace_last_token():
+    model = MiniMindOmni(config())
+    text_ids = torch.randint(20, 259, (1, 8))
+    audio_ids = torch.randint(0, 79, (1, 3, 8))
+    baseline = model(text_ids, audio_ids).audio_logits
+    conditioned = model(
+        text_ids,
+        audio_ids,
+        speaker_embedding=torch.randn(1, 16),
+        speaker_positions=torch.tensor([-1]),
+    ).audio_logits
+    assert all(torch.equal(left, right) for left, right in zip(baseline, conditioned))

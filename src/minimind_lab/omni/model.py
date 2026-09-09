@@ -147,7 +147,8 @@ class Talker(nn.Module):
             replacement = self.speaker_projector(speaker_embedding)
             audio_embeddings = audio_embeddings.clone()
             for batch_index, position in enumerate(speaker_positions.tolist()):
-                audio_embeddings[batch_index, position] = replacement[batch_index]
+                if position >= 0:
+                    audio_embeddings[batch_index, position] = replacement[batch_index]
         hidden = self.semantic_projector(bridge_states) * self.text_scale
         hidden = hidden + self.codec_projector(audio_embeddings) * self.audio_scale
         for layer in self.layers:
