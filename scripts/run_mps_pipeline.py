@@ -18,6 +18,18 @@ from preflight_mps_pipeline import STAGES, active_pid
 from minimind_lab.training import acquire_run_lock
 
 EVALUATIONS = {
+    "llm-pretrain": (
+        "artifacts/eval/llm-pretrain-final.json",
+        [
+            "scripts/evaluate_bpe_llm.py",
+            "--config",
+            "configs/llm/pretrain-mps.yaml",
+            "--checkpoint",
+            "artifacts/checkpoints/llm-64m-pretrain-mps.pt",
+            "--output",
+            "artifacts/eval/llm-pretrain-final.json",
+        ],
+    ),
     "llm-sft": (
         "artifacts/eval/llm-sft-final.json",
         [

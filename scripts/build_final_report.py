@@ -18,6 +18,7 @@ from minimind_lab.reporting import (
     render_temporal_ablation,
     render_training_curves,
     validate_final_evaluations,
+    validate_language_evaluation,
     validate_qivd_manifest,
 )
 
@@ -31,6 +32,7 @@ REQUIRED = {
     "Video alignment log": "artifacts/logs/video-omni-alignment-mps.json",
     "Video SFT log": "artifacts/logs/video-omni-sft-mps.json",
     "LLM evaluation": "artifacts/eval/llm-sft-final.json",
+    "LLM pretrain evaluation": "artifacts/eval/llm-pretrain-final.json",
     "VLM evaluation": "artifacts/eval/vlm-final.json",
     "Video evaluation": "artifacts/eval/video-omni-final.json",
     "LLM checkpoint": "artifacts/checkpoints/llm-64m-sft-mps.pt",
@@ -101,9 +103,11 @@ def main() -> None:
         "video_sft": read_json(REQUIRED["Video SFT log"]),
     }
     llm_eval = read_json(REQUIRED["LLM evaluation"])
+    llm_pretrain_eval = read_json(REQUIRED["LLM pretrain evaluation"])
     vlm_eval = read_json(REQUIRED["VLM evaluation"])
     video_eval = read_json(REQUIRED["Video evaluation"])
     validate_final_evaluations(llm_eval, vlm_eval, video_eval)
+    validate_language_evaluation(llm_pretrain_eval)
     qivd = read_json(REQUIRED["QIVD manifest"])
     validate_qivd_manifest(qivd, QIVD_REVISION)
     local_artifacts = [
@@ -111,6 +115,7 @@ def main() -> None:
         local_artifact_entry("vlm-sft-mps.pt", REQUIRED["VLM checkpoint"]),
         local_artifact_entry("video-omni-sft-mps.pt", REQUIRED["Video checkpoint"]),
         local_artifact_entry("llm-sft-final.json", REQUIRED["LLM evaluation"]),
+        local_artifact_entry("llm-pretrain-final.json", REQUIRED["LLM pretrain evaluation"]),
         local_artifact_entry("vlm-final.json", REQUIRED["VLM evaluation"]),
         local_artifact_entry("video-omni-final.json", REQUIRED["Video evaluation"]),
         local_artifact_entry("qivd.json", REQUIRED["QIVD manifest"]),
@@ -133,6 +138,7 @@ def main() -> None:
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     qivd_generation = video_eval["qivd_generation"]
     temporal = video_eval["controlled_temporal"]
+    llm_pretrain_language = llm_pretrain_eval["corpus"]
     llm_language = llm_eval["corpus"]
     vlm_language = vlm_eval["language_regression"]["corpus"]
     video_language = video_eval["language_regression"]["corpus"]
@@ -184,7 +190,8 @@ def main() -> None:
         "",
         "| 模型 / 数据集 | 主要指标 |",
         "|---|---|",
-        f"| LLM 文本留出集 | loss {fmt(llm_language['validation_loss'])}; PPL {fmt(llm_language['validation_perplexity'])}; BPB {fmt(llm_language['bits_per_byte'])} |",
+        f"| LLM Pretrain 文本留出集 | loss {fmt(llm_pretrain_language['validation_loss'])}; PPL {fmt(llm_pretrain_language['validation_perplexity'])}; BPB {fmt(llm_pretrain_language['bits_per_byte'])} |",
+        f"| LLM SFT 文本留出集 | loss {fmt(llm_language['validation_loss'])}; PPL {fmt(llm_language['validation_perplexity'])}; PPL 相对 Pretrain 变化 {fmt(llm_language['validation_perplexity'] - llm_pretrain_language['validation_perplexity'])} |",
         f"| VLM validation + 固定图像 | loss {fmt(vlm_eval['validation_loss'])}; 正确图关键词召回 {fmt(visual_ablation['correct_image_keyword_recall'])} |",
         f"| VLM 视觉反事实 | 错图/倒序召回 {fmt(visual_ablation['counterfactual_keyword_recall'])}; 正确减反事实 {fmt(visual_ablation['correct_minus_counterfactual_recall'])}; 回答变化率 {fmt(visual_ablation['completion_change_rate'])} |",
         f"| VLM 语言回归 | PPL {fmt(vlm_language['validation_perplexity'])}; 相对 LLM 变化 {fmt(vlm_language['validation_perplexity'] - llm_language['validation_perplexity'])} |",
@@ -216,11 +223,14 @@ def main() -> None:
         "",
         "### LLM",
         "",
-        "| 提示 | 模型续写 |",
-        "|---|---|",
+        "| 提示 | Pretrain 续写 | SFT 续写 |",
+        "|---|---|---|",
         *[
-            f"| {one_line(item['prompt'])} | {one_line(item['completion'])} |"
-            for item in llm_eval.get("generation", [])[:4]
+            f"| {one_line(pretrain_row['prompt'])} | {one_line(pretrain_row['completion'])} | "
+            f"{one_line(sft_row['completion'])} |"
+            for pretrain_row, sft_row in zip(
+                llm_pretrain_eval["generation"], llm_eval["generation"], strict=True
+            )
         ],
         "",
         "### 三模型语言能力保持情况",

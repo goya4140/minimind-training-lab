@@ -20,6 +20,9 @@
 
 固定生成必须使用相同 prompt、tokenizer、temperature 和 max tokens，否则不能直接横向比较。
 
+LLM 必须保留 Pretrain 与 SFT 两份独立评估 JSON，并用同一文本留出集和固定提示比较。这样读者能
+直接观察“续写模型”变成“指令模型”时，PPL、回答格式与内容发生了什么变化。
+
 ## VLM 指标
 
 VLM 同时报告 validation loss 和固定图像关键词召回。关键词召回只是轻量下限，不是完整 VQA benchmark；
