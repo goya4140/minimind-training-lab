@@ -110,10 +110,17 @@ class QIVDVideoDataset(Dataset):
 
             feature_cache = Path(feature_cache)
             done_path = feature_cache.with_suffix(".done.npy")
-            if not done_path.is_file() or not bool(np.load(done_path, mmap_mode="r").all()):
+            if not feature_cache.is_file() or not done_path.is_file():
+                raise RuntimeError("video feature cache is incomplete; run cache_video_features.py")
+            done = np.load(done_path, mmap_mode="r")
+            if done.shape != (len(self.rows),) or not bool(done.all()):
                 raise RuntimeError("video feature cache is incomplete; run cache_video_features.py")
             self.feature_cache = np.load(feature_cache, mmap_mode="r")
-            if self.feature_cache.shape[0] != len(self.rows) or self.feature_cache.shape[1] != num_frames:
+            if (
+                self.feature_cache.ndim != 4
+                or self.feature_cache.shape[0] != len(self.rows)
+                or self.feature_cache.shape[1] != num_frames
+            ):
                 raise ValueError("video feature cache shape does not match QIVD metadata/config")
         self.assistant_start_ids = tokenizer(f"{tokenizer.bos_token}assistant\n", add_special_tokens=False).input_ids
         self.turn_end_ids = tokenizer(f"{tokenizer.eos_token}\n", add_special_tokens=False).input_ids
