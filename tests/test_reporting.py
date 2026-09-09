@@ -7,7 +7,9 @@ from minimind_lab.reporting import (
     render_training_curves,
     summarize_training_config,
     validate_checkpoint_bindings,
+    validate_evaluation_sizes,
     validate_final_evaluations,
+    validate_prompt_alignment,
     validate_qivd_manifest,
     validate_training_summaries,
 )
@@ -217,3 +219,38 @@ def test_training_config_summary_exposes_effective_batch_and_updates():
         "sequence_length": 340,
         "data_path": "data/train.jsonl",
     }
+
+
+def test_evaluation_size_validator_rejects_shortened_protocol():
+    llm, vlm, video = valid_evaluations()
+    video["held_out_test_samples"] = 250
+    video["controlled_temporal"]["manifest"] = {
+        "samples": 1,
+        "seed": 20260909,
+        "training_overlap": 0,
+        "families": ["motion-horizontal", "motion-vertical", "size-change", "event-order"],
+    }
+    video["controlled_temporal"]["token_f1_by_category"] = {
+        "motion-horizontal": 1.0,
+        "motion-vertical": 1.0,
+        "size-change": 1.0,
+        "event-order": 1.0,
+    }
+    expected = {
+        "llm_generation": 1,
+        "vlm_qualitative": 1,
+        "qivd_test": 250,
+        "qivd_generation": 1,
+        "temporal_generation": 1,
+        "temporal_manifest": 1,
+    }
+    validate_evaluation_sizes(llm, vlm, video, expected)
+    with pytest.raises(ValueError, match="qivd_generation"):
+        validate_evaluation_sizes(llm, vlm, video, {**expected, "qivd_generation": 100})
+
+
+def test_language_prompt_alignment_requires_identical_order():
+    first = [{"prompt": "a"}, {"prompt": "b"}]
+    validate_prompt_alignment(first, [{"prompt": "a"}, {"prompt": "b"}])
+    with pytest.raises(ValueError, match="identical ordered prompts"):
+        validate_prompt_alignment(first, [{"prompt": "b"}, {"prompt": "a"}])

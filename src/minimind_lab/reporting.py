@@ -135,6 +135,60 @@ def validate_final_evaluations(llm: dict, vlm: dict, video: dict) -> None:
     _finite_metric(video, "controlled_temporal.reversed_minus_normal_loss")
 
 
+def validate_evaluation_sizes(llm: dict, vlm: dict, video: dict, expected: dict[str, int]) -> None:
+    """Require the fixed evaluation protocol rather than accepting a shortened run."""
+    actual = {
+        "llm_generation": len(_nested_value(llm, "generation")),
+        "vlm_qualitative": len(_nested_value(vlm, "qualitative")),
+        "qivd_test": _nested_value(video, "held_out_test_samples"),
+        "qivd_generation": _nested_value(video, "qivd_generation.generated_samples"),
+        "temporal_generation": _nested_value(video, "controlled_temporal.generated_samples"),
+        "temporal_manifest": _nested_value(video, "controlled_temporal.manifest.samples"),
+    }
+    if set(actual) != set(expected):
+        raise ValueError("evaluation size expectations do not match the fixed protocol")
+    for name, expected_count in expected.items():
+        value = actual[name]
+        if isinstance(value, bool) or not isinstance(value, int) or value != expected_count:
+            raise ValueError(f"evaluation size is incorrect for {name}: expected {expected_count}, got {value}")
+
+    if _nested_value(vlm, "visual_ablation.samples") != expected["vlm_qualitative"]:
+        raise ValueError("VLM ablation sample count does not match its qualitative cases")
+    for section, generated_key in (
+        ("qivd_generation", "qivd_generation"),
+        ("controlled_temporal", "temporal_generation"),
+    ):
+        qualitative = _nested_value(video, f"{section}.qualitative")
+        if len(qualitative) != min(12, expected[generated_key]):
+            raise ValueError(f"video qualitative sample count is incorrect for {section}")
+
+    manifest = _nested_value(video, "controlled_temporal.manifest")
+    if manifest.get("seed") != 20260909 or manifest.get("training_overlap") != 0:
+        raise ValueError("controlled temporal manifest seed or training overlap is incorrect")
+    expected_families = {"motion-horizontal", "motion-vertical", "size-change", "event-order"}
+    if set(manifest.get("families", [])) != expected_families:
+        raise ValueError("controlled temporal manifest families are incomplete")
+    categories = set(_nested_value(video, "controlled_temporal.token_f1_by_category"))
+    if categories != expected_families:
+        raise ValueError("controlled temporal category metrics are incomplete")
+
+
+def validate_prompt_alignment(*generations: list[dict]) -> None:
+    """Require all language-core comparisons to use the same prompts in the same order."""
+    if len(generations) < 2:
+        raise ValueError("prompt alignment needs at least two generation sets")
+    prompt_sets = []
+    for index, rows in enumerate(generations):
+        if not isinstance(rows, list) or not rows:
+            raise ValueError(f"prompt alignment generation set is empty: {index}")
+        prompts = [row.get("prompt") if isinstance(row, dict) else None for row in rows]
+        if any(not isinstance(prompt, str) or not prompt for prompt in prompts):
+            raise ValueError(f"prompt alignment generation set is malformed: {index}")
+        prompt_sets.append(prompts)
+    if any(prompts != prompt_sets[0] for prompts in prompt_sets[1:]):
+        raise ValueError("language evaluations do not use identical ordered prompts")
+
+
 def validate_qivd_manifest(manifest: dict, revision: str, video_count: int = 2900) -> None:
     """Require locally enumerated files that match the pinned upstream LFS tree."""
     if manifest.get("revision") != revision:

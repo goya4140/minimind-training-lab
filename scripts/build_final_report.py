@@ -20,8 +20,10 @@ from minimind_lab.reporting import (
     render_training_curves,
     summarize_training_config,
     validate_checkpoint_bindings,
+    validate_evaluation_sizes,
     validate_final_evaluations,
     validate_language_evaluation,
+    validate_prompt_alignment,
     validate_qivd_manifest,
     validate_training_summaries,
 )
@@ -34,6 +36,15 @@ EXPECTED_STAGES = {
     "vlm_sft": (30_000, 15_931_776),
     "video_alignment": (7_200, 20_105_472),
     "video_sft": (4_800, 34_854_528),
+}
+
+EXPECTED_EVALUATION_SIZES = {
+    "llm_generation": 4,
+    "vlm_qualitative": 7,
+    "qivd_test": 250,
+    "qivd_generation": 100,
+    "temporal_generation": 160,
+    "temporal_manifest": 160,
 }
 
 STAGE_CONFIGS = {
@@ -152,6 +163,13 @@ def main() -> None:
     video_eval = read_json(REQUIRED["Video evaluation"])
     validate_final_evaluations(llm_eval, vlm_eval, video_eval)
     validate_language_evaluation(llm_pretrain_eval)
+    validate_evaluation_sizes(llm_eval, vlm_eval, video_eval, EXPECTED_EVALUATION_SIZES)
+    validate_prompt_alignment(
+        llm_pretrain_eval["generation"],
+        llm_eval["generation"],
+        vlm_eval["language_regression"]["generation"],
+        video_eval["language_regression"]["generation"],
+    )
     qivd = read_json(REQUIRED["QIVD manifest"])
     validate_qivd_manifest(qivd, QIVD_REVISION)
     local_artifacts = [

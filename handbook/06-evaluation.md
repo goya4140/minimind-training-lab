@@ -19,6 +19,7 @@
 - tokens/s：效率指标，不是能力指标。
 
 固定生成必须使用相同 prompt、tokenizer、temperature 和 max tokens，否则不能直接横向比较。
+最终发布门禁会核对四组语言生成的提示文本与顺序完全一致，而不只比较样本数。
 
 LLM 必须保留 Pretrain 与 SFT 两份独立评估 JSON，并用同一文本留出集和固定提示比较。这样读者能
 直接观察“续写模型”变成“指令模型”时，PPL、回答格式与内容发生了什么变化。
@@ -41,6 +42,9 @@ normal score > reversed score  → 支持模型利用了时间顺序
 normal score ≈ reversed score  → 可能只看静态帧或语言先验
 normal score < reversed score  → 训练/评估异常或未建立稳定时序能力
 ```
+
+正式报告只接受完整协议：4 个固定语言提示、7 个 VLM 案例、250 条 QIVD test loss、前 100 条
+QIVD 生成，以及 160 条受控时序正常/倒序生成。缩短样本数的调试运行不能冒充最终评估。
 
 ## 避免指标误读
 
