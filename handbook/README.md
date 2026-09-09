@@ -23,6 +23,8 @@
 | [06 · 评估](06-evaluation.md) | loss 降低为什么不等于模型有效？ | PPL、VQA、Video-QA、受控时序测试 |
 | [07 · 完整复现](07-reproduction-runbook.md) | 如何在一台机器上从头跑完？ | 安装、下载、preflight、训练、报告 |
 | [08 · 读日志与排错](08-reading-logs.md) | loss、梯度、吞吐异常意味着什么？ | 真实日志字段与诊断树 |
+| [09 · 动手练习](09-exercises.md) | 如何确认自己真的理解了？ | 9 个由浅入深、不会覆盖正式权重的实验 |
+| [术语表](glossary.md) | 常见缩写是什么意思？ | 从 batch 到 Video-QA |
 
 ## 学习方式
 
