@@ -1,0 +1,19 @@
+.DS_Store
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# Local datasets, checkpoints and generated artifacts
+data/raw/
+data/processed/
+artifacts/checkpoints/
+artifacts/models/
+artifacts/logs/
+artifacts/eval/
+!artifacts/.gitkeep
+
+# Downloaded upstream/reference models
+third_party/
+

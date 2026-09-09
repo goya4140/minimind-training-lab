@@ -1,0 +1,44 @@
+# 训练策略
+
+## 实验分级
+
+- `smoke`：本机 MPS/CPU 上验证张量、反向传播、保存、加载和生成；结果不用于能力结论。
+- `mini`：使用公开 mini 数据验证完整模型训练链路。
+- `full`：使用固定数据版本与正式配置，产出最终权重和评估报告。
+
+## LLM
+
+1. 从随机初始化进行文本预训练，全 token causal language modeling；
+2. 从预训练权重进行 SFT，只在 assistant token 上计算损失；
+3. 可选 LoRA 与 GRPO 作为后训练专题，不作为三模型主线的完成条件。
+
+## VLM
+
+1. 从 LLM SFT 权重初始化；
+2. 冻结 SigLIP2 和 LLM，只训练 Vision Projector 完成图文对齐；
+3. 冻结 SigLIP2，训练 Projector 与 LLM 首尾层完成视觉指令微调；
+4. 全参数 LLM 微调只作为消融实验。
+
+## Omni
+
+1. 从 LLM SFT 权重初始化 Thinker；Talker 从 Thinker 后四层复制初始化；
+2. T2A：训练文本到文本+语音输出；
+3. A2A projector alignment：只训练 Audio Projector；
+4. A2A joint training：小学习率联合训练 Thinker、Talker 与 Projector；
+5. I2T：只训练 Vision Projector，避免破坏语言和语音能力。
+
+损失为文本交叉熵、8 路音频 code 交叉熵和可选 MoE 辅助损失之和。第一期只训练 Dense。
+
+## 可复现要求
+
+每个正式实验必须记录：
+
+- 仓库 commit 与脏工作区状态；
+- 数据名称、来源、许可、版本与校验和；
+- 完整配置和随机种子；
+- Python、PyTorch、CUDA、GPU；
+- 参数量、可训练参数量与冻结模块；
+- loss、梯度范数、吞吐、显存、耗时；
+- checkpoint 哈希；
+- 定量评估和固定定性样例。
+

@@ -1,0 +1,37 @@
+[project]
+name = "minimind-training-lab"
+version = "0.1.0"
+description = "A reproducible learning lab for training LLM, VLM and Omni models"
+requires-python = ">=3.10"
+dependencies = [
+  "numpy>=1.26,<3",
+  "pyyaml>=6,<7",
+  "torch>=2.6,<3",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8,<9",
+  "ruff>=0.9,<1",
+]
+multimodal = [
+  "datasets>=3.6,<4",
+  "pillow>=10,<12",
+  "transformers>=4.57,<5",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/minimind_lab"]
+

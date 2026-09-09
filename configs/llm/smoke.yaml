@@ -1,0 +1,29 @@
+experiment:
+  name: llm-smoke
+  seed: 42
+  device: auto
+
+model:
+  vocab_size: 259
+  hidden_size: 128
+  num_hidden_layers: 4
+  num_attention_heads: 4
+  num_key_value_heads: 2
+  intermediate_size: 352
+  max_position_embeddings: 256
+  rope_theta: 1000000.0
+  dropout: 0.0
+
+data:
+  path: data/sample/pretrain.txt
+  sequence_length: 128
+
+training:
+  steps: 120
+  batch_size: 8
+  learning_rate: 0.0005
+  weight_decay: 0.1
+  grad_clip: 1.0
+  log_interval: 10
+  checkpoint_path: artifacts/checkpoints/llm-smoke.pt
+
