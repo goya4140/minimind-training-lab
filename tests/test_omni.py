@@ -16,11 +16,14 @@ def config() -> OmniConfig:
         num_talker_hidden_layers=2,
         num_audio_codebooks=3,
         audio_vocab_size=80,
+        audio_codebook_size=64,
+        audio_pad_token_id=78,
+        audio_stop_token_id=79,
         audio_hidden_size=24,
         image_hidden_size=32,
         image_token_length=2,
         speaker_embedding_size=16,
-        audio_speaker_token_id=79,
+        audio_speaker_token_id=77,
     )
 
 
@@ -93,6 +96,20 @@ def test_missing_speaker_position_does_not_replace_last_token():
         speaker_positions=torch.tensor([-1]),
     ).audio_logits
     assert all(torch.equal(left, right) for left, right in zip(baseline, conditioned))
+
+
+def test_reference_omni_generation_returns_text_and_codebooks():
+    model = MiniMindOmni(config())
+    result = model.generate_multimodal(
+        torch.randint(20, 259, (1, 5)),
+        eos_token_id=2,
+        pad_token_id=0,
+        max_new_tokens=5,
+        text_temperature=0.0,
+        audio_temperature=0.0,
+    )
+    assert result["text_ids"].ndim == 2
+    assert result["audio_codes"].shape[:2] == (1, 3)
 
 
 def test_audio_feature_lengths_ignore_batch_padding():

@@ -16,6 +16,7 @@ class OmniConfig(MiniMindConfig):
     talker_hidden_size: int = 768
     num_audio_codebooks: int = 8
     audio_vocab_size: int = 2112
+    audio_codebook_size: int = 2048
     audio_pad_token_id: int = 2049
     audio_stop_token_id: int = 2050
     audio_hidden_size: int = 512
@@ -264,3 +265,87 @@ class MiniMindOmni(nn.Module):
                 layer_losses.append((token_losses * stop_weights).mean())
             audio_loss = torch.stack(layer_losses).mean()
         return OmniOutput(text_logits, audio_logits, text_loss, audio_loss)
+
+    @torch.inference_mode()
+    def generate_multimodal(
+        self,
+        text_ids: torch.Tensor,
+        eos_token_id: int,
+        pad_token_id: int,
+        max_new_tokens: int = 256,
+        text_temperature: float = 0.0,
+        audio_temperature: float = 0.2,
+        encoded_audio: torch.Tensor | None = None,
+        encoded_audio_lengths: torch.Tensor | None = None,
+        encoded_images: torch.Tensor | None = None,
+        speaker_embedding: torch.Tensor | None = None,
+    ) -> dict[str, torch.Tensor]:
+        """Reference autoregressive loop; correctness first, without a KV cache."""
+        if text_ids.size(0) != 1:
+            raise ValueError("reference Omni generation currently supports batch size 1")
+        self.eval()
+        prompt_length = text_ids.size(1)
+        audio_ids = torch.full(
+            (1, self.config.num_audio_codebooks, prompt_length),
+            self.config.audio_pad_token_id,
+            dtype=torch.long,
+            device=text_ids.device,
+        )
+        speaker_positions = None
+        if speaker_embedding is not None and prompt_length:
+            audio_ids[:, :, -1] = self.config.audio_speaker_token_id
+            speaker_positions = torch.tensor([prompt_length - 1], device=text_ids.device)
+        streams = [[] for _ in range(self.config.num_audio_codebooks)]
+        stopped = [False] * self.config.num_audio_codebooks
+        text_finished = False
+        for step in range(max_new_tokens):
+            output = self(
+                text_ids,
+                audio_ids,
+                encoded_audio=encoded_audio,
+                encoded_audio_lengths=encoded_audio_lengths,
+                encoded_images=encoded_images,
+                speaker_embedding=speaker_embedding,
+                speaker_positions=speaker_positions,
+            )
+            text_logits = output.text_logits[:, -1]
+            if text_finished:
+                next_text = torch.tensor([[pad_token_id]], device=text_ids.device)
+            elif text_temperature <= 0:
+                next_text = text_logits.argmax(dim=-1, keepdim=True)
+            else:
+                next_text = torch.multinomial(F.softmax(text_logits / text_temperature, dim=-1), 1)
+            if int(next_text.item()) == eos_token_id:
+                text_finished = True
+
+            next_audio = torch.full(
+                (1, self.config.num_audio_codebooks, 1),
+                self.config.audio_pad_token_id,
+                dtype=torch.long,
+                device=text_ids.device,
+            )
+            for codebook, logits in enumerate(output.audio_logits):
+                if step <= codebook or stopped[codebook]:
+                    continue
+                scores = logits[:, -1]
+                if audio_temperature <= 0:
+                    token = scores.argmax(dim=-1, keepdim=True)
+                else:
+                    token = torch.multinomial(F.softmax(scores / audio_temperature, dim=-1), 1)
+                value = int(token.item())
+                next_audio[:, codebook, 0] = value
+                if value >= self.config.audio_codebook_size:
+                    stopped[codebook] = True
+                else:
+                    streams[codebook].append(value)
+            text_ids = torch.cat((text_ids, next_text), dim=1)
+            audio_ids = torch.cat((audio_ids, next_audio), dim=2)
+            if text_finished and all(stopped):
+                break
+
+        generated_text = text_ids[:, prompt_length:]
+        frame_count = min((len(stream) for stream in streams), default=0)
+        audio_codes = torch.tensor(
+            [[stream[:frame_count] for stream in streams]], dtype=torch.long, device=text_ids.device
+        )
+        return {"text_ids": generated_text, "audio_codes": audio_codes}
