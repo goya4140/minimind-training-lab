@@ -61,6 +61,13 @@ uv run python scripts/evaluate_bpe_llm.py \
   --checkpoint artifacts/checkpoints/llm-64m-pretrain-mps.pt
 ```
 
+VLM 两阶段训练入口（需先准备 SigLIP2 与对应 LLM SFT checkpoint）：
+
+```bash
+uv run python scripts/train_vlm.py --config configs/vlm/alignment.yaml --resume
+uv run python scripts/train_vlm.py --config configs/vlm/sft.yaml --resume
+```
+
 `smoke.yaml` 是本机链路验证配置，不代表最终模型。当前正式本机复现使用
 `configs/llm/pretrain-mps.yaml`，后续阶段严格从前一阶段 checkpoint 初始化。
 

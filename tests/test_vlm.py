@@ -58,3 +58,28 @@ def test_instruction_stage_unfreezes_boundary_layers():
     assert any(name.startswith("vision_projector.") for name in trainable)
     assert any(name.startswith("language_model.layers.0.") for name in trainable)
     assert any(name.startswith("language_model.layers.1.") for name in trainable)
+
+
+def test_vlm_supports_multiple_images_per_sample():
+    model = MiniMindVLM(config(), FakeVisionEncoder(tokens=4, hidden=48))
+    input_ids = torch.randint(20, 259, (2, 20))
+    input_ids[:, 2:6] = 12
+    input_ids[:, 10:14] = 12
+    output = model(input_ids, torch.randn(2, 2, 3, 8, 8), labels=input_ids)
+    assert output["logits"].shape == (2, 20, 259)
+    assert torch.isfinite(output["loss"])
+
+
+def test_vlm_ignores_padded_images_using_image_counts():
+    model = MiniMindVLM(config(), FakeVisionEncoder(tokens=4, hidden=48))
+    input_ids = torch.randint(20, 259, (2, 20))
+    input_ids[0, 2:6] = 12
+    input_ids[1, 2:6] = 12
+    input_ids[1, 10:14] = 12
+    output = model(
+        input_ids,
+        torch.randn(2, 2, 3, 8, 8),
+        labels=input_ids,
+        image_counts=torch.tensor([1, 2]),
+    )
+    assert torch.isfinite(output["loss"])
