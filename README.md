@@ -10,13 +10,18 @@
 
 ## 当前状态
 
+<!-- STATUS_START -->
 | 阶段 | 架构 | 训练 | 评估 |
 |---|---|---|---|
 | LLM | ✅ 原生 PyTorch 主干（63,912,192 参数正式配置） | 🚧 正式 MPS 预训练进行中 | 🚧 step 12,000 中期评估已记录 |
 | VLM | ✅ Early-fusion 与冻结策略已实现 | ⏳ 真实数据/SigLIP2 已验证，等待 LLM SFT | ✅ 固定 6 图评估入口就绪 |
 | Video-Omni | ✅ 帧编码器 + 时序适配器 + LLM 已实现 | ⏳ QIVD 下载中，等待 LLM SFT | ✅ 留出集、倒序帧消融与分类型评估就绪 |
+<!-- STATUS_END -->
 
 状态以 [`docs/progress.md`](docs/progress.md) 中的证据为准。
+
+模型说明：[`LLM`](docs/model-cards/llm.md) · [`VLM`](docs/model-cards/vlm.md) ·
+[`Video-Omni`](docs/model-cards/video-omni.md)
 
 ## 目标架构
 

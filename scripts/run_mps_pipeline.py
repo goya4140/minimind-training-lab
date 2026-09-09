@@ -88,6 +88,7 @@ def verify_stage(config: str) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Resume the complete MiniMind MPS training and evaluation chain.")
     parser.add_argument("--poll-seconds", type=float, default=30.0)
+    parser.add_argument("--publish-results", action="store_true")
     args = parser.parse_args()
     pipeline_lock = acquire_run_lock(ROOT / "artifacts/checkpoints/pipeline-mps.lock")
     print(json.dumps({"pipeline": "mps", "stages": [item[0] for item in STAGES]}, ensure_ascii=False), flush=True)
@@ -109,7 +110,10 @@ def main() -> None:
         verify_stage(config)
         evaluate_if_needed(stage, output)
 
-    print("MPS training and evaluation pipeline complete", flush=True)
+    run(["scripts/build_final_report.py"])
+    if args.publish_results:
+        run(["scripts/publish_results.py"])
+    print("MPS training, evaluation, reporting, and requested publishing complete", flush=True)
     pipeline_lock.close()
 
 

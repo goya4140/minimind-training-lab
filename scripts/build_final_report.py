@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -97,13 +98,13 @@ def main() -> None:
     video_eval = read_json(REQUIRED["Video evaluation"])
     qivd = read_json(REQUIRED["QIVD manifest"])
     release_assets = [
-        release_entry("minimind-lab-llm-sft-mps.pt", REQUIRED["LLM checkpoint"]),
-        release_entry("minimind-lab-vlm-sft-mps.pt", REQUIRED["VLM checkpoint"]),
-        release_entry("minimind-lab-video-omni-sft-mps.pt", REQUIRED["Video checkpoint"]),
-        release_entry("llm-evaluation.json", REQUIRED["LLM evaluation"]),
-        release_entry("vlm-evaluation.json", REQUIRED["VLM evaluation"]),
-        release_entry("video-omni-evaluation.json", REQUIRED["Video evaluation"]),
-        release_entry("qivd-manifest.json", REQUIRED["QIVD manifest"]),
+        release_entry("llm-64m-sft-mps.pt", REQUIRED["LLM checkpoint"]),
+        release_entry("vlm-sft-mps.pt", REQUIRED["VLM checkpoint"]),
+        release_entry("video-omni-sft-mps.pt", REQUIRED["Video checkpoint"]),
+        release_entry("llm-sft-final.json", REQUIRED["LLM evaluation"]),
+        release_entry("vlm-final.json", REQUIRED["VLM evaluation"]),
+        release_entry("video-omni-final.json", REQUIRED["Video evaluation"]),
+        release_entry("qivd.json", REQUIRED["QIVD manifest"]),
     ]
     losses = {
         key: training_loss(REQUIRED[checkpoint_name])
@@ -222,10 +223,26 @@ def main() -> None:
     ]
     report_path = ROOT / "reports/final-results.md"
     report_path.write_text("\n".join(lines), encoding="utf-8")
-    manifest = {"tag": "v0.1.0-trained-mps", "commit": commit, "assets": release_assets}
+    manifest = {"tag": "v0.1.0-trained-mps", "source_commit": commit, "assets": release_assets}
     (ROOT / "reports/release-manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
+
+    readme_path = ROOT / "README.md"
+    readme = readme_path.read_text(encoding="utf-8")
+    status = """<!-- STATUS_START -->
+| 阶段 | 架构 | 训练 | 评估 |
+|---|---|---|---|
+| LLM | ✅ 63,912,192 参数 | ✅ Pretrain + SFT | ✅ loss / PPL / BPB / 固定生成 |
+| VLM | ✅ SigLIP2 + Projector + LLM | ✅ Alignment + SFT | ✅ validation + 固定图像样例 |
+| Video-Omni | ✅ Spatial + Temporal Adapter + LLM | ✅ Alignment + SFT | ✅ QIVD + 受控时序 + 倒序消融 |
+<!-- STATUS_END -->"""
+    readme, replacements = re.subn(
+        r"<!-- STATUS_START -->.*?<!-- STATUS_END -->", status, readme, count=1, flags=re.DOTALL
+    )
+    if replacements != 1:
+        raise RuntimeError("README status markers are missing or duplicated")
+    readme_path.write_text(readme, encoding="utf-8")
     print(json.dumps({"report": str(report_path), "release_manifest": manifest}, ensure_ascii=False, indent=2))
 
 
