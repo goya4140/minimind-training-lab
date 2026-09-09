@@ -103,7 +103,11 @@ def mean_field(rows: list[dict], field: str) -> float:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build the evidence-backed final handbook report.")
-    parser.add_argument("--check", action="store_true", help="Only check that every required artifact exists.")
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="Validate every required artifact without writing the final report.",
+    )
     args = parser.parse_args()
     missing = {name: path for name, path in REQUIRED.items() if not (ROOT / path).is_file()}
     if missing:
