@@ -145,80 +145,79 @@ def main() -> None:
     )
     render_temporal_ablation(temporal, assets / "temporal-ablation.svg")
     lines = [
-        "# MiniMind Training Lab — Final Results",
+        "# MiniMind Training Lab — 最终训练与评估结果",
         "",
         (
-            f"Evidence commit: `{commit}`. Hardware: Apple M4 Pro / MPS. Total recorded stage time: "
-            f"**{duration(total_training_seconds)}**."
+            f"证据对应提交：`{commit}`。硬件：Apple M4 Pro / MPS。六阶段记录的训练总耗时："
+            f"**{duration(total_training_seconds)}**。"
         ),
         "",
-        "## Outcome",
+        "## 结论",
         "",
         (
-            "This run trains one language core from random initialization, then reuses its instruction-tuned "
-            "checkpoint for image and video understanding. SigLIP2 is explicitly frozen and is not claimed as "
-            "from-scratch training."
+            "本次实验从随机初始化训练一个语言核心，再从其指令微调 checkpoint 分别扩展图像与视频理解。"
+            "SigLIP2 始终冻结，因此不把视觉编码器描述为从零训练。"
         ),
         "",
-        "## Training",
+        "## 训练结果",
         "",
-        "| Stage | Steps | Trainable parameters | First logged loss | Last logged loss | Time |",
+        "| 阶段 | Micro-steps | 可训练参数 | 首次记录 loss | 最后记录 loss | 耗时 |",
         "|---|---:|---:|---:|---:|---:|",
-        f"| LLM pretrain | {logs['llm_pretrain']['total_steps']:,} | 63,912,192 | {fmt(losses['llm_pretrain'][0])} | {fmt(losses['llm_pretrain'][1])} | {duration(logs['llm_pretrain']['training_seconds'])} |",
+        f"| LLM 预训练 | {logs['llm_pretrain']['total_steps']:,} | 63,912,192 | {fmt(losses['llm_pretrain'][0])} | {fmt(losses['llm_pretrain'][1])} | {duration(logs['llm_pretrain']['training_seconds'])} |",
         f"| LLM SFT | {logs['llm_sft']['total_steps']:,} | 63,912,192 | {fmt(losses['llm_sft'][0])} | {fmt(losses['llm_sft'][1])} | {duration(logs['llm_sft']['training_seconds'])} |",
-        f"| VLM alignment | {logs['vlm_alignment']['total_steps']:,} | {logs['vlm_alignment']['trainable_parameters']:,} | {fmt(losses['vlm_alignment'][0])} | {fmt(losses['vlm_alignment'][1])} | {duration(logs['vlm_alignment']['training_seconds'])} |",
+        f"| VLM 对齐 | {logs['vlm_alignment']['total_steps']:,} | {logs['vlm_alignment']['trainable_parameters']:,} | {fmt(losses['vlm_alignment'][0])} | {fmt(losses['vlm_alignment'][1])} | {duration(logs['vlm_alignment']['training_seconds'])} |",
         f"| VLM SFT | {logs['vlm_sft']['total_steps']:,} | {logs['vlm_sft']['trainable_parameters']:,} | {fmt(losses['vlm_sft'][0])} | {fmt(losses['vlm_sft'][1])} | {duration(logs['vlm_sft']['training_seconds'])} |",
-        f"| Video alignment | {logs['video_alignment']['total_steps']:,} | {logs['video_alignment']['trainable_parameters']:,} | {fmt(losses['video_alignment'][0])} | {fmt(losses['video_alignment'][1])} | {duration(logs['video_alignment']['training_seconds'])} |",
-        f"| Video SFT | {logs['video_sft']['total_steps']:,} | {logs['video_sft']['trainable_parameters']:,} | {fmt(losses['video_sft'][0])} | {fmt(losses['video_sft'][1])} | {duration(logs['video_sft']['training_seconds'])} |",
+        f"| Video-Omni 对齐 | {logs['video_alignment']['total_steps']:,} | {logs['video_alignment']['trainable_parameters']:,} | {fmt(losses['video_alignment'][0])} | {fmt(losses['video_alignment'][1])} | {duration(logs['video_alignment']['training_seconds'])} |",
+        f"| Video-Omni SFT | {logs['video_sft']['total_steps']:,} | {logs['video_sft']['trainable_parameters']:,} | {fmt(losses['video_sft'][0])} | {fmt(losses['video_sft'][1])} | {duration(logs['video_sft']['training_seconds'])} |",
         "",
-        "![Six-stage training loss curves](assets/training-curves.svg)",
+        "![六阶段训练 loss 曲线](assets/training-curves.svg)",
         "",
-        "## Evaluation",
+        "## 评估结果",
         "",
-        "| Model / set | Primary metrics |",
+        "| 模型 / 数据集 | 主要指标 |",
         "|---|---|",
-        f"| LLM held-out text | loss {fmt(llm_language['validation_loss'])}; perplexity {fmt(llm_language['validation_perplexity'])}; BPB {fmt(llm_language['bits_per_byte'])} |",
-        f"| VLM validation + fixed images | loss {fmt(vlm_eval['validation_loss'])}; correct-image keyword recall {fmt(visual_ablation['correct_image_keyword_recall'])} |",
-        f"| VLM visual counterfactual | swapped/reversed recall {fmt(visual_ablation['counterfactual_keyword_recall'])}; correct-minus-counterfactual {fmt(visual_ablation['correct_minus_counterfactual_recall'])}; answer change rate {fmt(visual_ablation['completion_change_rate'])} |",
-        f"| VLM language regression | perplexity {fmt(vlm_language['validation_perplexity'])}; delta vs LLM {fmt(vlm_language['validation_perplexity'] - llm_language['validation_perplexity'])} |",
-        f"| Video QIVD held-out | loss {fmt(video_eval['test_loss'])}; exact {fmt(qivd_generation['normalized_exact_match'])}; token F1 {fmt(qivd_generation['token_f1'])} |",
-        f"| Controlled temporal | exact {fmt(temporal['normalized_exact_match'])}; reversed exact {fmt(temporal['reversed_frame_exact_match'])}; token F1 delta {fmt(temporal['normal_minus_reversed_token_f1'])} |",
-        f"| Video language regression | perplexity {fmt(video_language['validation_perplexity'])}; delta vs LLM {fmt(video_language['validation_perplexity'] - llm_language['validation_perplexity'])} |",
+        f"| LLM 文本留出集 | loss {fmt(llm_language['validation_loss'])}; PPL {fmt(llm_language['validation_perplexity'])}; BPB {fmt(llm_language['bits_per_byte'])} |",
+        f"| VLM validation + 固定图像 | loss {fmt(vlm_eval['validation_loss'])}; 正确图关键词召回 {fmt(visual_ablation['correct_image_keyword_recall'])} |",
+        f"| VLM 视觉反事实 | 错图/倒序召回 {fmt(visual_ablation['counterfactual_keyword_recall'])}; 正确减反事实 {fmt(visual_ablation['correct_minus_counterfactual_recall'])}; 回答变化率 {fmt(visual_ablation['completion_change_rate'])} |",
+        f"| VLM 语言回归 | PPL {fmt(vlm_language['validation_perplexity'])}; 相对 LLM 变化 {fmt(vlm_language['validation_perplexity'] - llm_language['validation_perplexity'])} |",
+        f"| Video QIVD 留出集 | loss {fmt(video_eval['test_loss'])}; exact {fmt(qivd_generation['normalized_exact_match'])}; token F1 {fmt(qivd_generation['token_f1'])} |",
+        f"| 受控时序集 | exact {fmt(temporal['normalized_exact_match'])}; 倒序 exact {fmt(temporal['reversed_frame_exact_match'])}; token F1 差 {fmt(temporal['normal_minus_reversed_token_f1'])} |",
+        f"| Video-Omni 语言回归 | PPL {fmt(video_language['validation_perplexity'])}; 相对 LLM 变化 {fmt(video_language['validation_perplexity'] - llm_language['validation_perplexity'])} |",
         "",
-        "![Controlled temporal normal versus reversed metrics](assets/temporal-ablation.svg)",
-        "",
-        (
-            "A positive controlled temporal normal-minus-reversed result is evidence that the model uses frame "
-            "order; a zero or negative result must be interpreted as failure to establish temporal sensitivity."
-        ),
-        "",
-        "## Data and local artifacts",
+        "![受控时序正常帧与倒序帧指标](assets/temporal-ablation.svg)",
         "",
         (
-            f"QIVD: {qivd['video_count']:,} videos, pinned revision `{qivd['revision']}`, aggregate SHA-256 "
-            f"`{qivd['aggregate_sha256']}`. QIVD is research-only and is not redistributed."
+            "受控时序集的 normal-minus-reversed 为正，才是模型利用帧序的证据；若为零或负值，必须解释为"
+            "尚未建立时序敏感性。"
         ),
         "",
-        "The following files stay local and are **not uploaded to GitHub**. Their hashes make a local run auditable.",
+        "## 数据与本地产物",
         "",
-        "| Local artifact | Bytes | SHA-256 |",
+        (
+            f"QIVD：{qivd['video_count']:,} 个视频，固定 revision `{qivd['revision']}`，聚合 SHA-256 "
+            f"`{qivd['aggregate_sha256']}`。QIVD 仅限研究使用，本项目不重新分发。"
+        ),
+        "",
+        "下列文件仅保存在本机，**不会上传 GitHub**；哈希用于审计本地运行。",
+        "",
+        "| 本地产物 | Bytes | SHA-256 |",
         "|---|---:|---|",
         *[f"| `{item['name']}` | {item['bytes']:,} | `{item['sha256']}` |" for item in local_artifacts],
         "",
-        "## Fixed qualitative examples",
+        "## 固定定性样例",
         "",
         "### LLM",
         "",
-        "| Prompt | Completion |",
+        "| 提示 | 模型续写 |",
         "|---|---|",
         *[
             f"| {one_line(item['prompt'])} | {one_line(item['completion'])} |"
             for item in llm_eval.get("generation", [])[:4]
         ],
         "",
-        "### Language retention across variants",
+        "### 三模型语言能力保持情况",
         "",
-        "| Prompt | LLM | VLM language core | Video-Omni language core |",
+        "| 提示 | LLM | VLM 语言核心 | Video-Omni 语言核心 |",
         "|---|---|---|---|",
         *[
             f"| {one_line(llm_row['prompt'])} | {one_line(llm_row['completion'])} | "
@@ -233,7 +232,7 @@ def main() -> None:
         "",
         "### VLM",
         "",
-        "| Images | Prompt | Correct image(s) | Mismatched/reversed image(s) |",
+        "| 图像数 | 提示 | 正确图像回答 | 错图/倒序图像回答 |",
         "|---:|---|---|---|",
         *[
             f"| {item.get('image_count', 1)} | {one_line(item.get('prompt', item.get('id', '')))} | "
@@ -241,9 +240,9 @@ def main() -> None:
             for item in qualitative_vlm
         ],
         "",
-        "### Video-Omni — QIVD",
+        "### Video-Omni — QIVD 真实视频",
         "",
-        "| Question | Reference | Normal frames | Reversed frames |",
+        "| 问题 | 参考答案 | 正常帧回答 | 倒序帧回答 |",
         "|---|---|---|---|",
         *[
             f"| {one_line(item['question'])} | {one_line(item['answer'])} | "
@@ -251,9 +250,9 @@ def main() -> None:
             for item in qivd_generation.get("qualitative", [])[:6]
         ],
         "",
-        "### Video-Omni — controlled temporal",
+        "### Video-Omni — 受控时序视频",
         "",
-        "| Category | Question | Reference | Normal frames | Reversed frames |",
+        "| 类别 | 问题 | 参考答案 | 正常帧回答 | 倒序帧回答 |",
         "|---|---|---|---|---|",
         *[
             f"| {one_line(item['category'])} | {one_line(item['question'])} | {one_line(item['answer'])} | "
@@ -262,8 +261,8 @@ def main() -> None:
         ],
         "",
         (
-            "See `docs/model-cards/` for intended use and limitations, `docs/evaluation.md` for the protocol, "
-            "and the local JSON evaluation artifacts for full qualitative outputs."
+            "预期用途和限制见 `docs/model-cards/`，评估协议见 `docs/evaluation.md`；完整定性输出保存在"
+            "本机 JSON 评估产物中。"
         ),
         "",
     ]
