@@ -45,10 +45,13 @@ def test_temporal_renderer_validates_metric_range(tmp_path: Path):
 def valid_evaluations():
     qualitative = [
         {
+            "category": "motion",
             "question": "what moves?",
             "answer": "a ball",
             "normal_completion": "a ball",
             "reversed_completion": "a ball",
+            "normal_token_f1": 1.0,
+            "reversed_token_f1": 0.5,
         }
     ]
     generation = {
@@ -67,7 +70,16 @@ def valid_evaluations():
     }
     llm = {
         "corpus": {"validation_loss": 2.0, "validation_perplexity": 7.4, "bits_per_byte": 1.2},
-        "generation": [{"prompt": "hello", "completion": "world"}],
+        "generation": [
+            {
+                "prompt": "hello",
+                "completion": "world",
+                "new_tokens": 1,
+                "seconds": 0.1,
+                "tokens_per_second": 10.0,
+                "distinct_2": 0.0,
+            }
+        ],
     }
     vlm = {
         "validation_loss": 1.5,
@@ -79,6 +91,8 @@ def valid_evaluations():
                 "counterfactual_completion": "a car",
                 "counterfactual_keyword_recall": 0.0,
                 "completion_changed_on_counterfactual": True,
+                "tokens_per_second": 10.0,
+                "distinct_2": 0.5,
             }
         ],
         "visual_ablation": {
@@ -124,12 +138,29 @@ def test_final_evaluation_validator_accepts_complete_evidence():
             lambda llm, vlm, video: video["qivd_generation"].update(token_f1_by_category={}),
             "category metrics",
         ),
+        (
+            lambda llm, vlm, video: llm["generation"][0].update(tokens_per_second=float("nan")),
+            "language generation metric",
+        ),
+        (
+            lambda llm, vlm, video: video["controlled_temporal"]["qualitative"][0].update(
+                normal_token_f1=1.1
+            ),
+            "video sample metric",
+        ),
     ],
 )
 def test_final_evaluation_validator_rejects_unpublishable_evidence(mutation, message):
     llm, vlm, video = valid_evaluations()
     mutation(llm, vlm, video)
     with pytest.raises(ValueError, match=message):
+        validate_final_evaluations(llm, vlm, video)
+
+
+def test_vlm_counterfactual_change_flag_must_be_boolean():
+    llm, vlm, video = valid_evaluations()
+    vlm["qualitative"][0]["completion_changed_on_counterfactual"] = "yes"
+    with pytest.raises(TypeError, match="change flag"):
         validate_final_evaluations(llm, vlm, video)
 
 

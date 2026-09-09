@@ -224,6 +224,10 @@ def main() -> None:
     video_language = video_eval["language_regression"]["corpus"]
     qualitative_vlm = vlm_eval.get("qualitative", [])
     visual_ablation = vlm_eval["visual_ablation"]
+    vlm_grounding_established = visual_ablation["correct_minus_counterfactual_recall"] > 0
+    temporal_sensitivity_established = (
+        temporal["normal_minus_reversed_token_f1"] > 0 and temporal["reversed_minus_normal_loss"] > 0
+    )
     llm_generation_tps = mean_field(llm_eval["generation"], "tokens_per_second")
     vlm_generation_tps = mean_field(qualitative_vlm, "tokens_per_second")
     total_training_seconds = sum(float(log.get("training_seconds", 0)) for log in logs.values())
@@ -294,6 +298,24 @@ def main() -> None:
         f"| 受控时序集 | loss {fmt(temporal['test_loss'])}; 倒序 loss 差 {fmt(temporal['reversed_minus_normal_loss'])}; exact {fmt(temporal['normalized_exact_match'])}; 倒序 exact {fmt(temporal['reversed_frame_exact_match'])}; token F1 差 {fmt(temporal['normal_minus_reversed_token_f1'])}; 回答变化率 {fmt(temporal['completion_change_rate_on_reversal'])} |",
         f"| Video-Omni 语言回归 | PPL {fmt(video_language['validation_perplexity'])}; 相对 LLM 变化 {fmt(video_language['validation_perplexity'] - llm_language['validation_perplexity'])} |",
         "",
+        "### 预注册能力判定",
+        "",
+        (
+            f"- **VLM 视觉依赖：{'已建立' if vlm_grounding_established else '未建立'}。** 判据为正确图像关键词召回"
+            f"严格高于错图/倒序图像，实测差值 {fmt(visual_ablation['correct_minus_counterfactual_recall'])}。"
+        ),
+        (
+            f"- **Video-Omni 时序敏感性：{'已建立' if temporal_sensitivity_established else '未建立'}。** 判据为受控集"
+            f"正常帧 token F1 高于倒序帧且倒序 loss 更高；实测 F1 差 "
+            f"{fmt(temporal['normal_minus_reversed_token_f1'])}、loss 差 "
+            f"{fmt(temporal['reversed_minus_normal_loss'])}。"
+        ),
+        (
+            f"- **语言能力变化：** VLM 相对 LLM 的 PPL 差为 "
+            f"{fmt(vlm_language['validation_perplexity'] - llm_language['validation_perplexity'])}，Video-Omni 为 "
+            f"{fmt(video_language['validation_perplexity'] - llm_language['validation_perplexity'])}；正值表示退化。"
+        ),
+        "",
         "![受控时序正常帧与倒序帧指标](assets/temporal-ablation.svg)",
         "",
         (
@@ -318,11 +340,13 @@ def main() -> None:
         "",
         "### LLM",
         "",
-        "| 提示 | Pretrain 续写 | SFT 续写 |",
-        "|---|---|---|",
+        "| 提示 | Pretrain 续写 | Pretrain D-2 / tok·s⁻¹ | SFT 续写 | SFT D-2 / tok·s⁻¹ |",
+        "|---|---|---:|---|---:|",
         *[
             f"| {one_line(pretrain_row['prompt'])} | {one_line(pretrain_row['completion'])} | "
-            f"{one_line(sft_row['completion'])} |"
+            f"{fmt(pretrain_row['distinct_2'])} / {pretrain_row['tokens_per_second']:.1f} | "
+            f"{one_line(sft_row['completion'])} | {fmt(sft_row['distinct_2'])} / "
+            f"{sft_row['tokens_per_second']:.1f} |"
             for pretrain_row, sft_row in zip(
                 llm_pretrain_eval["generation"], llm_eval["generation"], strict=True
             )
@@ -345,11 +369,12 @@ def main() -> None:
         "",
         "### VLM",
         "",
-        "| 图像数 | 提示 | 正确图像回答 | 错图/倒序图像回答 |",
-        "|---:|---|---|---|",
+        "| 图像数 | 提示 | 正确图回答 | Recall | 错图/倒序图回答 | Counterfactual recall |",
+        "|---:|---|---|---:|---|---:|",
         *[
             f"| {item.get('image_count', 1)} | {one_line(item.get('prompt', item.get('id', '')))} | "
-            f"{one_line(item['completion'])} | {one_line(item['counterfactual_completion'])} |"
+            f"{one_line(item['completion'])} | {fmt(item['keyword_recall'])} | "
+            f"{one_line(item['counterfactual_completion'])} | {fmt(item['counterfactual_keyword_recall'])} |"
             for item in qualitative_vlm
         ],
         "",
@@ -362,11 +387,12 @@ def main() -> None:
             for category, score in qivd_generation["token_f1_by_category"].items()
         ],
         "",
-        "| 问题 | 参考答案 | 正常帧回答 | 倒序帧回答 |",
-        "|---|---|---|---|",
+        "| 问题 | 参考答案 | 正常帧回答 | F1 | 倒序帧回答 | 倒序 F1 |",
+        "|---|---|---|---:|---|---:|",
         *[
             f"| {one_line(item['question'])} | {one_line(item['answer'])} | "
-            f"{one_line(item['normal_completion'])} | {one_line(item['reversed_completion'])} |"
+            f"{one_line(item['normal_completion'])} | {fmt(item['normal_token_f1'])} | "
+            f"{one_line(item['reversed_completion'])} | {fmt(item['reversed_token_f1'])} |"
             for item in qivd_generation.get("qualitative", [])[:6]
         ],
         "",
@@ -379,11 +405,12 @@ def main() -> None:
             for category, score in temporal["token_f1_by_category"].items()
         ],
         "",
-        "| 类别 | 问题 | 参考答案 | 正常帧回答 | 倒序帧回答 |",
-        "|---|---|---|---|---|",
+        "| 类别 | 问题 | 参考答案 | 正常帧回答 | F1 | 倒序帧回答 | 倒序 F1 |",
+        "|---|---|---|---|---:|---|---:|",
         *[
             f"| {one_line(item['category'])} | {one_line(item['question'])} | {one_line(item['answer'])} | "
-            f"{one_line(item['normal_completion'])} | {one_line(item['reversed_completion'])} |"
+            f"{one_line(item['normal_completion'])} | {fmt(item['normal_token_f1'])} | "
+            f"{one_line(item['reversed_completion'])} | {fmt(item['reversed_token_f1'])} |"
             for item in temporal.get("qualitative", [])[:8]
         ],
         "",

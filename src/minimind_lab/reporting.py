@@ -67,7 +67,28 @@ def validate_language_evaluation(report: dict, prefix: str = "") -> None:
     _finite_metric(report, f"{base}corpus.validation_loss", minimum=0)
     _finite_metric(report, f"{base}corpus.validation_perplexity", minimum=1)
     _finite_metric(report, f"{base}corpus.bits_per_byte", minimum=0)
-    _qualitative_rows(report, f"{base}generation", ("prompt", "completion"))
+    generation_path = f"{base}generation"
+    _qualitative_rows(
+        report,
+        generation_path,
+        ("prompt", "completion", "new_tokens", "seconds", "tokens_per_second", "distinct_2"),
+    )
+    for index, row in enumerate(_nested_value(report, generation_path)):
+        for field, minimum, maximum in (
+            ("new_tokens", 0, None),
+            ("seconds", 0, None),
+            ("tokens_per_second", 0, None),
+            ("distinct_2", 0, 1),
+        ):
+            value = row[field]
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(float(value))
+                or float(value) < minimum
+                or (maximum is not None and float(value) > maximum)
+            ):
+                raise ValueError(f"language generation metric is invalid: {generation_path}[{index}].{field}")
 
 
 def validate_final_evaluations(llm: dict, vlm: dict, video: dict) -> None:
@@ -85,18 +106,26 @@ def validate_final_evaluations(llm: dict, vlm: dict, video: dict) -> None:
             "counterfactual_completion",
             "counterfactual_keyword_recall",
             "completion_changed_on_counterfactual",
+            "tokens_per_second",
+            "distinct_2",
         ),
     )
     validate_language_evaluation(vlm, "language_regression")
     for index, row in enumerate(vlm["qualitative"]):
-        recall = row["keyword_recall"]
-        if recall is not None and (
-            isinstance(recall, bool)
-            or not isinstance(recall, (int, float))
-            or not math.isfinite(float(recall))
-            or not 0 <= float(recall) <= 1
-        ):
-            raise ValueError(f"VLM keyword recall must be null or in [0, 1]: qualitative[{index}]")
+        for field in ("keyword_recall", "counterfactual_keyword_recall", "distinct_2"):
+            value = row[field]
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(float(value))
+                or not 0 <= float(value) <= 1
+            ):
+                raise ValueError(f"VLM metric must be in [0, 1]: qualitative[{index}].{field}")
+        speed = row["tokens_per_second"]
+        if isinstance(speed, bool) or not isinstance(speed, (int, float)) or not math.isfinite(speed) or speed < 0:
+            raise ValueError(f"VLM generation speed is invalid: qualitative[{index}]")
+        if not isinstance(row["completion_changed_on_counterfactual"], bool):
+            raise TypeError(f"VLM counterfactual change flag is invalid: qualitative[{index}]")
     _finite_metric(vlm, "visual_ablation.samples", minimum=1)
     for metric in (
         "correct_image_keyword_recall",
@@ -128,8 +157,26 @@ def validate_final_evaluations(llm: dict, vlm: dict, video: dict) -> None:
         _qualitative_rows(
             video,
             f"{section}.qualitative",
-            ("question", "answer", "normal_completion", "reversed_completion"),
+            (
+                "category",
+                "question",
+                "answer",
+                "normal_completion",
+                "reversed_completion",
+                "normal_token_f1",
+                "reversed_token_f1",
+            ),
         )
+        for index, row in enumerate(_nested_value(video, f"{section}.qualitative")):
+            for field in ("normal_token_f1", "reversed_token_f1"):
+                value = row[field]
+                if (
+                    isinstance(value, bool)
+                    or not isinstance(value, (int, float))
+                    or not math.isfinite(float(value))
+                    or not 0 <= float(value) <= 1
+                ):
+                    raise ValueError(f"video sample metric is invalid: {section}.qualitative[{index}].{field}")
     _finite_metric(video, "controlled_temporal.test_loss", minimum=0)
     _finite_metric(video, "controlled_temporal.reversed_frame_test_loss", minimum=0)
     _finite_metric(video, "controlled_temporal.reversed_minus_normal_loss")
