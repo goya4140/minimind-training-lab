@@ -7,17 +7,48 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-BASE_URL = "https://huggingface.co/datasets/jingyaogong/minimind_dataset/resolve/main"
 FILES = {
     "pretrain": {
+        "repo": "jingyaogong/minimind_dataset",
+        "revision": "312afb4f76391145c6902f765bb51691c09a12f5",
         "name": "pretrain_t2t_mini.jsonl",
         "size": 1_241_043_656,
         "sha256": "6dd6716c84ab36897bdbfc7f88e04f4441c48c1ab7ecee88ce0b0e7d4685560c",
     },
     "sft": {
+        "repo": "jingyaogong/minimind_dataset",
+        "revision": "312afb4f76391145c6902f765bb51691c09a12f5",
         "name": "sft_t2t_mini.jsonl",
         "size": 1_739_201_170,
         "sha256": "abb1e76b2056e14728beb78db96b7b3c491a0bef1ed3e34a9b381b28f29fa518",
+    },
+    "vlm-pretrain": {
+        "repo": "jingyaogong/minimind-v_dataset",
+        "revision": "1e279a8b665cb10383451a6af6fd62b9f35bdd79",
+        "name": "pretrain_i2t.parquet",
+        "size": 4_326_415_097,
+        "sha256": "65761f37d1947d54a1d85457ff70938275e4ef58ba5cedcd02463a3a247c93fd",
+    },
+    "vlm-sft": {
+        "repo": "jingyaogong/minimind-v_dataset",
+        "revision": "1e279a8b665cb10383451a6af6fd62b9f35bdd79",
+        "name": "sft_i2t.parquet",
+        "size": 4_934_887_104,
+        "sha256": "712f4026cd0e21b369feddca7334b1e465cb8182b5f298006f3f4f877f926643",
+    },
+    "omni-t2a-mini": {
+        "repo": "jingyaogong/minimind-o_dataset",
+        "revision": "d6588e12ac2ac8ced65eb58a7d7b3eef4aa220de",
+        "name": "sft_t2a_mini.parquet",
+        "size": 1_558_442_729,
+        "sha256": "dfe44b8b263ecd0579627160cf258b363b4c18457ae03221691e2e1a85e60ab8",
+    },
+    "omni-a2a-mini": {
+        "repo": "jingyaogong/minimind-o_dataset",
+        "revision": "d6588e12ac2ac8ced65eb58a7d7b3eef4aa220de",
+        "name": "sft_a2a_mini.parquet",
+        "size": 881_313_734,
+        "sha256": "fba0159e424ee106c9e5a732fe607875b3780d0c9f8b6806038879acd279782b",
     },
 }
 
@@ -37,7 +68,8 @@ def fetch(spec: dict) -> None:
         print(f"already verified: {target}")
         return
     temporary = target.with_suffix(target.suffix + ".part")
-    with urllib.request.urlopen(f"{BASE_URL}/{spec['name']}", timeout=120) as response, temporary.open("wb") as output:
+    url = f"https://huggingface.co/datasets/{spec['repo']}/resolve/{spec['revision']}/{spec['name']}"
+    with urllib.request.urlopen(url, timeout=120) as response, temporary.open("wb") as output:
         downloaded = 0
         while chunk := response.read(8 * 1024 * 1024):
             output.write(chunk)

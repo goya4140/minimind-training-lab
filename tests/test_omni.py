@@ -56,3 +56,26 @@ def test_talker_can_copy_thinker_tail_layers():
     target = model.talker.layers[0].attention.q_proj.weight
     assert torch.equal(source, target)
     assert source.data_ptr() != target.data_ptr()
+
+
+def test_projector_stages_freeze_everything_else():
+    model = MiniMindOmni(config())
+    model.configure_trainable("audio-projector-only")
+    trainable = {name for name, parameter in model.named_parameters() if parameter.requires_grad}
+    assert trainable
+    assert all(name.startswith("audio_projector.") for name in trainable)
+
+    model.configure_trainable("vision-projector-only")
+    trainable = {name for name, parameter in model.named_parameters() if parameter.requires_grad}
+    assert trainable
+    assert all(name.startswith("vision_projector.") for name in trainable)
+
+
+def test_empty_audio_targets_have_zero_finite_loss():
+    model = MiniMindOmni(config())
+    text_ids = torch.randint(20, 259, (1, 8))
+    audio_ids = torch.randint(0, 79, (1, 3, 8))
+    labels = torch.full((1, 3, 8), -100)
+    output = model(text_ids, audio_ids, audio_labels=labels)
+    assert output.audio_loss.item() == 0.0
+    assert torch.isfinite(output.audio_loss)

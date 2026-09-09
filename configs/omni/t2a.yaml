@@ -11,6 +11,8 @@ model:
   talker_hidden_size: 768
   num_audio_codebooks: 8
   audio_vocab_size: 2112
+  audio_pad_token_id: 2049
+  audio_stop_token_id: 2050
   audio_hidden_size: 512
 
 data:
@@ -23,4 +25,3 @@ training:
   batch_size: 40
   learning_rate: 0.0005
   checkpoint_path: artifacts/checkpoints/omni-t2a.pt
-

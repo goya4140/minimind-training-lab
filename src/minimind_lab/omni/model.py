@@ -16,6 +16,8 @@ class OmniConfig(MiniMindConfig):
     talker_hidden_size: int = 768
     num_audio_codebooks: int = 8
     audio_vocab_size: int = 2112
+    audio_pad_token_id: int = 2049
+    audio_stop_token_id: int = 2050
     audio_hidden_size: int = 512
     audio_token_id: int = 16
     image_hidden_size: int = 768
@@ -185,6 +187,24 @@ class MiniMindOmni(nn.Module):
         for index, layer in enumerate(self.talker.layers):
             layer.load_state_dict(self.thinker.layers[source_start + index].state_dict())
 
+    def configure_trainable(self, stage: str) -> None:
+        """Apply the frozen-module policy used by each Omni training stage."""
+        allowed = {"text-to-audio", "audio-projector-only", "vision-projector-only", "joint"}
+        if stage not in allowed:
+            raise ValueError(f"unknown Omni training stage: {stage}")
+        for parameter in self.parameters():
+            parameter.requires_grad = stage in {"text-to-audio", "joint"}
+        if stage == "text-to-audio":
+            for module in (self.audio_projector, self.vision_projector):
+                for parameter in module.parameters():
+                    parameter.requires_grad = False
+        elif stage == "audio-projector-only":
+            for parameter in self.audio_projector.parameters():
+                parameter.requires_grad = True
+        elif stage == "vision-projector-only":
+            for parameter in self.vision_projector.parameters():
+                parameter.requires_grad = True
+
     def forward(
         self,
         text_ids: torch.Tensor,
@@ -214,16 +234,22 @@ class MiniMindOmni(nn.Module):
         audio_logits = self.talker(bridge_states, audio_code_ids, speaker_embedding, speaker_positions)
         text_loss = None
         if text_labels is not None:
-            text_loss = F.cross_entropy(
-                text_logits.reshape(-1, text_logits.size(-1)), text_labels.reshape(-1), ignore_index=-100
-            )
+            valid_text = text_labels != -100
+            if valid_text.any():
+                text_loss = F.cross_entropy(text_logits[valid_text], text_labels[valid_text])
+            else:
+                text_loss = text_logits.sum() * 0
         audio_loss = None
         if audio_labels is not None:
-            layer_losses = [
-                F.cross_entropy(
-                    logits.reshape(-1, logits.size(-1)), audio_labels[:, index].reshape(-1), ignore_index=-100
-                )
-                for index, logits in enumerate(audio_logits)
-            ]
+            layer_losses = []
+            for index, logits in enumerate(audio_logits):
+                targets = audio_labels[:, index]
+                valid = targets != -100
+                if not valid.any():
+                    layer_losses.append(logits.sum() * 0)
+                    continue
+                token_losses = F.cross_entropy(logits[valid], targets[valid], reduction="none")
+                stop_weights = torch.where(targets[valid] == self.config.audio_stop_token_id, 10.0, 1.0)
+                layer_losses.append((token_losses * stop_weights).mean())
             audio_loss = torch.stack(layer_losses).mean()
         return OmniOutput(text_logits, audio_logits, text_loss, audio_loss)

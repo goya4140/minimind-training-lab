@@ -47,9 +47,11 @@ uv run pytest
 
 ```bash
 uv run python scripts/fetch_tokenizer.py
-uv run python scripts/fetch_data.py all
+uv run python scripts/fetch_data.py pretrain sft
 uv run python scripts/train_pretrain.py --config configs/llm/pretrain-mps.yaml --resume
 ```
+
+`fetch_data.py all` 会进一步下载 VLM 与 Omni 阶段约 11.7 GB 的固定版本数据。
 
 正式 BPE 评估：
 
