@@ -23,6 +23,10 @@ QIVD 视频不提交到 Git，也不重新分发。`scripts/fetch_qivd.py` 以�
 个文件完成后生成逐文件 SHA-256 与聚合 SHA-256。ID 经过 seed 48 稳定哈希后，固定划分为
 2,400 train / 250 validation / 250 test。
 
+下载器还会读取固定 revision 的 Hugging Face LFS tree，对每个视频核验上游声明的字节数与
+SHA-256；本地自洽但不同于上游的截断或损坏文件不会通过，manifest 只有在全部匹配后才写入
+`upstream_lfs_verified: true`。
+
 ## SFT 结构验证
 
 SFT 样本使用 ChatML 模板，只对 assistant 片段计算 loss。真实数据包含普通单轮、多轮及

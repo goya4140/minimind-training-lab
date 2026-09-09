@@ -62,6 +62,17 @@ def inspect_stage(name: str, runner: str, config_path: str, prior_outputs: set[P
         missing_videos = sum(not (data_path / row["video_file_name"]).is_file() for row in rows)
         if missing_videos:
             missing.append(f"{relative(data_path)}/videos ({missing_videos} files missing)")
+        manifest_path = ROOT / "data/manifests/qivd.json"
+        if not manifest_path.is_file():
+            missing.append(relative(manifest_path))
+        else:
+            try:
+                manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                missing.append(f"{relative(manifest_path)} (unreadable)")
+            else:
+                if manifest.get("video_count") != len(rows) or manifest.get("upstream_lfs_verified") is not True:
+                    missing.append(f"{relative(manifest_path)} (upstream verification missing)")
 
     dependencies = [model[key] for key in DEPENDENCY_KEYS if model.get(key)]
     if config["training"].get("initial_checkpoint"):

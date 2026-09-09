@@ -24,8 +24,9 @@ uv run python scripts/fetch_models.py all
 uv run python scripts/fetch_qivd.py
 ```
 
-下载脚本固定 repository revision；大文件支持断点恢复。QIVD 完成后会生成逐文件与聚合 SHA-256。
-数据全部位于 Git 忽略目录，不应提交或重新分发。
+下载脚本固定 repository revision；大文件支持断点恢复。QIVD 会逐文件比对固定 revision 的 LFS
+字节数与 SHA-256，全部通过后才生成逐文件与聚合 manifest。数据全部位于 Git 忽略目录，不应提交或
+重新分发。自动六阶段流水线在 Video-Omni 开始前会再次执行这项完整性检查。
 
 ## 3. Preflight
 

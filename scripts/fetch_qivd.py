@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 import random
@@ -14,14 +13,26 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+
+from minimind_lab.data.integrity import file_matches, verified_dataset_manifest
+
 REPO = "Qualcomm-AI-Research/QIVD"
 REVISION = "c5376ab0b9fd3643545a1503413aee64f26ba22a"
 BASE_URL = f"https://huggingface.co/datasets/{REPO}/resolve/{REVISION}/"
 
 
-def download_file(relative_path: str, destination: Path, retries: int, base_delay: float) -> None:
-    if destination.is_file() and destination.stat().st_size > 0:
+def download_file(
+    relative_path: str,
+    destination: Path,
+    retries: int,
+    base_delay: float,
+    expected_size: int | None = None,
+    expected_sha256: str | None = None,
+) -> None:
+    if file_matches(destination, expected_size, expected_sha256):
         return
+    destination.unlink(missing_ok=True)
     destination.parent.mkdir(parents=True, exist_ok=True)
     partial = destination.with_suffix(destination.suffix + ".part")
     for attempt in range(retries):
@@ -37,6 +48,12 @@ def download_file(relative_path: str, destination: Path, retries: int, base_dela
                     while chunk := response.read(1024 * 1024):
                         handle.write(chunk)
             os.replace(partial, destination)
+            if not file_matches(destination, expected_size, expected_sha256):
+                destination.unlink(missing_ok=True)
+                raise urllib.error.ContentTooShortError(
+                    f"downloaded file failed size/SHA-256 verification: {relative_path}",
+                    content=None,
+                )
             return
         except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError) as error:
             if attempt + 1 == retries:
@@ -47,23 +64,18 @@ def download_file(relative_path: str, destination: Path, retries: int, base_dela
             time.sleep(delay)
 
 
-def dataset_manifest(root: Path, files: list[str]) -> dict:
-    entries = []
-    for relative_path in sorted(files):
-        path = root / relative_path
-        digest = hashlib.sha256(path.read_bytes()).hexdigest()
-        entries.append({"path": relative_path, "bytes": path.stat().st_size, "sha256": digest})
-    aggregate = hashlib.sha256(
-        "\n".join(f"{entry['path']} {entry['bytes']} {entry['sha256']}" for entry in entries).encode()
-    ).hexdigest()
-    return {
-        "repository": REPO,
-        "revision": REVISION,
-        "video_count": len(entries),
-        "total_video_bytes": sum(entry["bytes"] for entry in entries),
-        "aggregate_sha256": aggregate,
-        "files": entries,
-    }
+def upstream_video_files() -> dict[str, dict[str, int | str]]:
+    from huggingface_hub import HfApi, RepoFile
+
+    entries = {}
+    for item in HfApi().list_repo_tree(
+        REPO, path_in_repo="videos", recursive=False, expand=True, revision=REVISION, repo_type="dataset"
+    ):
+        if isinstance(item, RepoFile) and item.lfs is not None:
+            entries[item.path] = {"bytes": item.lfs.size, "sha256": item.lfs.sha256}
+    if not entries:
+        raise RuntimeError("QIVD upstream tree returned no LFS videos")
+    return entries
 
 
 def main() -> None:
@@ -81,13 +93,24 @@ def main() -> None:
 
     rows = pq.read_table(root / "metadata.parquet", columns=["video_file_name"]).to_pylist()
     video_files = sorted({row["video_file_name"] for row in rows})
+    expected = upstream_video_files()
+    if set(video_files) != set(expected):
+        raise RuntimeError("QIVD metadata video paths do not match the pinned upstream tree")
     for index, relative_path in enumerate(video_files, start=1):
-        download_file(relative_path, root / relative_path, args.retries, args.base_delay)
+        upstream = expected[relative_path]
+        download_file(
+            relative_path,
+            root / relative_path,
+            args.retries,
+            args.base_delay,
+            expected_size=int(upstream["bytes"]),
+            expected_sha256=str(upstream["sha256"]),
+        )
         if index == 1 or index % 50 == 0:
             completed = sum((root / path).is_file() for path in video_files)
             print(json.dumps({"completed": completed, "total": len(video_files)}), flush=True)
 
-    manifest = dataset_manifest(root, video_files)
+    manifest = verified_dataset_manifest(root, video_files, expected, REPO, REVISION)
     manifest_path = ROOT / "data/manifests/qivd.json"
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
     temporary = manifest_path.with_suffix(".tmp")

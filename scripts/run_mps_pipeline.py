@@ -116,6 +116,10 @@ def main() -> None:
     for stage, runner, config in STAGES:
         if stage == "video-omni-alignment":
             run(
+                ["scripts/fetch_qivd.py"],
+                console_log=ROOT / "artifacts/logs/qivd-integrity.console.log",
+            )
+            run(
                 ["scripts/cache_video_features.py", "--config", config],
                 console_log=ROOT / "artifacts/logs/video-feature-cache.console.log",
             )
