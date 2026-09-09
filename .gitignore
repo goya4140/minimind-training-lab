@@ -18,3 +18,4 @@ artifacts/eval/
 third_party/
 assets/tokenizer/*.json
 !assets/tokenizer/README.md
+assets/models/

@@ -31,6 +31,7 @@ MiniMind LLM (Decoder-only, 64M)
 设计详情：[`docs/architecture.md`](docs/architecture.md)  
 训练策略：[`docs/training-strategy.md`](docs/training-strategy.md)  
 评估协议：[`docs/evaluation.md`](docs/evaluation.md)
+冻结组件：[`docs/external-components.md`](docs/external-components.md)
 
 ## 快速验证 LLM 链路
 
@@ -52,6 +53,7 @@ uv run python scripts/train_pretrain.py --config configs/llm/pretrain-mps.yaml -
 ```
 
 `fetch_data.py all` 会进一步下载 VLM 与 Omni 阶段约 11.7 GB 的固定版本数据。
+冻结的多模态组件使用 `uv run python scripts/fetch_models.py all` 下载并校验。
 
 正式 BPE 评估：
 
