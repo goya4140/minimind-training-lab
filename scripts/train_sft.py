@@ -18,7 +18,16 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from minimind_lab.data import DeterministicBatchStream, JsonlSFTDataset
 from minimind_lab.llm import MiniMindConfig, MiniMindForCausalLM
-from minimind_lab.training import acquire_run_lock, load_config, resolve_device, resolve_training_steps, seed_everything
+from minimind_lab.training import (
+    acquire_run_lock,
+    load_config,
+    optimizer_step_size,
+    rescale_partial_accumulation,
+    resolve_device,
+    resolve_training_steps,
+    seed_everything,
+    should_save_resume,
+)
 from minimind_lab.training.utils import environment_info, write_json
 
 
@@ -120,7 +129,9 @@ def main() -> None:
         if not torch.isfinite(loss):
             raise RuntimeError(f"non-finite loss at step {step}")
         loss.backward()
-        if step % accumulation == 0:
+        accumulated = optimizer_step_size(step, total_steps, accumulation)
+        if accumulated:
+            rescale_partial_accumulation(model.parameters(), accumulated, accumulation)
             current_lr = learning_rate(step, total_steps, training["learning_rate"])
             for group in optimizer.param_groups:
                 group["lr"] = current_lr
@@ -139,7 +150,7 @@ def main() -> None:
             }
             history.append(record)
             print(json.dumps(record, ensure_ascii=False), flush=True)
-        if step % training["save_interval"] == 0:
+        if should_save_resume(step, training["save_interval"], accumulation):
             save_resume(resume_path, model, optimizer, config, step, history)
             print(f"saved resume checkpoint: {resume_path}", flush=True)
     training_elapsed = time.time() - started

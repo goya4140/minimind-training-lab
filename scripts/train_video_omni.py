@@ -17,7 +17,16 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from minimind_lab.data import DeterministicBatchStream, QIVDVideoDataset, collate_video
-from minimind_lab.training import acquire_run_lock, load_config, resolve_device, resolve_training_steps, seed_everything
+from minimind_lab.training import (
+    acquire_run_lock,
+    load_config,
+    optimizer_step_size,
+    rescale_partial_accumulation,
+    resolve_device,
+    resolve_training_steps,
+    seed_everything,
+    should_save_resume,
+)
 from minimind_lab.training.utils import environment_info, write_json
 from minimind_lab.video import MiniMindVideoOmni, VideoOmniConfig
 
@@ -164,7 +173,9 @@ def main() -> None:
         if not torch.isfinite(loss):
             raise RuntimeError(f"non-finite loss at step {step}")
         loss.backward()
-        if step % accumulation == 0:
+        accumulated = optimizer_step_size(step, total_steps, accumulation)
+        if accumulated:
+            rescale_partial_accumulation(model.parameters(), accumulated, accumulation)
             for group in optimizer.param_groups:
                 group["lr"] = cosine_lr(step, total_steps, training["learning_rate"])
             last_grad_norm = float(
@@ -182,7 +193,7 @@ def main() -> None:
             }
             history.append(record)
             print(json.dumps(record, ensure_ascii=False), flush=True)
-        if step % training.get("save_interval", 400) == 0:
+        if should_save_resume(step, training.get("save_interval", 400), accumulation):
             save_resume(resume_path, model, optimizer, config, step, history)
 
     training_seconds = time.time() - started

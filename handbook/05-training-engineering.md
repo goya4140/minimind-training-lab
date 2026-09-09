@@ -16,6 +16,9 @@ clip_grad_norm → optimizer.step → zero_grad
 尺度与一次处理完整 effective batch 接近。本项目配置表明确区分 micro-step 与 optimizer step，避免
 把“训练 10,000 步”理解错一个 accumulation 倍数。
 
+若总 micro-step 数不能被 `N` 整除，最后不足 `N` 个的梯度仍需要执行一次 optimizer update，
+并按实际累积数重新缩放成均值。本项目的 trainer 显式处理这个尾部 batch。
+
 ## 学习率与梯度裁剪
 
 AdamW 更新参数，同时把 weight decay 与 gradient update 分开。Cosine schedule 让学习率从初始值
@@ -37,6 +40,9 @@ AdamW 更新参数，同时把 weight decay 与 gradient update 分开。Cosine 
 
 保存先写 `.tmp`，完成后用 `os.replace` 原子替换。进程中途退出不会留下一个看似存在但只写了一半的
 正式 checkpoint。
+
+Resume checkpoint 只在 optimizer update 之后写入。如果在 accumulation 中间保存却不保存
+尚未提交的 gradient，恢复时就会静默丢掉部分 micro-batch；边界保存避免了这个问题。
 
 ## 防止重复训练
 

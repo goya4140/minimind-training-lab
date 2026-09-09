@@ -45,6 +45,37 @@ def resolve_training_steps(training: dict, steps_per_epoch: int) -> int:
     return total
 
 
+def optimizer_step_size(step: int, total_steps: int, accumulation: int) -> int:
+    """Return the number of accumulated micro-batches to update on, or zero."""
+    if accumulation <= 0:
+        raise ValueError("gradient accumulation steps must be positive")
+    if not 1 <= step <= total_steps:
+        raise ValueError("step must be within the training range")
+    if step % accumulation == 0:
+        return accumulation
+    if step == total_steps:
+        remainder = total_steps % accumulation
+        return remainder or accumulation
+    return 0
+
+
+def rescale_partial_accumulation(parameters, accumulated: int, accumulation: int) -> None:
+    """Turn gradients divided by the full accumulation into a partial-batch mean."""
+    if accumulated == accumulation:
+        return
+    if not 0 < accumulated < accumulation:
+        raise ValueError("partial accumulation must be between zero and the configured accumulation")
+    scale = accumulation / accumulated
+    for parameter in parameters:
+        if parameter.grad is not None:
+            parameter.grad.mul_(scale)
+
+
+def should_save_resume(step: int, save_interval: int, accumulation: int) -> bool:
+    """Only persist resume state after an optimizer update, never mid-accumulation."""
+    return save_interval > 0 and step % save_interval == 0 and step % accumulation == 0
+
+
 def write_json(path: str | Path, payload: dict) -> None:
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
