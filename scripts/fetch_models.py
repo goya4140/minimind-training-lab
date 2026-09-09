@@ -85,16 +85,28 @@ def download_file(repo: str, revision: str, name: str, target: Path, size: int, 
     target.parent.mkdir(parents=True, exist_ok=True)
     temporary = target.with_suffix(target.suffix + ".part")
     url = f"https://huggingface.co/{repo}/resolve/{revision}/{name}"
-    for attempt in range(1, 6):
+    if temporary.exists() and temporary.stat().st_size > size:
+        temporary.unlink()
+    attempts = 0
+    while not temporary.exists() or temporary.stat().st_size < size:
+        downloaded = temporary.stat().st_size if temporary.exists() else 0
+        request = urllib.request.Request(url, headers={"Range": f"bytes={downloaded}-"})
         try:
-            with urllib.request.urlopen(url, timeout=120) as response, temporary.open("wb") as output:
-                while chunk := response.read(8 * 1024 * 1024):
-                    output.write(chunk)
-            break
+            with urllib.request.urlopen(request, timeout=120) as response:
+                mode = "ab" if downloaded and response.status == 206 else "wb"
+                if mode == "wb":
+                    downloaded = 0
+                with temporary.open(mode) as output:
+                    while chunk := response.read(8 * 1024 * 1024):
+                        output.write(chunk)
+                        downloaded += len(chunk)
+                        print(f"{name}: downloaded {downloaded}/{size}", flush=True)
+            attempts = 0
         except OSError:
-            if attempt == 5:
+            attempts += 1
+            if attempts >= 10:
                 raise
-            time.sleep(2**attempt)
+            time.sleep(min(2**attempts, 30))
     if not valid(temporary, size, checksum):
         actual = sha256(temporary) if temporary.exists() else "missing"
         raise RuntimeError(f"verification failed for {name}: size={temporary.stat().st_size}, sha256={actual}")

@@ -17,6 +17,7 @@ dev = [
 ]
 multimodal = [
   "datasets>=3.6,<4",
+  "numexpr>=2.10.2,<3",
   "pillow>=10,<12",
 ]
 omni = [
