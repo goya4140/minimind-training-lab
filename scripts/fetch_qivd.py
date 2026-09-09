@@ -65,13 +65,13 @@ def download_file(
 
 
 def upstream_video_files() -> dict[str, dict[str, int | str]]:
-    from huggingface_hub import HfApi, RepoFile
+    from huggingface_hub import HfApi
 
     entries = {}
     for item in HfApi().list_repo_tree(
         REPO, path_in_repo="videos", recursive=False, expand=True, revision=REVISION, repo_type="dataset"
     ):
-        if isinstance(item, RepoFile) and item.lfs is not None:
+        if getattr(item, "lfs", None) is not None and str(item.path).startswith("videos/"):
             entries[item.path] = {"bytes": item.lfs.size, "sha256": item.lfs.sha256}
     if not entries:
         raise RuntimeError("QIVD upstream tree returned no LFS videos")

@@ -17,7 +17,7 @@
 | M2 | LLM 从零 Pretrain | 进行中 | 已超过 step 40,000；step 12,000 中期评估已提交 |
 | M3 | LLM SFT 与评估 | 已准备 | assistant-only 数据管线、配置和训练入口已测试 |
 | M4 | VLM 对齐与 SFT | 管线就绪 | 真实 Parquet + SigLIP2 前向探针通过，等待 LLM SFT |
-| M5 | Video-Omni Video→Text | 管线就绪 | 时序 Transformer、倒序消融、QIVD 划分与训练/评估入口已测试；数据下载中 |
+| M5 | Video-Omni Video→Text | 管线就绪 | 时序 Transformer、倒序消融、QIVD 划分与训练/评估入口已测试；2,900 个视频已完成上游 LFS 哈希核验 |
 | M6 | 最终 GitHub Handbook | 进行中 | 入门章节、README、报告生成器、模型卡；等待最终实测结果 |
 
 `artifacts/` 下生成的日志和评估输出默认不提交；经过审核的结果将提炼到 `reports/` 并提交。

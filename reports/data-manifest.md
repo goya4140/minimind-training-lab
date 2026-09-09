@@ -9,7 +9,7 @@
 | LLM SFT | `sft_t2t_mini.jsonl` | 905,718 | 1,739,201,170 | `abb1e76b2056e14728beb78db96b7b3c491a0bef1ed3e34a9b381b28f29fa518` |
 | VLM alignment | `pretrain_i2t.parquet` | 1,274,698 | 4,326,415,097 | `65761f37d1947d54a1d85457ff70938275e4ef58ba5cedcd02463a3a247c93fd` |
 | VLM SFT | `sft_i2t.parquet` | 2,904,511 | 4,934,887,104 | `712f4026cd0e21b369feddca7334b1e465cb8182b5f298006f3f4f877f926643` |
-| Video-Omni | `QIVD/metadata.parquet + videos` | 2,900 | 下载完成后生成 | 下载完成后生成 |
+| Video-Omni | `QIVD/metadata.parquet + videos` | 2,900 | 887,255,736（视频） | `648b60445d59f1e445d0437ddd93f8ad97c09bb7e6ded0d46a996c98428ad7a3`（聚合） |
 
 来源：[jingyaogong/minimind_dataset](https://huggingface.co/datasets/jingyaogong/minimind_dataset)。
 
@@ -26,6 +26,9 @@ QIVD 视频不提交到 Git，也不重新分发。`scripts/fetch_qivd.py` 以�
 下载器还会读取固定 revision 的 Hugging Face LFS tree，对每个视频核验上游声明的字节数与
 SHA-256；本地自洽但不同于上游的截断或损坏文件不会通过，manifest 只有在全部匹配后才写入
 `upstream_lfs_verified: true`。
+
+本次本机下载已完成该核验：2,900/2,900 个视频匹配固定 revision；上述聚合值由按路径排序后的
+`path bytes sha256` 记录计算。逐文件 manifest 留在 Git 忽略目录，不上传或重新分发。
 
 ## SFT 结构验证
 

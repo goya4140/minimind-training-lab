@@ -18,7 +18,7 @@ optimizer state 和逐步原始日志均不上传 GitHub；仓库只记录足以
 |---|---|---|---|
 | LLM | ✅ 原生 PyTorch 主干（63,912,192 参数正式配置） | 🚧 正式 MPS 预训练进行中 | 🚧 step 12,000 中期评估已记录 |
 | VLM | ✅ Early-fusion 与冻结策略已实现 | ⏳ 真实数据/SigLIP2 已验证，等待 LLM SFT | ✅ 固定 6 单图 + 1 双图评估入口就绪 |
-| Video-Omni | ✅ 帧编码器 + 时序适配器 + LLM 已实现 | ⏳ QIVD 下载中，等待 LLM SFT | ✅ 留出集、倒序帧消融与分类型评估就绪 |
+| Video-Omni | ✅ 帧编码器 + 时序适配器 + LLM 已实现 | ⏳ QIVD 已完成上游哈希核验，等待 LLM SFT | ✅ 留出集、倒序帧消融与分类型评估就绪 |
 <!-- STATUS_END -->
 
 状态以 [`docs/progress.md`](docs/progress.md) 中的证据为准。
