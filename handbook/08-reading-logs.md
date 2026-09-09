@@ -55,3 +55,7 @@ flowchart TD
 5. 第一个新 step 应大于保存 step，而不是从 1 重新开始。
 
 仓库中的 lock、atomic save 和 artifact verifier 可以降低风险，但不能替代阅读 traceback 与理解数据。
+
+运行 `uv run python scripts/snapshot_progress.py` 可把各阶段本地 console log 提炼为
+[`reports/training-progress.md`](../reports/training-progress.md)。该报告只包含聚合进度和 loss，不上传
+原始逐步日志、数据或权重。

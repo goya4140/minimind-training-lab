@@ -63,11 +63,32 @@ def output_for(config_path: str) -> Path:
     return ROOT / config["training"]["checkpoint_path"]
 
 
-def run(command: list[str]) -> None:
+def run(command: list[str], console_log: Path | None = None) -> None:
     printable = " ".join(command)
     print(f"running: {printable}", flush=True)
     resolved = [sys.executable, str(ROOT / command[0]), *command[1:]]
-    subprocess.run(resolved, cwd=ROOT, check=True)
+    if console_log is None:
+        subprocess.run(resolved, cwd=ROOT, check=True)
+        return
+    console_log.parent.mkdir(parents=True, exist_ok=True)
+    with console_log.open("a", encoding="utf-8") as handle:
+        process = subprocess.Popen(
+            resolved,
+            cwd=ROOT,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+        )
+        if process.stdout is None:
+            raise RuntimeError("failed to capture stage output")
+        for line in process.stdout:
+            print(line, end="", flush=True)
+            handle.write(line)
+            handle.flush()
+        return_code = process.wait()
+    if return_code:
+        raise subprocess.CalledProcessError(return_code, resolved)
 
 
 def evaluate_if_needed(stage: str, checkpoint: Path) -> None:
@@ -103,7 +124,12 @@ def main() -> None:
         if output.exists():
             print(f"checkpoint already complete: {output.relative_to(ROOT)}", flush=True)
         else:
-            run([runner, "--config", config, "--resume"])
+            with (ROOT / config).open(encoding="utf-8") as handle:
+                experiment = yaml.safe_load(handle)["experiment"]["name"]
+            run(
+                [runner, "--config", config, "--resume"],
+                console_log=ROOT / f"artifacts/logs/{experiment}.console.log",
+            )
         if not output.exists():
             raise RuntimeError(f"stage exited without final checkpoint: {stage}")
         verify_stage(config)
