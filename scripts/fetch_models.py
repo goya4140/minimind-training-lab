@@ -22,47 +22,6 @@ MODELS = {
             ),
         },
     },
-    "sensevoice": {
-        "repo": "jingyaogong/SenseVoiceSmall",
-        "revision": "964f07d8f0e48309a5f37770ac9b5ed2cdca6b91",
-        "directory": "SenseVoiceSmall",
-        "files": {
-            "am.mvn": (11_203, None),
-            "chn_jpn_yue_eng_ko_spectok.bpe.model": (
-                377_341,
-                "aa87f86064c3730d799ddf7af3c04659151102cba548bce325cf06ba4da4e6a8",
-            ),
-            "config.yaml": (1_855, None),
-            "configuration.json": (396, None),
-            "model.pt": (468_291_478, "218811976815c1673e1b852dc383d78987b229268f78e7ebd0a1fe67229c83dd"),
-        },
-    },
-    "mimi": {
-        "repo": "jingyaogong/mimi",
-        "revision": "b4e362bbfbba9444b162de486da40af6639e0b98",
-        "directory": "mimi",
-        "files": {
-            "config.json": (1_117, None),
-            "preprocessor_config.json": (234, None),
-            "model.safetensors": (
-                192_346_842,
-                "7542ee039d3025d5089cf227d21df64b6b8eff08fcd376a11a1fbd178dd9d3f5",
-            ),
-        },
-    },
-    "campplus": {
-        "repo": "jingyaogong/campplus",
-        "revision": "77bb7d92872bdbd66586cdcc6a7148dfd111683c",
-        "directory": "campplus",
-        "files": {
-            "config.yaml": (537, None),
-            "configuration.json": (581, None),
-            "campplus_cn_common.pt": (
-                14_173_135,
-                "55ffb1a55d04bac4a9b7ed80497cb731909985c9b55d120fce04b851a697886c",
-            ),
-        },
-    },
 }
 
 

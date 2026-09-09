@@ -1,8 +1,0 @@
-[
-  {"id": "t2a-zh", "kind": "text", "prompt": "请用两句话介绍春天。"},
-  {"id": "t2a-en", "kind": "text", "prompt": "Please explain why the sky is blue in two sentences."},
-  {"id": "a2a-zh", "kind": "audio", "file": "audio-zh-05_为什么天空是蓝色的.mp3"},
-  {"id": "a2a-en", "kind": "audio", "file": "audio-en-09_how_can_i_improve_my_study_efficiency.mp3"},
-  {"id": "i2a-cat", "kind": "image", "file": "image-01-orange-cat-moon-desk.jpg", "prompt": "请描述图片中的主体和场景。"},
-  {"id": "i2a-astronaut", "kind": "image", "file": "image-04-astronaut-riding-bicycle.jpg", "prompt": "What unusual activity is happening in this image?"}
-]

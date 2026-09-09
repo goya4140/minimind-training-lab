@@ -20,7 +20,7 @@ STAGES = [
     ("video-omni-sft", "scripts/train_video_omni.py", "configs/video/sft-mps.yaml"),
 ]
 DEPENDENCY_KEYS = ("language_checkpoint", "alignment_checkpoint", "checkpoint")
-COMPONENT_KEYS = ("vision_encoder", "audio_encoder", "codec")
+COMPONENT_KEYS = ("vision_encoder",)
 
 
 def relative(path: Path) -> str:

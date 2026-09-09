@@ -110,7 +110,6 @@ caffeinate -i uv run python scripts/run_mps_pipeline.py
 
 - [jingyaogong/minimind](https://github.com/jingyaogong/minimind) — LLM
 - [jingyaogong/minimind-v](https://github.com/jingyaogong/minimind-v) — VLM
-- [jingyaogong/minimind-o](https://github.com/jingyaogong/minimind-o) — 多模态训练组织方式参考；本项目第三模型按学习目标改为 Video → Text
 
 具体版本记录在 [`docs/upstream.md`](docs/upstream.md)。
 

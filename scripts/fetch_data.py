@@ -37,20 +37,6 @@ FILES = {
         "size": 4_934_887_104,
         "sha256": "712f4026cd0e21b369feddca7334b1e465cb8182b5f298006f3f4f877f926643",
     },
-    "omni-t2a-mini": {
-        "repo": "jingyaogong/minimind-o_dataset",
-        "revision": "d6588e12ac2ac8ced65eb58a7d7b3eef4aa220de",
-        "name": "sft_t2a_mini.parquet",
-        "size": 1_558_442_729,
-        "sha256": "dfe44b8b263ecd0579627160cf258b363b4c18457ae03221691e2e1a85e60ab8",
-    },
-    "omni-a2a-mini": {
-        "repo": "jingyaogong/minimind-o_dataset",
-        "revision": "d6588e12ac2ac8ced65eb58a7d7b3eef4aa220de",
-        "name": "sft_a2a_mini.parquet",
-        "size": 881_313_734,
-        "sha256": "fba0159e424ee106c9e5a732fe607875b3780d0c9f8b6806038879acd279782b",
-    },
 }
 
 
