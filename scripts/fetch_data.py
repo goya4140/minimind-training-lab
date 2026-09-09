@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import time
 import urllib.request
 from pathlib import Path
 
@@ -69,12 +70,28 @@ def fetch(spec: dict) -> None:
         return
     temporary = target.with_suffix(target.suffix + ".part")
     url = f"https://huggingface.co/datasets/{spec['repo']}/resolve/{spec['revision']}/{spec['name']}"
-    with urllib.request.urlopen(url, timeout=120) as response, temporary.open("wb") as output:
-        downloaded = 0
-        while chunk := response.read(8 * 1024 * 1024):
-            output.write(chunk)
-            downloaded += len(chunk)
-            print(f"{spec['name']}: downloaded {downloaded}/{spec['size']}", flush=True)
+    if temporary.exists() and temporary.stat().st_size > spec["size"]:
+        temporary.unlink()
+    attempts = 0
+    while not temporary.exists() or temporary.stat().st_size < spec["size"]:
+        downloaded = temporary.stat().st_size if temporary.exists() else 0
+        request = urllib.request.Request(url, headers={"Range": f"bytes={downloaded}-"})
+        try:
+            with urllib.request.urlopen(request, timeout=120) as response:
+                mode = "ab" if downloaded and response.status == 206 else "wb"
+                if mode == "wb":
+                    downloaded = 0
+                with temporary.open(mode) as output:
+                    while chunk := response.read(8 * 1024 * 1024):
+                        output.write(chunk)
+                        downloaded += len(chunk)
+                        print(f"{spec['name']}: downloaded {downloaded}/{spec['size']}", flush=True)
+            attempts = 0
+        except OSError:
+            attempts += 1
+            if attempts >= 10:
+                raise
+            time.sleep(min(2**attempts, 30))
     if temporary.stat().st_size != spec["size"]:
         raise RuntimeError(f"size mismatch: {temporary.stat().st_size} != {spec['size']}")
     actual = sha256(temporary)
