@@ -5,6 +5,7 @@ import pytest
 from minimind_lab.reporting import (
     render_temporal_ablation,
     render_training_curves,
+    validate_checkpoint_bindings,
     validate_final_evaluations,
     validate_qivd_manifest,
     validate_training_summaries,
@@ -165,4 +166,35 @@ def test_training_summary_validator_locks_steps_parameters_time_and_checkpoint()
     with pytest.raises(ValueError, match="finite verification"):
         validate_training_summaries(
             {"llm": {**report, "artifact_verification": {"all_finite": False}}}, {"llm": (100, 200)}
+        )
+
+
+def test_checkpoint_binding_requires_exact_path_size_and_hash():
+    report = {
+        "checkpoint": "artifacts/checkpoints/model.pt",
+        "artifact_verification": {
+            "checkpoint_bytes": 123,
+            "checkpoint_sha256": "a" * 64,
+        },
+    }
+    artifact = {
+        "path": "artifacts/checkpoints/model.pt",
+        "bytes": 123,
+        "sha256": "a" * 64,
+    }
+    validate_checkpoint_bindings({"stage": report}, {"stage": artifact})
+    with pytest.raises(ValueError, match="SHA-256"):
+        validate_checkpoint_bindings(
+            {"stage": report},
+            {"stage": {**artifact, "sha256": "b" * 64}},
+        )
+    with pytest.raises(ValueError, match="size"):
+        validate_checkpoint_bindings(
+            {"stage": report},
+            {"stage": {**artifact, "bytes": 124}},
+        )
+    with pytest.raises(ValueError, match="path"):
+        validate_checkpoint_bindings(
+            {"stage": report},
+            {"stage": {**artifact, "path": "artifacts/checkpoints/other.pt"}},
         )

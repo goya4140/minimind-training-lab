@@ -17,6 +17,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from minimind_lab.reporting import (
     render_temporal_ablation,
     render_training_curves,
+    validate_checkpoint_bindings,
     validate_final_evaluations,
     validate_language_evaluation,
     validate_qivd_manifest,
@@ -144,6 +145,16 @@ def main() -> None:
         local_artifact_entry("video-omni-final.json", REQUIRED["Video evaluation"]),
         local_artifact_entry("qivd.json", REQUIRED["QIVD manifest"]),
     ]
+    artifacts_by_name = {artifact["name"]: artifact for artifact in local_artifacts}
+    checkpoint_artifacts = {
+        "llm_pretrain": artifacts_by_name["llm-64m-pretrain-mps.pt"],
+        "llm_sft": artifacts_by_name["llm-64m-sft-mps.pt"],
+        "vlm_alignment": artifacts_by_name["vlm-alignment-mps.pt"],
+        "vlm_sft": artifacts_by_name["vlm-sft-mps.pt"],
+        "video_alignment": artifacts_by_name["video-omni-alignment-mps.pt"],
+        "video_sft": artifacts_by_name["video-omni-sft-mps.pt"],
+    }
+    validate_checkpoint_bindings(logs, checkpoint_artifacts)
     histories = {
         key: training_history(REQUIRED[checkpoint_name])
         for key, checkpoint_name in (

@@ -188,6 +188,21 @@ def validate_training_summaries(logs: dict[str, dict], expected: dict[str, tuple
             raise ValueError(f"training stage checkpoint SHA-256 is malformed: {stage}")
 
 
+def validate_checkpoint_bindings(logs: dict[str, dict], artifacts: dict[str, dict]) -> None:
+    """Bind each completed stage report to the exact checkpoint bytes being published."""
+    if set(logs) != set(artifacts):
+        raise ValueError("checkpoint binding stages do not match the training summaries")
+    for stage, report in logs.items():
+        artifact = artifacts[stage]
+        verification = report.get("artifact_verification", {})
+        if report.get("checkpoint") != artifact.get("path"):
+            raise ValueError(f"training report checkpoint path does not match the artifact: {stage}")
+        if verification.get("checkpoint_bytes") != artifact.get("bytes"):
+            raise ValueError(f"training report checkpoint size does not match the artifact: {stage}")
+        if verification.get("checkpoint_sha256") != artifact.get("sha256"):
+            raise ValueError(f"training report checkpoint SHA-256 does not match the artifact: {stage}")
+
+
 def render_training_curves(histories: dict[str, list[dict]], output: str | Path) -> None:
     width, height = 960, 600
     columns, rows = 3, 2

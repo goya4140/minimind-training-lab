@@ -80,3 +80,6 @@ temporal adapter 和 projector，最终评估仍走原始 MP4，因此缓存不�
 每次训练检查 loss 是否 finite；最终 checkpoint 用
 [`scripts/verify_stage_artifact.py`](../scripts/verify_stage_artifact.py) 遍历 tensor，记录参数数量、字节数、
 SHA-256 与 NaN/Inf 结果。通过这个门禁只说明 artifact 完整，不说明模型能力合格。
+
+最终报告生成器会再次计算六个 checkpoint 的字节数和 SHA-256，并要求与各阶段完成日志中的审计值
+完全一致。这样可以证明报告引用的正是通过门禁的文件，而不是验证完成后被替换的同名文件。
