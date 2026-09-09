@@ -16,7 +16,7 @@ from transformers import AutoTokenizer
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from minimind_lab.data import JsonlPretrainDataset
+from minimind_lab.data import DeterministicBatchStream, JsonlPretrainDataset
 from minimind_lab.llm import MiniMindConfig, MiniMindForCausalLM
 from minimind_lab.training import load_config, resolve_device, seed_everything
 from minimind_lab.training.utils import environment_info, write_json
@@ -80,7 +80,9 @@ def main() -> None:
     train_dataset = Subset(dataset, range(split))
     validation_dataset = Subset(dataset, range(split, len(dataset)))
     training = config["training"]
-    loader = DataLoader(train_dataset, batch_size=training["batch_size"], shuffle=True, num_workers=0)
+    batch_stream = DeterministicBatchStream(
+        train_dataset, batch_size=training["batch_size"], seed=config["experiment"]["seed"]
+    )
     validation_loader = DataLoader(validation_dataset, batch_size=training["batch_size"], num_workers=0)
     model = MiniMindForCausalLM(MiniMindConfig(**config["model"])).to(device)
     optimizer = torch.optim.AdamW(
@@ -100,16 +102,11 @@ def main() -> None:
         history = resume["history"]
         print(f"resuming from step {start_step}: {resume_path}")
     started = time.time()
-    iterator = iter(loader)
     model.train()
     optimizer.zero_grad(set_to_none=True)
     last_grad_norm = None
     for step in range(start_step + 1, training["steps"] + 1):
-        try:
-            input_ids, labels = next(iterator)
-        except StopIteration:
-            iterator = iter(loader)
-            input_ids, labels = next(iterator)
+        input_ids, labels = batch_stream.batch(step)
         output = model(input_ids.to(device), labels.to(device))
         loss = output["loss"] / accumulation
         loss.backward()

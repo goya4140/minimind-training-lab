@@ -50,3 +50,31 @@ class JsonlPretrainDataset(Dataset):
         state["_handle"] = None
         return state
 
+
+class DeterministicBatchStream:
+    """Epoch-wise deterministic shuffle that can resume from any global step."""
+
+    def __init__(self, dataset: Dataset, batch_size: int, seed: int) -> None:
+        self.dataset = dataset
+        self.batch_size = batch_size
+        self.seed = seed
+        self.steps_per_epoch = (len(dataset) + batch_size - 1) // batch_size
+        self._epoch = -1
+        self._permutation = torch.empty(0, dtype=torch.long)
+
+    def indices_for_step(self, step: int) -> list[int]:
+        if step < 1:
+            raise ValueError("step is one-based and must be positive")
+        epoch = (step - 1) // self.steps_per_epoch
+        position = (step - 1) % self.steps_per_epoch
+        if epoch != self._epoch:
+            generator = torch.Generator().manual_seed(self.seed + epoch)
+            self._permutation = torch.randperm(len(self.dataset), generator=generator)
+            self._epoch = epoch
+        start = position * self.batch_size
+        return self._permutation[start : start + self.batch_size].tolist()
+
+    def batch(self, step: int) -> tuple[torch.Tensor, torch.Tensor]:
+        samples = [self.dataset[index] for index in self.indices_for_step(step)]
+        input_ids, labels = zip(*samples)
+        return torch.stack(input_ids), torch.stack(labels)

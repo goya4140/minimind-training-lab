@@ -1,4 +1,3 @@
-from .pretrain import JsonlPretrainDataset
+from .pretrain import DeterministicBatchStream, JsonlPretrainDataset
 
-__all__ = ["JsonlPretrainDataset"]
-
+__all__ = ["DeterministicBatchStream", "JsonlPretrainDataset"]

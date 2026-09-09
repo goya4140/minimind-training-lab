@@ -2,7 +2,7 @@ import json
 
 import torch
 
-from minimind_lab.data import JsonlPretrainDataset
+from minimind_lab.data import DeterministicBatchStream, JsonlPretrainDataset
 from minimind_lab.llm import ByteTokenizer, MiniMindConfig, MiniMindForCausalLM
 
 
@@ -56,3 +56,15 @@ def test_jsonl_dataset_builds_labels(tmp_path):
     assert len(dataset) == 1
     assert input_ids.shape == labels.shape == (24,)
     assert labels[input_ids == tokenizer.pad_token_id].eq(-100).all()
+
+
+def test_batch_stream_resumes_exactly(tmp_path):
+    path = tmp_path / "data.jsonl"
+    lines = [json.dumps({"text": f"sample {index}"}) for index in range(9)]
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    dataset = JsonlPretrainDataset(path, ByteTokenizer(), sequence_length=16)
+    first = DeterministicBatchStream(dataset, batch_size=4, seed=42)
+    resumed = DeterministicBatchStream(dataset, batch_size=4, seed=42)
+    assert first.indices_for_step(2) == resumed.indices_for_step(2)
+    assert first.indices_for_step(4) == resumed.indices_for_step(4)
+    assert first.indices_for_step(3) != first.indices_for_step(4)
