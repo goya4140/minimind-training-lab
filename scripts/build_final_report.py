@@ -12,6 +12,9 @@ from pathlib import Path
 import torch
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+
+from minimind_lab.reporting import render_temporal_ablation, render_training_curves
 
 REQUIRED = {
     "LLM pretrain log": "artifacts/logs/llm-64m-pretrain-mps.json",
@@ -51,12 +54,12 @@ def duration(seconds: float) -> str:
     return f"{hours:d}h {minutes:02d}m {seconds:02d}s"
 
 
-def training_loss(checkpoint_path: str) -> tuple[float, float]:
+def training_history(checkpoint_path: str) -> list[dict]:
     checkpoint = torch.load(ROOT / checkpoint_path, map_location="cpu", weights_only=False)
     history = checkpoint.get("history", [])
     if not history:
         raise RuntimeError(f"checkpoint has no training history: {checkpoint_path}")
-    return float(history[0]["loss"]), float(history[-1]["loss"])
+    return history
 
 
 def local_artifact_entry(name: str, relative_path: str) -> dict:
@@ -106,8 +109,8 @@ def main() -> None:
         local_artifact_entry("video-omni-final.json", REQUIRED["Video evaluation"]),
         local_artifact_entry("qivd.json", REQUIRED["QIVD manifest"]),
     ]
-    losses = {
-        key: training_loss(REQUIRED[checkpoint_name])
+    histories = {
+        key: training_history(REQUIRED[checkpoint_name])
         for key, checkpoint_name in (
             ("llm_pretrain", "LLM pretrain checkpoint"),
             ("llm_sft", "LLM checkpoint"),
@@ -117,12 +120,26 @@ def main() -> None:
             ("video_sft", "Video checkpoint"),
         )
     }
+    losses = {key: (float(history[0]["loss"]), float(history[-1]["loss"])) for key, history in histories.items()}
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     qivd_generation = video_eval["qivd_generation"]
     temporal = video_eval["controlled_temporal"]
     qualitative_vlm = vlm_eval.get("qualitative", [])
     vlm_keyword_recall = [item["keyword_recall"] for item in qualitative_vlm if item.get("keyword_recall") is not None]
     total_training_seconds = sum(float(log.get("training_seconds", 0)) for log in logs.values())
+    assets = ROOT / "reports/assets"
+    render_training_curves(
+        {
+            "LLM pretrain": histories["llm_pretrain"],
+            "LLM SFT": histories["llm_sft"],
+            "VLM alignment": histories["vlm_alignment"],
+            "VLM SFT": histories["vlm_sft"],
+            "Video alignment": histories["video_alignment"],
+            "Video SFT": histories["video_sft"],
+        },
+        assets / "training-curves.svg",
+    )
+    render_temporal_ablation(temporal, assets / "temporal-ablation.svg")
     lines = [
         "# MiniMind Training Lab — Final Results",
         "",
@@ -150,6 +167,8 @@ def main() -> None:
         f"| Video alignment | {logs['video_alignment']['total_steps']:,} | {logs['video_alignment']['trainable_parameters']:,} | {fmt(losses['video_alignment'][0])} | {fmt(losses['video_alignment'][1])} | {duration(logs['video_alignment']['training_seconds'])} |",
         f"| Video SFT | {logs['video_sft']['total_steps']:,} | {logs['video_sft']['trainable_parameters']:,} | {fmt(losses['video_sft'][0])} | {fmt(losses['video_sft'][1])} | {duration(logs['video_sft']['training_seconds'])} |",
         "",
+        "![Six-stage training loss curves](assets/training-curves.svg)",
+        "",
         "## Evaluation",
         "",
         "| Model / set | Primary metrics |",
@@ -158,6 +177,8 @@ def main() -> None:
         f"| VLM validation + fixed images | loss {fmt(vlm_eval['validation_loss'])}; mean keyword recall {fmt(sum(vlm_keyword_recall) / len(vlm_keyword_recall)) if vlm_keyword_recall else 'n/a'} |",
         f"| Video QIVD held-out | loss {fmt(video_eval['test_loss'])}; exact {fmt(qivd_generation['normalized_exact_match'])}; token F1 {fmt(qivd_generation['token_f1'])} |",
         f"| Controlled temporal | exact {fmt(temporal['normalized_exact_match'])}; reversed exact {fmt(temporal['reversed_frame_exact_match'])}; token F1 delta {fmt(temporal['normal_minus_reversed_token_f1'])} |",
+        "",
+        "![Controlled temporal normal versus reversed metrics](assets/temporal-ablation.svg)",
         "",
         (
             "A positive controlled temporal normal-minus-reversed result is evidence that the model uses frame "
