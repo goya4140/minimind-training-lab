@@ -57,7 +57,23 @@ def valid_evaluations():
     }
     vlm = {
         "validation_loss": 1.5,
-        "qualitative": [{"prompt": "describe", "completion": "a dog", "keyword_recall": 1.0}],
+        "qualitative": [
+            {
+                "prompt": "describe",
+                "completion": "a dog",
+                "keyword_recall": 1.0,
+                "counterfactual_completion": "a car",
+                "counterfactual_keyword_recall": 0.0,
+                "completion_changed_on_counterfactual": True,
+            }
+        ],
+        "visual_ablation": {
+            "samples": 1,
+            "correct_image_keyword_recall": 1.0,
+            "counterfactual_keyword_recall": 0.0,
+            "correct_minus_counterfactual_recall": 1.0,
+            "completion_change_rate": 1.0,
+        },
         "language_regression": {"corpus": dict(llm["corpus"]), "generation": list(llm["generation"])},
     }
     video = {

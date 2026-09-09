@@ -3,10 +3,12 @@ import torch
 
 from minimind_lab.evaluation import (
     distinct_n,
+    keyword_recall,
     language_corpus_metrics,
     language_generation_samples,
     normalize_qa_answer,
     token_f1,
+    visual_ablation_summary,
 )
 
 
@@ -68,3 +70,23 @@ def test_shared_language_metrics_and_generation_are_model_agnostic():
     assert metrics["predicted_tokens"] == 2
     assert samples[0]["prompt"] == "same prompt"
     assert samples[0]["completion"] == "34"
+
+
+def test_visual_counterfactual_summary_compares_the_same_keywords():
+    cases = [
+        {
+            "keyword_recall": keyword_recall("yellow car", ["yellow", "car"]),
+            "counterfactual_keyword_recall": keyword_recall("rainbow umbrella", ["yellow", "car"]),
+            "completion_changed_on_counterfactual": True,
+        },
+        {
+            "keyword_recall": 0.5,
+            "counterfactual_keyword_recall": 0.25,
+            "completion_changed_on_counterfactual": False,
+        },
+    ]
+    summary = visual_ablation_summary(cases)
+    assert summary["correct_image_keyword_recall"] == pytest.approx(0.75)
+    assert summary["counterfactual_keyword_recall"] == pytest.approx(0.125)
+    assert summary["correct_minus_counterfactual_recall"] == pytest.approx(0.625)
+    assert summary["completion_change_rate"] == pytest.approx(0.5)

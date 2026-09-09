@@ -129,7 +129,7 @@ def main() -> None:
     vlm_language = vlm_eval["language_regression"]["corpus"]
     video_language = video_eval["language_regression"]["corpus"]
     qualitative_vlm = vlm_eval.get("qualitative", [])
-    vlm_keyword_recall = [item["keyword_recall"] for item in qualitative_vlm if item.get("keyword_recall") is not None]
+    visual_ablation = vlm_eval["visual_ablation"]
     total_training_seconds = sum(float(log.get("training_seconds", 0)) for log in logs.values())
     assets = ROOT / "reports/assets"
     render_training_curves(
@@ -178,7 +178,8 @@ def main() -> None:
         "| Model / set | Primary metrics |",
         "|---|---|",
         f"| LLM held-out text | loss {fmt(llm_language['validation_loss'])}; perplexity {fmt(llm_language['validation_perplexity'])}; BPB {fmt(llm_language['bits_per_byte'])} |",
-        f"| VLM validation + fixed images | loss {fmt(vlm_eval['validation_loss'])}; mean keyword recall {fmt(sum(vlm_keyword_recall) / len(vlm_keyword_recall)) if vlm_keyword_recall else 'n/a'} |",
+        f"| VLM validation + fixed images | loss {fmt(vlm_eval['validation_loss'])}; correct-image keyword recall {fmt(visual_ablation['correct_image_keyword_recall'])} |",
+        f"| VLM visual counterfactual | swapped/reversed recall {fmt(visual_ablation['counterfactual_keyword_recall'])}; correct-minus-counterfactual {fmt(visual_ablation['correct_minus_counterfactual_recall'])}; answer change rate {fmt(visual_ablation['completion_change_rate'])} |",
         f"| VLM language regression | perplexity {fmt(vlm_language['validation_perplexity'])}; delta vs LLM {fmt(vlm_language['validation_perplexity'] - llm_language['validation_perplexity'])} |",
         f"| Video QIVD held-out | loss {fmt(video_eval['test_loss'])}; exact {fmt(qivd_generation['normalized_exact_match'])}; token F1 {fmt(qivd_generation['token_f1'])} |",
         f"| Controlled temporal | exact {fmt(temporal['normalized_exact_match'])}; reversed exact {fmt(temporal['reversed_frame_exact_match'])}; token F1 delta {fmt(temporal['normal_minus_reversed_token_f1'])} |",
@@ -232,11 +233,11 @@ def main() -> None:
         "",
         "### VLM",
         "",
-        "| Images | Prompt | Completion |",
-        "|---:|---|---|",
+        "| Images | Prompt | Correct image(s) | Mismatched/reversed image(s) |",
+        "|---:|---|---|---|",
         *[
             f"| {item.get('image_count', 1)} | {one_line(item.get('prompt', item.get('id', '')))} | "
-            f"{one_line(item['completion'])} |"
+            f"{one_line(item['completion'])} | {one_line(item['counterfactual_completion'])} |"
             for item in qualitative_vlm
         ],
         "",

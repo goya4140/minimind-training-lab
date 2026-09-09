@@ -63,7 +63,18 @@ def validate_final_evaluations(llm: dict, vlm: dict, video: dict) -> None:
     _validate_language_evaluation(llm)
 
     _finite_metric(vlm, "validation_loss", minimum=0)
-    _qualitative_rows(vlm, "qualitative", ("prompt", "completion", "keyword_recall"))
+    _qualitative_rows(
+        vlm,
+        "qualitative",
+        (
+            "prompt",
+            "completion",
+            "keyword_recall",
+            "counterfactual_completion",
+            "counterfactual_keyword_recall",
+            "completion_changed_on_counterfactual",
+        ),
+    )
     _validate_language_evaluation(vlm, "language_regression")
     for index, row in enumerate(vlm["qualitative"]):
         recall = row["keyword_recall"]
@@ -74,6 +85,14 @@ def validate_final_evaluations(llm: dict, vlm: dict, video: dict) -> None:
             or not 0 <= float(recall) <= 1
         ):
             raise ValueError(f"VLM keyword recall must be null or in [0, 1]: qualitative[{index}]")
+    _finite_metric(vlm, "visual_ablation.samples", minimum=1)
+    for metric in (
+        "correct_image_keyword_recall",
+        "counterfactual_keyword_recall",
+        "completion_change_rate",
+    ):
+        _finite_metric(vlm, f"visual_ablation.{metric}", minimum=0, maximum=1)
+    _finite_metric(vlm, "visual_ablation.correct_minus_counterfactual_recall", minimum=-1, maximum=1)
 
     _finite_metric(video, "test_loss", minimum=0)
     _validate_language_evaluation(video, "language_regression")
