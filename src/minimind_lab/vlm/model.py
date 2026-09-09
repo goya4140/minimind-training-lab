@@ -90,8 +90,17 @@ class MiniMindVLM(nn.Module):
         labels: torch.Tensor | None = None,
         image_counts: torch.Tensor | None = None,
     ) -> dict[str, torch.Tensor | None]:
-        text_embeddings = self.language_model.embed_tokens(input_ids)
         image_features = self.encode_images(pixel_values)
+        return self.forward_with_features(input_ids, image_features, labels, image_counts)
+
+    def forward_with_features(
+        self,
+        input_ids: torch.Tensor,
+        image_features: torch.Tensor,
+        labels: torch.Tensor | None = None,
+        image_counts: torch.Tensor | None = None,
+    ) -> dict[str, torch.Tensor | None]:
+        text_embeddings = self.language_model.embed_tokens(input_ids)
         inputs_embeds = self.inject_image_features(input_ids, text_embeddings, image_features, image_counts)
         return self.language_model.forward_from_embeddings(inputs_embeds, labels)
 
@@ -118,9 +127,10 @@ class MiniMindVLM(nn.Module):
         eos_token_id: int | None = None,
     ) -> torch.Tensor:
         self.eval()
+        image_features = self.encode_images(pixel_values)
         for _ in range(max_new_tokens):
             context = input_ids[:, -self.config.max_position_embeddings :]
-            logits = self(context, pixel_values, image_counts=image_counts)["logits"][:, -1]
+            logits = self.forward_with_features(context, image_features, image_counts=image_counts)["logits"][:, -1]
             if temperature <= 0:
                 next_token = logits.argmax(dim=-1, keepdim=True)
             else:

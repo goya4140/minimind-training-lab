@@ -12,8 +12,10 @@ class FakeVisionEncoder(nn.Module):
         self.projection = nn.Linear(3, tokens * hidden)
         self.tokens = tokens
         self.hidden = hidden
+        self.calls = 0
 
     def forward(self, pixel_values: torch.Tensor):
+        self.calls += 1
         pooled = pixel_values.mean(dim=(-1, -2))
         return SimpleNamespace(last_hidden_state=self.projection(pooled).view(-1, self.tokens, self.hidden))
 
@@ -91,3 +93,4 @@ def test_vlm_generation_appends_tokens():
     input_ids[:, 2:6] = 12
     generated = model.generate(input_ids, torch.randn(1, 3, 8, 8), max_new_tokens=3)
     assert generated.shape == (1, 13)
+    assert model.vision_encoder.calls == 1

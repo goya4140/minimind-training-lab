@@ -20,6 +20,9 @@ flowchart LR
 这里采用 early fusion：视觉 token 与文本 token 一起进入 causal Transformer，而不是额外增加
 cross-attention。实现见 [`src/minimind_lab/vlm/model.py`](../src/minimind_lab/vlm/model.py)。
 
+生成时视觉 encoder 只运行一次，projected image features 在逐 token 解码循环中复用。如果每生成一个
+token 都重新编码同一张图，答案不变但评估耗时会被视觉 forward 成倍放大。
+
 ## 两阶段训练的理由
 
 Alignment 阶段冻结 SigLIP2 和 LLM，只训练 1.18M projector 参数。如果一开始就更新整个 LLM，随机
