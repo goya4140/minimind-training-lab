@@ -45,7 +45,10 @@ def verify_checkpoint(path: str | Path) -> dict[str, int | str | bool]:
 
 
 def verify_resume_checkpoint(
-    path: str | Path, expected_config: dict[str, Any] | None = None
+    path: str | Path,
+    expected_config: dict[str, Any] | None = None,
+    *,
+    require_complete: bool = False,
 ) -> dict[str, int | float | str | bool]:
     target = Path(path)
     checkpoint = torch.load(target, map_location="cpu", weights_only=False)
@@ -72,6 +75,8 @@ def verify_resume_checkpoint(
     accumulation = training.get("gradient_accumulation_steps")
     if not isinstance(total_steps, int) or total_steps <= 0 or step > total_steps:
         raise ValueError("resume step is outside the configured training range")
+    if require_complete and step != total_steps:
+        raise ValueError("resume checkpoint has not reached the configured final step")
     if not isinstance(accumulation, int) or accumulation <= 0:
         raise ValueError("gradient accumulation must be a positive integer")
     if step != total_steps and step % accumulation:
@@ -119,4 +124,5 @@ def verify_resume_checkpoint(
         "training_seconds": float(training_seconds),
         "rng_state_bytes": rng_state.numel() * rng_state.element_size(),
         "config_matches": expected_config is None or config == expected_config,
+        "training_complete": step == total_steps,
     }

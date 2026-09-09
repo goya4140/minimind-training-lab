@@ -15,10 +15,19 @@ from minimind_lab.training import load_config, verify_resume_checkpoint
 def main() -> None:
     parser = argparse.ArgumentParser(description="Audit a local resume checkpoint without modifying it.")
     parser.add_argument("--config", required=True)
+    parser.add_argument(
+        "--require-complete",
+        action="store_true",
+        help="Also require the resume step to equal the configured final step.",
+    )
     args = parser.parse_args()
     config = load_config(ROOT / args.config)
     resume_path = (ROOT / config["training"]["checkpoint_path"]).with_suffix(".resume.pt")
-    verification = verify_resume_checkpoint(resume_path, expected_config=config)
+    verification = verify_resume_checkpoint(
+        resume_path,
+        expected_config=config,
+        require_complete=args.require_complete,
+    )
     print(
         json.dumps(
             {"checkpoint": str(resume_path.relative_to(ROOT)), **verification},

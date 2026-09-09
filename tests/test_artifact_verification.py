@@ -52,6 +52,18 @@ def test_resume_verification_checks_recoverable_state(tmp_path):
     assert result["history_records"] == 2
     assert result["training_seconds"] == 12.5
     assert result["all_finite"] is True
+    assert result["training_complete"] is False
+
+
+def test_resume_verification_can_require_final_step(tmp_path):
+    path = tmp_path / "model.resume.pt"
+    payload = resume_payload(step=32)
+    torch.save(payload, path)
+    with pytest.raises(ValueError, match="final step"):
+        verify_resume_checkpoint(path, require_complete=True)
+    payload["step"] = 100
+    torch.save(payload, path)
+    assert verify_resume_checkpoint(path, require_complete=True)["training_complete"] is True
 
 
 @pytest.mark.parametrize(

@@ -116,6 +116,7 @@ def evaluate_if_needed(stage: str, checkpoint: Path) -> None:
 
 def verify_stage(config: str) -> None:
     run(["scripts/verify_stage_artifact.py", "--config", config])
+    run(["scripts/verify_resume_checkpoint.py", "--config", config, "--require-complete"])
 
 
 def main() -> None:
