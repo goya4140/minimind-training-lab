@@ -14,7 +14,14 @@ import torch
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from minimind_lab.reporting import render_temporal_ablation, render_training_curves, validate_final_evaluations
+from minimind_lab.reporting import (
+    render_temporal_ablation,
+    render_training_curves,
+    validate_final_evaluations,
+    validate_qivd_manifest,
+)
+
+QIVD_REVISION = "c5376ab0b9fd3643545a1503413aee64f26ba22a"
 
 REQUIRED = {
     "LLM pretrain log": "artifacts/logs/llm-64m-pretrain-mps.json",
@@ -98,6 +105,7 @@ def main() -> None:
     video_eval = read_json(REQUIRED["Video evaluation"])
     validate_final_evaluations(llm_eval, vlm_eval, video_eval)
     qivd = read_json(REQUIRED["QIVD manifest"])
+    validate_qivd_manifest(qivd, QIVD_REVISION)
     local_artifacts = [
         local_artifact_entry("llm-64m-sft-mps.pt", REQUIRED["LLM checkpoint"]),
         local_artifact_entry("vlm-sft-mps.pt", REQUIRED["VLM checkpoint"]),

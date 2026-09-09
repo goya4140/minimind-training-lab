@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+import re
 from html import escape
 from pathlib import Path
 
@@ -112,6 +113,23 @@ def validate_final_evaluations(llm: dict, vlm: dict, video: dict) -> None:
             f"{section}.qualitative",
             ("question", "answer", "normal_completion", "reversed_completion"),
         )
+
+
+def validate_qivd_manifest(manifest: dict, revision: str, video_count: int = 2900) -> None:
+    """Require locally enumerated files that match the pinned upstream LFS tree."""
+    if manifest.get("revision") != revision:
+        raise ValueError("QIVD manifest revision does not match the pinned revision")
+    if manifest.get("video_count") != video_count:
+        raise ValueError("QIVD manifest video count is incorrect")
+    if manifest.get("upstream_lfs_verified") is not True:
+        raise ValueError("QIVD manifest lacks upstream LFS verification")
+    if not isinstance(manifest.get("total_video_bytes"), int) or manifest["total_video_bytes"] <= 0:
+        raise ValueError("QIVD manifest total bytes must be positive")
+    if not re.fullmatch(r"[0-9a-f]{64}", str(manifest.get("aggregate_sha256", ""))):
+        raise ValueError("QIVD manifest aggregate SHA-256 is malformed")
+    files = manifest.get("files")
+    if not isinstance(files, list) or len(files) != video_count:
+        raise ValueError("QIVD manifest must enumerate every video")
 
 
 def render_training_curves(histories: dict[str, list[dict]], output: str | Path) -> None:

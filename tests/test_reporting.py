@@ -2,7 +2,12 @@ from pathlib import Path
 
 import pytest
 
-from minimind_lab.reporting import render_temporal_ablation, render_training_curves, validate_final_evaluations
+from minimind_lab.reporting import (
+    render_temporal_ablation,
+    render_training_curves,
+    validate_final_evaluations,
+    validate_qivd_manifest,
+)
 
 
 def test_training_curve_renderer_writes_all_panels(tmp_path: Path):
@@ -106,3 +111,20 @@ def test_final_evaluation_validator_rejects_unpublishable_evidence(mutation, mes
     mutation(llm, vlm, video)
     with pytest.raises(ValueError, match=message):
         validate_final_evaluations(llm, vlm, video)
+
+
+def test_qivd_manifest_validator_requires_pinned_upstream_evidence():
+    revision = "a" * 40
+    manifest = {
+        "revision": revision,
+        "video_count": 2,
+        "total_video_bytes": 10,
+        "aggregate_sha256": "b" * 64,
+        "upstream_lfs_verified": True,
+        "files": [{"path": "0.mp4"}, {"path": "1.mp4"}],
+    }
+    validate_qivd_manifest(manifest, revision, video_count=2)
+    with pytest.raises(ValueError, match="upstream LFS"):
+        validate_qivd_manifest({**manifest, "upstream_lfs_verified": False}, revision, video_count=2)
+    with pytest.raises(ValueError, match="enumerate every video"):
+        validate_qivd_manifest({**manifest, "files": []}, revision, video_count=2)
