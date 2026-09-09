@@ -1,0 +1,26 @@
+[
+  {
+    "image": "image-01-golden-dog-balloons.jpg",
+    "prompt": "请客观描述这张图片中的主体、动作和背景，不要添加看不见的细节。"
+  },
+  {
+    "image": "image-02-rainbow-umbrella-street.jpg",
+    "prompt": "图中最显眼的物体是什么？它有哪些颜色？"
+  },
+  {
+    "image": "image-03-cherry-blossom-bike.jpg",
+    "prompt": "请描述自行车与周围环境的位置关系。"
+  },
+  {
+    "image": "image-04-yellow-car.jpg",
+    "prompt": "图中车辆的颜色是什么？场景看起来在哪里？"
+  },
+  {
+    "image": "image-05-superhero-rooftop.jpg",
+    "prompt": "这个人物在做什么？请区分图中事实与推测。"
+  },
+  {
+    "image": "image-06-racecar-drift.jpg",
+    "prompt": "描述赛车的运动状态，并指出支持判断的视觉线索。"
+  }
+]

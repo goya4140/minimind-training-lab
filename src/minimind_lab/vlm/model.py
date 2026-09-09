@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import torch
+import torch.nn.functional as F
 from torch import nn
 
 from minimind_lab.llm import MiniMindConfig, MiniMindForCausalLM
@@ -105,3 +106,26 @@ class MiniMindVLM(nn.Module):
         for layer_index in (0, self.config.num_hidden_layers - 1):
             for parameter in self.language_model.layers[layer_index].parameters():
                 parameter.requires_grad = True
+
+    @torch.inference_mode()
+    def generate(
+        self,
+        input_ids: torch.Tensor,
+        pixel_values: torch.Tensor,
+        image_counts: torch.Tensor | None = None,
+        max_new_tokens: int = 80,
+        temperature: float = 0.0,
+        eos_token_id: int | None = None,
+    ) -> torch.Tensor:
+        self.eval()
+        for _ in range(max_new_tokens):
+            context = input_ids[:, -self.config.max_position_embeddings :]
+            logits = self(context, pixel_values, image_counts=image_counts)["logits"][:, -1]
+            if temperature <= 0:
+                next_token = logits.argmax(dim=-1, keepdim=True)
+            else:
+                next_token = torch.multinomial(F.softmax(logits / temperature, dim=-1), 1)
+            input_ids = torch.cat((input_ids, next_token), dim=1)
+            if eos_token_id is not None and torch.all(next_token == eos_token_id):
+                break
+        return input_ids

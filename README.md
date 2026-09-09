@@ -68,6 +68,9 @@ VLM 两阶段训练入口（需先准备 SigLIP2 与对应 LLM SFT checkpoint）
 ```bash
 uv run python scripts/train_vlm.py --config configs/vlm/alignment.yaml --resume
 uv run python scripts/train_vlm.py --config configs/vlm/sft.yaml --resume
+uv run python scripts/evaluate_vlm.py \
+  --config configs/vlm/sft.yaml \
+  --checkpoint artifacts/checkpoints/vlm-sft.pt
 ```
 
 Omni 四阶段入口依次为 `t2a → a2a-alignment → a2a-sft → i2t`：

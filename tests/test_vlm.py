@@ -83,3 +83,11 @@ def test_vlm_ignores_padded_images_using_image_counts():
         image_counts=torch.tensor([1, 2]),
     )
     assert torch.isfinite(output["loss"])
+
+
+def test_vlm_generation_appends_tokens():
+    model = MiniMindVLM(config(), FakeVisionEncoder(tokens=4, hidden=48))
+    input_ids = torch.randint(20, 259, (1, 10))
+    input_ids[:, 2:6] = 12
+    generated = model.generate(input_ids, torch.randn(1, 3, 8, 8), max_new_tokens=3)
+    assert generated.shape == (1, 13)
