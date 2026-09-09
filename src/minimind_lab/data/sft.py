@@ -21,11 +21,11 @@ def normalize_conversations(conversations: list[dict]) -> tuple[list[dict], list
     return messages, tools
 
 
-def assistant_token_labels(
+def assistant_token_ranges(
     input_ids: list[int], assistant_start_ids: list[int], turn_end_ids: list[int], max_length: int
-) -> list[int]:
-    """Mask every token except assistant responses, including each response terminator."""
-    labels = [-100] * len(input_ids)
+) -> list[tuple[int, int]]:
+    """Locate assistant response spans, including each response terminator."""
+    ranges = []
     position = 0
     while position < len(input_ids):
         if input_ids[position : position + len(assistant_start_ids)] == assistant_start_ids:
@@ -36,10 +36,20 @@ def assistant_token_labels(
                     break
                 end += 1
             target_end = min(end + len(turn_end_ids), max_length)
-            labels[start:target_end] = input_ids[start:target_end]
+            ranges.append((start, target_end))
             position = target_end
         else:
             position += 1
+    return ranges
+
+
+def assistant_token_labels(
+    input_ids: list[int], assistant_start_ids: list[int], turn_end_ids: list[int], max_length: int
+) -> list[int]:
+    """Mask every token except assistant responses, including each response terminator."""
+    labels = [-100] * len(input_ids)
+    for start, end in assistant_token_ranges(input_ids, assistant_start_ids, turn_end_ids, max_length):
+        labels[start:end] = input_ids[start:end]
     return labels
 
 

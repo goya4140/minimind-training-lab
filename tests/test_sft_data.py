@@ -1,6 +1,6 @@
 import json
 
-from minimind_lab.data import assistant_token_labels, normalize_conversations
+from minimind_lab.data import assistant_token_labels, assistant_token_ranges, normalize_conversations
 
 
 def test_assistant_only_labels_cover_multiple_turns():
@@ -17,6 +17,11 @@ def test_truncated_assistant_response_is_still_supervised():
     tokens = [1, 9, 30, 31, 32]
     labels = assistant_token_labels(tokens, [1, 9], [2, 10], max_length=5)
     assert labels == [-100, -100, 30, 31, 32]
+
+
+def test_assistant_ranges_include_turn_terminator():
+    tokens = [1, 9, 30, 2, 10, 1, 9, 40, 41, 2, 10]
+    assert assistant_token_ranges(tokens, [1, 9], [2, 10], max_length=20) == [(2, 5), (7, 11)]
 
 
 def test_tool_metadata_strings_are_normalized():
