@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import sys
 import time
 from collections import defaultdict
@@ -17,28 +16,10 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from minimind_lab.data import QIVDVideoDataset, collate_video, decode_uniform_video
 from minimind_lab.data.temporal_benchmark import generate_temporal_benchmark
+from minimind_lab.evaluation import normalize_qa_answer, token_f1
 from minimind_lab.training import load_config, resolve_device, seed_everything
 from minimind_lab.training.utils import environment_info, write_json
 from minimind_lab.video import MiniMindVideoOmni, VideoOmniConfig
-
-
-def normalize_answer(text: str) -> str:
-    return " ".join(re.findall(r"\w+", text.casefold()))
-
-
-def token_f1(prediction: str, reference: str) -> float:
-    prediction_tokens = normalize_answer(prediction).split()
-    reference_tokens = normalize_answer(reference).split()
-    if not prediction_tokens or not reference_tokens:
-        return float(prediction_tokens == reference_tokens)
-    prediction_counts = {token: prediction_tokens.count(token) for token in set(prediction_tokens)}
-    reference_counts = {token: reference_tokens.count(token) for token in set(reference_tokens)}
-    overlap = sum(min(count, reference_counts.get(token, 0)) for token, count in prediction_counts.items())
-    if overlap == 0:
-        return 0.0
-    precision = overlap / len(prediction_tokens)
-    recall = overlap / len(reference_tokens)
-    return 2 * precision * recall / (precision + recall)
 
 
 @torch.inference_mode()
@@ -88,10 +69,12 @@ def generate_cases(model, dataset, tokenizer, processor, device, count: int, max
             outputs[label] = tokenizer.decode(generated[len(prompt_ids) :].tolist(), skip_special_tokens=True).strip()
 
         short_answer = str(row.get("short_answer") or "")
-        reference = str(row["answer"]) if normalize_answer(short_answer) in {"", "na", "n a"} else short_answer
-        normalized_reference = normalize_answer(reference)
-        normal_prediction = normalize_answer(outputs["normal"])
-        reversed_prediction = normalize_answer(outputs["reversed"])
+        reference = (
+            str(row["answer"]) if normalize_qa_answer(short_answer) in {"", "na", "n a"} else short_answer
+        )
+        normalized_reference = normalize_qa_answer(reference)
+        normal_prediction = normalize_qa_answer(outputs["normal"])
+        reversed_prediction = normalize_qa_answer(outputs["reversed"])
         results.append(
             {
                 "id": row["id"],
