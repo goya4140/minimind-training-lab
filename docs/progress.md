@@ -42,8 +42,9 @@
 `2496b17f64d428275920954ebfcbf936fd47ee5f945b48cd94c0b7b1d7fdd5fc`。该文件是持续覆盖的
 运行恢复点，因此哈希只用于证明当时的原子快照，不作为最终模型哈希。
 
-step 40,000 在完整的 32-micro-batch optimizer 边界保存后，已由后台六阶段流水线
-重载并继续至 step 40,060 以上。这次切换同时验证了修正后的边界 checkpoint 恢复路径；
+step 40,000 在完整的 32-micro-batch optimizer 边界保存后，已由后台六阶段流水线成功重载。
+step 48,000 再次于完整边界切换至包含累计耗时和 Pretrain/SFT 对照评估的新版流水线，并继续至
+step 48,040 以上；恢复点记录此前累计训练 `17,393.61s`。这些切换验证了修正后的边界 checkpoint 恢复路径；
 训练器也会对最后不足一个 accumulation 的 micro-batch 执行尾部 optimizer update。
 
 本节只陈述已验证的运行状态。最终步数、耗时、曲线和 checkpoint 哈希将在训练完成后写入正式报告。
