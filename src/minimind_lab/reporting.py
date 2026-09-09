@@ -107,6 +107,8 @@ def validate_final_evaluations(llm: dict, vlm: dict, video: dict) -> None:
     _finite_metric(vlm, "visual_ablation.correct_minus_counterfactual_recall", minimum=-1, maximum=1)
 
     _finite_metric(video, "test_loss", minimum=0)
+    _finite_metric(video, "reversed_frame_test_loss", minimum=0)
+    _finite_metric(video, "reversed_minus_normal_loss")
     validate_language_evaluation(video, "language_regression")
     for section in ("qivd_generation", "controlled_temporal"):
         _finite_metric(video, f"{section}.generated_samples", minimum=1)
@@ -115,16 +117,22 @@ def validate_final_evaluations(llm: dict, vlm: dict, video: dict) -> None:
             "reversed_frame_exact_match",
             "token_f1",
             "reversed_frame_token_f1",
+            "contains_reference",
+            "reversed_frame_contains_reference",
             "completion_change_rate_on_reversal",
         ):
             _finite_metric(video, f"{section}.{metric}", minimum=0, maximum=1)
         _finite_metric(video, f"{section}.normal_minus_reversed_token_f1", minimum=-1, maximum=1)
+        _finite_metric(video, f"{section}.mean_generation_seconds", minimum=0)
         _category_metrics(video, f"{section}.token_f1_by_category")
         _qualitative_rows(
             video,
             f"{section}.qualitative",
             ("question", "answer", "normal_completion", "reversed_completion"),
         )
+    _finite_metric(video, "controlled_temporal.test_loss", minimum=0)
+    _finite_metric(video, "controlled_temporal.reversed_frame_test_loss", minimum=0)
+    _finite_metric(video, "controlled_temporal.reversed_minus_normal_loss")
 
 
 def validate_qivd_manifest(manifest: dict, revision: str, video_count: int = 2900) -> None:
@@ -154,6 +162,14 @@ def validate_training_summaries(logs: dict[str, dict], expected: dict[str, tuple
             raise ValueError(f"training stage is not complete: {stage}")
         if report.get("total_steps") != steps:
             raise ValueError(f"training stage step count is incorrect: {stage}")
+        validation_loss = report.get("validation_loss")
+        if (
+            isinstance(validation_loss, bool)
+            or not isinstance(validation_loss, (int, float))
+            or not math.isfinite(validation_loss)
+            or validation_loss < 0
+        ):
+            raise ValueError(f"training stage validation loss is invalid: {stage}")
         reported_parameters = report.get("trainable_parameters", report.get("parameters"))
         if reported_parameters != trainable_parameters:
             raise ValueError(f"training stage parameter count is incorrect: {stage}")

@@ -51,10 +51,13 @@ def valid_evaluations():
         "generated_samples": 1,
         "normalized_exact_match": 1.0,
         "reversed_frame_exact_match": 0.0,
+        "contains_reference": 1.0,
+        "reversed_frame_contains_reference": 0.0,
         "token_f1": 1.0,
         "reversed_frame_token_f1": 0.5,
         "normal_minus_reversed_token_f1": 0.5,
         "completion_change_rate_on_reversal": 1.0,
+        "mean_generation_seconds": 0.5,
         "token_f1_by_category": {"motion": 1.0},
         "qualitative": qualitative,
     }
@@ -85,8 +88,15 @@ def valid_evaluations():
     }
     video = {
         "test_loss": 1.0,
+        "reversed_frame_test_loss": 1.1,
+        "reversed_minus_normal_loss": 0.1,
         "qivd_generation": generation,
-        "controlled_temporal": dict(generation),
+        "controlled_temporal": {
+            **generation,
+            "test_loss": 1.0,
+            "reversed_frame_test_loss": 1.2,
+            "reversed_minus_normal_loss": 0.2,
+        },
         "language_regression": {"corpus": dict(llm["corpus"]), "generation": list(llm["generation"])},
     }
     return llm, vlm, video
@@ -141,6 +151,7 @@ def test_training_summary_validator_locks_steps_parameters_time_and_checkpoint()
         "status": "complete",
         "total_steps": 100,
         "parameters": 200,
+        "validation_loss": 1.0,
         "training_seconds": 30.0,
         "artifact_verification": {"all_finite": True, "checkpoint_sha256": "a" * 64},
     }
@@ -149,6 +160,8 @@ def test_training_summary_validator_locks_steps_parameters_time_and_checkpoint()
         validate_training_summaries({"llm": {**report, "total_steps": 99}}, {"llm": (100, 200)})
     with pytest.raises(ValueError, match="cumulative time"):
         validate_training_summaries({"llm": {**report, "training_seconds": 0}}, {"llm": (100, 200)})
+    with pytest.raises(ValueError, match="validation loss"):
+        validate_training_summaries({"llm": {**report, "validation_loss": float("nan")}}, {"llm": (100, 200)})
     with pytest.raises(ValueError, match="finite verification"):
         validate_training_summaries(
             {"llm": {**report, "artifact_verification": {"all_finite": False}}}, {"llm": (100, 200)}
