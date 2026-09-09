@@ -36,6 +36,7 @@ AdamW 更新参数，同时把 weight decay 与 gradient update 分开。Cosine 
 - 当前 micro-step；
 - 已记录 history；
 - PyTorch RNG state；
+- 已完成训练片段的累计耗时；
 - 完整训练 config。
 
 保存先写 `.tmp`，完成后用 `os.replace` 原子替换。进程中途退出不会留下一个看似存在但只写了一半的

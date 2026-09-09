@@ -45,7 +45,9 @@ def learning_rate(step: int, total_steps: int, base_lr: float) -> float:
     return base_lr * (0.1 + 0.45 * (1 + math.cos(math.pi * step / total_steps)))
 
 
-def save_resume(path: Path, model, optimizer, config: dict, step: int, history: list[dict]) -> None:
+def save_resume(
+    path: Path, model, optimizer, config: dict, step: int, history: list[dict], training_seconds: float
+) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".tmp")
     torch.save(
@@ -55,6 +57,7 @@ def save_resume(path: Path, model, optimizer, config: dict, step: int, history: 
             "config": config,
             "step": step,
             "history": history,
+            "training_seconds": training_seconds,
             "torch_rng_state": torch.get_rng_state(),
         },
         temporary,
@@ -100,6 +103,7 @@ def main() -> None:
     accumulation = training["gradient_accumulation_steps"]
     history = []
     start_step = 0
+    prior_training_seconds = 0.0
     resume_path = (ROOT / training["checkpoint_path"]).with_suffix(".resume.pt")
     if args.resume and resume_path.exists():
         resume = torch.load(resume_path, map_location="cpu", weights_only=False)
@@ -109,6 +113,7 @@ def main() -> None:
         torch.set_rng_state(resume["torch_rng_state"])
         start_step = resume["step"]
         history = resume["history"]
+        prior_training_seconds = float(resume.get("training_seconds", 0))
         print(f"resuming from step {start_step}: {resume_path}")
     started = time.time()
     model.train()
@@ -143,14 +148,22 @@ def main() -> None:
             print(json.dumps(record, ensure_ascii=False), flush=True)
         save_interval = training.get("save_interval", 0)
         if should_save_resume(step, save_interval, accumulation):
-            save_resume(resume_path, model, optimizer, config, step, history)
+            save_resume(
+                resume_path,
+                model,
+                optimizer,
+                config,
+                step,
+                history,
+                prior_training_seconds + time.time() - started,
+            )
             print(f"saved resume checkpoint: {resume_path}", flush=True)
-    training_elapsed = time.time() - started
+    training_elapsed = prior_training_seconds + time.time() - started
     val_loss = validation_loss(model, validation_loader, device)
     checkpoint_path = ROOT / training["checkpoint_path"]
     checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
     torch.save({"model": model.state_dict(), "config": config, "history": history}, checkpoint_path)
-    save_resume(resume_path, model, optimizer, config, training["steps"], history)
+    save_resume(resume_path, model, optimizer, config, training["steps"], history, training_elapsed)
     elapsed = time.time() - started
     report = {
         "experiment": config["experiment"]["name"],
@@ -162,10 +175,10 @@ def main() -> None:
         "total_steps": training["steps"],
         "elapsed_seconds": round(elapsed, 3),
         "training_seconds": training_elapsed,
-        "seconds_per_step": training_elapsed / max(training["steps"] - start_step, 1),
+        "seconds_per_step": training_elapsed / training["steps"],
         "tokens_per_second": training["batch_size"]
         * config["data"]["sequence_length"]
-        * max(training["steps"] - start_step, 1)
+        * training["steps"]
         / training_elapsed,
         "validation_loss": val_loss,
         "validation_perplexity": math.exp(min(val_loss, 20)),
