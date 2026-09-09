@@ -93,3 +93,18 @@ def test_missing_speaker_position_does_not_replace_last_token():
         speaker_positions=torch.tensor([-1]),
     ).audio_logits
     assert all(torch.equal(left, right) for left, right in zip(baseline, conditioned))
+
+
+def test_audio_feature_lengths_ignore_batch_padding():
+    model = MiniMindOmni(config())
+    text_ids = torch.randint(20, 259, (2, 8))
+    text_ids[0, 1:3] = 16
+    text_ids[1, 1:4] = 16
+    audio_ids = torch.randint(0, 79, (2, 3, 8))
+    output = model(
+        text_ids,
+        audio_ids,
+        encoded_audio=torch.randn(2, 3, 24),
+        encoded_audio_lengths=torch.tensor([2, 3]),
+    )
+    assert output.text_logits.shape == (2, 8, 259)

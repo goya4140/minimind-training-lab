@@ -169,15 +169,20 @@ class MiniMindOmni(nn.Module):
 
     @staticmethod
     def inject_features(
-        token_ids: torch.Tensor, embeddings: torch.Tensor, features: torch.Tensor, placeholder_id: int
+        token_ids: torch.Tensor,
+        embeddings: torch.Tensor,
+        features: torch.Tensor,
+        placeholder_id: int,
+        feature_lengths: torch.Tensor | None = None,
     ) -> torch.Tensor:
         output = []
         for batch_index in range(token_ids.size(0)):
+            length = int(feature_lengths[batch_index]) if feature_lengths is not None else features.size(1)
             positions = torch.nonzero(token_ids[batch_index] == placeholder_id).flatten()
-            if positions.numel() < features.size(1):
+            if positions.numel() < length:
                 raise ValueError("not enough modality placeholder tokens")
             item = embeddings[batch_index].clone()
-            item[positions[: features.size(1)]] = features[batch_index]
+            item[positions[:length]] = features[batch_index, :length]
             output.append(item)
         return torch.stack(output)
 
@@ -213,6 +218,7 @@ class MiniMindOmni(nn.Module):
         text_labels: torch.Tensor | None = None,
         audio_labels: torch.Tensor | None = None,
         encoded_audio: torch.Tensor | None = None,
+        encoded_audio_lengths: torch.Tensor | None = None,
         encoded_images: torch.Tensor | None = None,
         speaker_embedding: torch.Tensor | None = None,
         speaker_positions: torch.Tensor | None = None,
@@ -220,7 +226,11 @@ class MiniMindOmni(nn.Module):
         hidden = self.thinker.embed_tokens(text_ids)
         if encoded_audio is not None:
             hidden = self.inject_features(
-                text_ids, hidden, self.audio_projector(encoded_audio), self.config.audio_token_id
+                text_ids,
+                hidden,
+                self.audio_projector(encoded_audio),
+                self.config.audio_token_id,
+                encoded_audio_lengths,
             )
         if encoded_images is not None:
             hidden = self.inject_features(

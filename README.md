@@ -70,6 +70,16 @@ uv run python scripts/train_vlm.py --config configs/vlm/alignment.yaml --resume
 uv run python scripts/train_vlm.py --config configs/vlm/sft.yaml --resume
 ```
 
+Omni 四阶段入口依次为 `t2a → a2a-alignment → a2a-sft → i2t`：
+
+```bash
+uv sync --extra multimodal --extra omni --extra dev
+uv run python scripts/train_omni.py --config configs/omni/t2a.yaml --resume
+uv run python scripts/train_omni.py --config configs/omni/a2a-alignment.yaml --resume
+uv run python scripts/train_omni.py --config configs/omni/a2a-sft.yaml --resume
+uv run python scripts/train_omni.py --config configs/omni/i2t.yaml --resume
+```
+
 `smoke.yaml` 是本机链路验证配置，不代表最终模型。当前正式本机复现使用
 `configs/llm/pretrain-mps.yaml`，后续阶段严格从前一阶段 checkpoint 初始化。
 
