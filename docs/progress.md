@@ -26,3 +26,5 @@
 | 实验 | 设备 | 结果 | 报告 |
 |---|---|---|---|
 | `llm-smoke-001` | Apple M4 Pro / MPS | 120 步，loss 5.6009 → 0.5583 | [`reports/llm-smoke-001.md`](../reports/llm-smoke-001.md) |
+| `llm-bpe-mini-001` | Apple M4 Pro / MPS | 300 步，loss 8.8215 → 0.0130 | [`reports/llm-bpe-mini-001.md`](../reports/llm-bpe-mini-001.md) |
+| `llm-64m-mps-probe` | Apple M4 Pro / MPS | 正式 63.9M 架构、真实数据、完整恢复通过 | [`reports/llm-64m-mps-probe.md`](../reports/llm-64m-mps-probe.md) |

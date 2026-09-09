@@ -16,4 +16,5 @@ artifacts/eval/
 
 # Downloaded upstream/reference models
 third_party/
-
+assets/tokenizer/*.json
+!assets/tokenizer/README.md

@@ -9,11 +9,17 @@ class ByteTokenizer:
     eos_token_id = 2
     vocab_size = 259
 
-    def encode(self, text: str, add_special_tokens: bool = True) -> list[int]:
+    def encode(
+        self,
+        text: str,
+        add_special_tokens: bool = True,
+        truncation: bool = False,
+        max_length: int | None = None,
+    ) -> list[int]:
         ids = [byte + 3 for byte in text.encode("utf-8")]
-        return [self.bos_token_id, *ids, self.eos_token_id] if add_special_tokens else ids
+        ids = [self.bos_token_id, *ids, self.eos_token_id] if add_special_tokens else ids
+        return ids[:max_length] if truncation and max_length is not None else ids
 
     def decode(self, ids: list[int]) -> str:
         data = bytes(token - 3 for token in ids if 3 <= token < self.vocab_size)
         return data.decode("utf-8", errors="replace")
-

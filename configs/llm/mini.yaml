@@ -1,0 +1,33 @@
+experiment:
+  name: llm-bpe-mini
+  seed: 42
+  device: auto
+
+model:
+  vocab_size: 6400
+  hidden_size: 256
+  num_hidden_layers: 4
+  num_attention_heads: 4
+  num_key_value_heads: 2
+  intermediate_size: 704
+  max_position_embeddings: 256
+  rope_theta: 1000000.0
+  dropout: 0.0
+
+tokenizer:
+  path: assets/tokenizer
+
+data:
+  path: data/sample/pretrain.jsonl
+  sequence_length: 128
+  repeats: 256
+
+training:
+  steps: 300
+  batch_size: 8
+  learning_rate: 0.0005
+  weight_decay: 0.1
+  grad_clip: 1.0
+  log_interval: 20
+  checkpoint_path: artifacts/checkpoints/llm-bpe-mini.pt
+

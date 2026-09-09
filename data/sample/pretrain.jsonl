@@ -1,0 +1,13 @@
+{"text":"语言模型通过预测下一个词元学习文本中的规律。"}
+{"text":"Transformer 使用自注意力机制建模上下文关系。"}
+{"text":"训练模型需要数据、模型、损失函数和优化器。"}
+{"text":"预训练让模型学习语言规律，指令微调让模型学习如何回答问题。"}
+{"text":"深度学习模型通过反向传播计算参数的梯度。"}
+{"text":"优化器根据梯度更新参数，使训练损失逐渐降低。"}
+{"text":"人工智能可以帮助人们分析信息和解决问题。"}
+{"text":"模型评估必须同时包含定量指标和定性样例。"}
+{"text":"The model learns to predict the next token from its context."}
+{"text":"Training must be reproducible, measurable, and carefully documented."}
+{"text":"Question: 什么是语言模型？ Answer: 语言模型用于估计一段词元序列的概率。"}
+{"text":"Question: What is training? Answer: Training updates parameters to minimize an objective."}
+

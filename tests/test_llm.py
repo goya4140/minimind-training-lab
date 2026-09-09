@@ -1,5 +1,8 @@
+import json
+
 import torch
 
+from minimind_lab.data import JsonlPretrainDataset
 from minimind_lab.llm import ByteTokenizer, MiniMindConfig, MiniMindForCausalLM
 
 
@@ -43,3 +46,13 @@ def test_one_optimization_step_changes_parameters():
     optimizer.step()
     assert not torch.equal(before, model.layers[0].attention.q_proj.weight)
 
+
+def test_jsonl_dataset_builds_labels(tmp_path):
+    path = tmp_path / "data.jsonl"
+    path.write_text(json.dumps({"text": "MiniMind 学习"}, ensure_ascii=False) + "\n", encoding="utf-8")
+    tokenizer = ByteTokenizer()
+    dataset = JsonlPretrainDataset(path, tokenizer, sequence_length=24)
+    input_ids, labels = dataset[0]
+    assert len(dataset) == 1
+    assert input_ids.shape == labels.shape == (24,)
+    assert labels[input_ids == tokenizer.pad_token_id].eq(-100).all()
