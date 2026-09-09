@@ -10,7 +10,7 @@
 | VLM alignment | `pretrain_i2t.parquet` | 1,274,698 | 4,326,415,097 | `65761f37d1947d54a1d85457ff70938275e4ef58ba5cedcd02463a3a247c93fd` |
 | VLM SFT / Omni I2T | `sft_i2t.parquet` | 2,904,511 | 4,934,887,104 | `712f4026cd0e21b369feddca7334b1e465cb8182b5f298006f3f4f877f926643` |
 | Omni T2A mini | `sft_t2a_mini.parquet` | 515,415 | 1,558,442,729 | `dfe44b8b263ecd0579627160cf258b363b4c18457ae03221691e2e1a85e60ab8` |
-| Omni A2A mini | `sft_a2a_mini.parquet` | 待本地验证 | 881,313,734 | `fba0159e424ee106c9e5a732fe607875b3780d0c9f8b6806038879acd279782b` |
+| Omni A2A mini | `sft_a2a_mini.parquet` | 76,797 | 881,313,734 | `fba0159e424ee106c9e5a732fe607875b3780d0c9f8b6806038879acd279782b` |
 
 来源：[jingyaogong/minimind_dataset](https://huggingface.co/datasets/jingyaogong/minimind_dataset)。
 
