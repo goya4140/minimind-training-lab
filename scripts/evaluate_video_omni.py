@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from minimind_lab.data import QIVDVideoDataset, collate_video, decode_uniform_video
+from minimind_lab.data.temporal_benchmark import generate_temporal_benchmark
 from minimind_lab.training import load_config, resolve_device, seed_everything
 from minimind_lab.training.utils import environment_info, write_json
 from minimind_lab.video import MiniMindVideoOmni, VideoOmniConfig
@@ -101,7 +102,9 @@ def generate_cases(model, dataset, tokenizer, processor, device, count: int, max
                 "normal_completion": outputs["normal"],
                 "reversed_completion": outputs["reversed"],
                 "normal_exact_match": normal_prediction == normalized_reference,
+                "reversed_exact_match": reversed_prediction == normalized_reference,
                 "normal_contains_reference": normalized_reference in normal_prediction,
+                "reversed_contains_reference": normalized_reference in reversed_prediction,
                 "normal_token_f1": token_f1(outputs["normal"], reference),
                 "reversed_token_f1": token_f1(outputs["reversed"], reference),
                 "completion_changed_when_reversed": normal_prediction != reversed_prediction,
@@ -115,11 +118,37 @@ def mean(items: list[float]) -> float:
     return sum(items) / len(items) if items else 0.0
 
 
+def generation_summary(cases: list[dict]) -> dict:
+    by_category = defaultdict(list)
+    for case in cases:
+        by_category[case["category"]].append(case["normal_token_f1"])
+    return {
+        "generated_samples": len(cases),
+        "normalized_exact_match": mean([float(case["normal_exact_match"]) for case in cases]),
+        "reversed_frame_exact_match": mean([float(case["reversed_exact_match"]) for case in cases]),
+        "contains_reference": mean([float(case["normal_contains_reference"]) for case in cases]),
+        "reversed_frame_contains_reference": mean(
+            [float(case["reversed_contains_reference"]) for case in cases]
+        ),
+        "token_f1": mean([case["normal_token_f1"] for case in cases]),
+        "reversed_frame_token_f1": mean([case["reversed_token_f1"] for case in cases]),
+        "normal_minus_reversed_token_f1": mean([case["normal_token_f1"] for case in cases])
+        - mean([case["reversed_token_f1"] for case in cases]),
+        "completion_change_rate_on_reversal": mean(
+            [float(case["completion_changed_when_reversed"]) for case in cases]
+        ),
+        "mean_generation_seconds": mean([case["normal_seconds"] for case in cases]),
+        "token_f1_by_category": {key: mean(values) for key, values in sorted(by_category.items())},
+        "qualitative": cases[:12],
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=True)
     parser.add_argument("--checkpoint", required=True)
     parser.add_argument("--generation-samples", type=int, default=100)
+    parser.add_argument("--temporal-generation-samples", type=int, default=80)
     parser.add_argument("--max-new-tokens", type=int, default=64)
     parser.add_argument("--output", default="artifacts/eval/video-omni-final.json")
     args = parser.parse_args()
@@ -155,28 +184,49 @@ def main() -> None:
     cases = generate_cases(
         model, dataset, tokenizer, processor, device, args.generation_samples, args.max_new_tokens
     )
-    by_category = defaultdict(list)
-    for case in cases:
-        by_category[case["category"]].append(case["normal_token_f1"])
+
+    temporal_root = ROOT / "data/eval/temporal-video"
+    temporal_manifest = generate_temporal_benchmark(temporal_root)
+    temporal_dataset = QIVDVideoDataset(
+        temporal_root,
+        tokenizer,
+        processor,
+        sequence_length=data["sequence_length"],
+        num_frames=model.config.num_frames,
+        num_video_tokens=model.config.num_video_tokens,
+        split="test",
+        split_seed=20260909,
+        train_samples=0,
+        validation_samples=0,
+    )
+    temporal_loss, temporal_reversed_loss = loss_ablation(
+        model, temporal_dataset, config["training"]["batch_size"], device
+    )
+    temporal_cases = generate_cases(
+        model,
+        temporal_dataset,
+        tokenizer,
+        processor,
+        device,
+        args.temporal_generation_samples,
+        args.max_new_tokens,
+    )
     report = {
         "experiment": config["experiment"]["name"],
         "checkpoint": args.checkpoint,
         "environment": environment_info(device),
         "held_out_test_samples": len(dataset),
-        "generated_test_samples": len(cases),
         "test_loss": normal_loss,
         "reversed_frame_test_loss": reversed_loss,
         "reversed_minus_normal_loss": reversed_loss - normal_loss,
-        "normalized_exact_match": mean([float(case["normal_exact_match"]) for case in cases]),
-        "contains_reference": mean([float(case["normal_contains_reference"]) for case in cases]),
-        "token_f1": mean([case["normal_token_f1"] for case in cases]),
-        "reversed_frame_token_f1": mean([case["reversed_token_f1"] for case in cases]),
-        "completion_change_rate_on_reversal": mean(
-            [float(case["completion_changed_when_reversed"]) for case in cases]
-        ),
-        "mean_generation_seconds": mean([case["normal_seconds"] for case in cases]),
-        "token_f1_by_category": {key: mean(values) for key, values in sorted(by_category.items())},
-        "qualitative": cases[:12],
+        "qivd_generation": generation_summary(cases),
+        "controlled_temporal": {
+            "manifest": temporal_manifest,
+            "test_loss": temporal_loss,
+            "reversed_frame_test_loss": temporal_reversed_loss,
+            "reversed_minus_normal_loss": temporal_reversed_loss - temporal_loss,
+            **generation_summary(temporal_cases),
+        },
     }
     write_json(ROOT / args.output, report)
     print(json.dumps(report, ensure_ascii=False, indent=2))

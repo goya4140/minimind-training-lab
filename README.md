@@ -86,6 +86,9 @@ uv run python scripts/evaluate_video_omni.py \
   --checkpoint artifacts/checkpoints/video-omni-sft-mps.pt
 ```
 
+评估脚本会自动生成一个不参与训练的 160 条受控时序基准，分别测试水平/垂直移动、大小变化和
+事件先后，并与 QIVD held-out test 一起进行正常帧/倒序帧对照。
+
 若希望在每个上游 checkpoint 完成后自动接力，并在 LLM、VLM、Video-Omni 末端运行固定评估：
 
 ```bash
