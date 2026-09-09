@@ -18,3 +18,15 @@
 该结果证明真实视频解码、逐帧视觉编码、时间位置编码、learned-query resampling、embedding 注入
 和语言 loss 可以端到端运行，也证明倒序会改变初始视频表示。它不是训练后能力结果；最终结论必须
 由固定 250 条 held-out test、正常/倒序消融和定性生成共同给出。
+
+## 真实单步反向传播
+
+同一真实样本随后完成一次 alignment optimizer step。为控制探针成本，语言主干为 2 层、hidden
+size 64，SigLIP2 和正式时序 hidden size 保持不变：
+
+- assistant 监督 token：50；
+- loss：`8.72732`；global grad norm：`0.68392`；
+- spatial query 单步最大参数更新：`1.00043e-04`；
+- SigLIP2 获得梯度的参数张量数：0。
+
+因此 assistant-only mask、冻结边界、梯度流和 optimizer update 均已用真实 MP4 验证。
