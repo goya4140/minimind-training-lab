@@ -51,6 +51,17 @@ def _qualitative_rows(report: dict, path: str, required_fields: tuple[str, ...])
             raise ValueError(f"malformed qualitative row: {path}[{index}]")
 
 
+def _category_metrics(report: dict, path: str) -> None:
+    metrics = _nested_value(report, path)
+    if not isinstance(metrics, dict) or not metrics:
+        raise ValueError(f"final evaluation needs category metrics: {path}")
+    for category, value in metrics.items():
+        if not isinstance(category, str) or not category:
+            raise ValueError(f"final evaluation category name is invalid: {path}")
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or not 0 <= float(value) <= 1:
+            raise ValueError(f"final evaluation category metric must be in [0, 1]: {path}.{category}")
+
+
 def validate_language_evaluation(report: dict, prefix: str = "") -> None:
     base = f"{prefix}." if prefix else ""
     _finite_metric(report, f"{base}corpus.validation_loss", minimum=0)
@@ -108,6 +119,7 @@ def validate_final_evaluations(llm: dict, vlm: dict, video: dict) -> None:
         ):
             _finite_metric(video, f"{section}.{metric}", minimum=0, maximum=1)
         _finite_metric(video, f"{section}.normal_minus_reversed_token_f1", minimum=-1, maximum=1)
+        _category_metrics(video, f"{section}.token_f1_by_category")
         _qualitative_rows(
             video,
             f"{section}.qualitative",

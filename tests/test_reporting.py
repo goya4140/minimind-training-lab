@@ -54,6 +54,7 @@ def valid_evaluations():
         "reversed_frame_token_f1": 0.5,
         "normal_minus_reversed_token_f1": 0.5,
         "completion_change_rate_on_reversal": 1.0,
+        "token_f1_by_category": {"motion": 1.0},
         "qualitative": qualitative,
     }
     llm = {
@@ -104,6 +105,10 @@ def test_final_evaluation_validator_accepts_complete_evidence():
             "above 1",
         ),
         (lambda llm, vlm, video: video["qivd_generation"].update(qualitative=[]), "qualitative row"),
+        (
+            lambda llm, vlm, video: video["qivd_generation"].update(token_f1_by_category={}),
+            "category metrics",
+        ),
     ],
 )
 def test_final_evaluation_validator_rejects_unpublishable_evidence(mutation, message):

@@ -85,6 +85,13 @@ def one_line(value: object, limit: int = 180) -> str:
     return text if len(text) <= limit else text[: limit - 1] + "…"
 
 
+def mean_field(rows: list[dict], field: str) -> float:
+    values = [float(row[field]) for row in rows if field in row]
+    if not values:
+        raise ValueError(f"no values available for summary field: {field}")
+    return sum(values) / len(values)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build the evidence-backed final handbook report.")
     parser.add_argument("--check", action="store_true", help="Only check that every required artifact exists.")
@@ -144,6 +151,8 @@ def main() -> None:
     video_language = video_eval["language_regression"]["corpus"]
     qualitative_vlm = vlm_eval.get("qualitative", [])
     visual_ablation = vlm_eval["visual_ablation"]
+    llm_generation_tps = mean_field(llm_eval["generation"], "tokens_per_second")
+    vlm_generation_tps = mean_field(qualitative_vlm, "tokens_per_second")
     total_training_seconds = sum(float(log.get("training_seconds", 0)) for log in logs.values())
     assets = ROOT / "reports/assets"
     render_training_curves(
@@ -191,11 +200,11 @@ def main() -> None:
         "| 模型 / 数据集 | 主要指标 |",
         "|---|---|",
         f"| LLM Pretrain 文本留出集 | loss {fmt(llm_pretrain_language['validation_loss'])}; PPL {fmt(llm_pretrain_language['validation_perplexity'])}; BPB {fmt(llm_pretrain_language['bits_per_byte'])} |",
-        f"| LLM SFT 文本留出集 | loss {fmt(llm_language['validation_loss'])}; PPL {fmt(llm_language['validation_perplexity'])}; PPL 相对 Pretrain 变化 {fmt(llm_language['validation_perplexity'] - llm_pretrain_language['validation_perplexity'])} |",
-        f"| VLM validation + 固定图像 | loss {fmt(vlm_eval['validation_loss'])}; 正确图关键词召回 {fmt(visual_ablation['correct_image_keyword_recall'])} |",
+        f"| LLM SFT 文本留出集 | loss {fmt(llm_language['validation_loss'])}; PPL {fmt(llm_language['validation_perplexity'])}; PPL 相对 Pretrain 变化 {fmt(llm_language['validation_perplexity'] - llm_pretrain_language['validation_perplexity'])}; 生成 {fmt(llm_generation_tps)} token/s |",
+        f"| VLM validation + 固定图像 | loss {fmt(vlm_eval['validation_loss'])}; 正确图关键词召回 {fmt(visual_ablation['correct_image_keyword_recall'])}; 生成 {fmt(vlm_generation_tps)} token/s |",
         f"| VLM 视觉反事实 | 错图/倒序召回 {fmt(visual_ablation['counterfactual_keyword_recall'])}; 正确减反事实 {fmt(visual_ablation['correct_minus_counterfactual_recall'])}; 回答变化率 {fmt(visual_ablation['completion_change_rate'])} |",
         f"| VLM 语言回归 | PPL {fmt(vlm_language['validation_perplexity'])}; 相对 LLM 变化 {fmt(vlm_language['validation_perplexity'] - llm_language['validation_perplexity'])} |",
-        f"| Video QIVD 留出集 | loss {fmt(video_eval['test_loss'])}; exact {fmt(qivd_generation['normalized_exact_match'])}; token F1 {fmt(qivd_generation['token_f1'])} |",
+        f"| Video QIVD 留出集 | loss {fmt(video_eval['test_loss'])}; exact {fmt(qivd_generation['normalized_exact_match'])}; token F1 {fmt(qivd_generation['token_f1'])}; 平均生成 {qivd_generation['mean_generation_seconds']:.2f}s/样例 |",
         f"| 受控时序集 | exact {fmt(temporal['normalized_exact_match'])}; 倒序 exact {fmt(temporal['reversed_frame_exact_match'])}; token F1 差 {fmt(temporal['normal_minus_reversed_token_f1'])} |",
         f"| Video-Omni 语言回归 | PPL {fmt(video_language['validation_perplexity'])}; 相对 LLM 变化 {fmt(video_language['validation_perplexity'] - llm_language['validation_perplexity'])} |",
         "",
@@ -260,6 +269,13 @@ def main() -> None:
         "",
         "### Video-Omni — QIVD 真实视频",
         "",
+        "| QIVD 类别 | Token F1 |",
+        "|---|---:|",
+        *[
+            f"| {one_line(category)} | {fmt(score)} |"
+            for category, score in qivd_generation["token_f1_by_category"].items()
+        ],
+        "",
         "| 问题 | 参考答案 | 正常帧回答 | 倒序帧回答 |",
         "|---|---|---|---|",
         *[
@@ -269,6 +285,13 @@ def main() -> None:
         ],
         "",
         "### Video-Omni — 受控时序视频",
+        "",
+        "| 受控类别 | Token F1 |",
+        "|---|---:|",
+        *[
+            f"| {one_line(category)} | {fmt(score)} |"
+            for category, score in temporal["token_f1_by_category"].items()
+        ],
         "",
         "| 类别 | 问题 | 参考答案 | 正常帧回答 | 倒序帧回答 |",
         "|---|---|---|---|---|",

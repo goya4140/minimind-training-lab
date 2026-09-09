@@ -14,7 +14,7 @@
 
 - Validation loss、Perplexity、Bits Per Byte；
 - 固定基础知识、指令跟随、重复生成测试；
-- tokens/s、峰值显存与首次生成延迟；
+- 每个固定样例的生成耗时与 tokens/s；
 - 生成样例必须同时展示成功和失败案例。
 
 Pretrain 与 SFT checkpoint 使用完全相同的文本留出集、tokenizer 和固定提示分别评估。最终报告并排
