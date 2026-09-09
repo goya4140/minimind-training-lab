@@ -24,7 +24,8 @@ data:
 
 training:
   initial_checkpoint: artifacts/checkpoints/llm-64m-pretrain-mps.pt
-  epochs: 2
+  # 40,000 micro-steps × batch 4 = 160,000 deterministic sample exposures.
+  steps: 40000
   batch_size: 4
   gradient_accumulation_steps: 4
   learning_rate: 0.00001
@@ -33,4 +34,3 @@ training:
   log_interval: 20
   save_interval: 2000
   checkpoint_path: artifacts/checkpoints/llm-64m-sft-mps.pt
-

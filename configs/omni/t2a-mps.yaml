@@ -25,7 +25,8 @@ data:
 
 training:
   stage: text-to-audio
-  epochs: 1
+  # 20,000 micro-steps × batch 8 = 160,000 deterministic T2A exposures.
+  steps: 20000
   batch_size: 8
   gradient_accumulation_steps: 5
   learning_rate: 0.0005

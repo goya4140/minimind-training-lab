@@ -17,7 +17,8 @@ data:
 
 training:
   stage: audio-projector-only
-  epochs: 1
+  # 5,000 micro-steps × batch 8 = 40,000 deterministic A2A exposures.
+  steps: 5000
   batch_size: 8
   gradient_accumulation_steps: 5
   learning_rate: 0.0005

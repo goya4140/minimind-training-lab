@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from minimind_lab.data import DeterministicBatchStream, ParquetVLMDataset, collate_vlm
-from minimind_lab.training import acquire_run_lock, load_config, resolve_device, seed_everything
+from minimind_lab.training import acquire_run_lock, load_config, resolve_device, resolve_training_steps, seed_everything
 from minimind_lab.training.utils import environment_info, write_json
 from minimind_lab.vlm import MiniMindVLM, VLMConfig
 
@@ -124,7 +124,7 @@ def main() -> None:
     batch_stream = DeterministicBatchStream(
         dataset, batch_size=training["batch_size"], seed=config["experiment"]["seed"]
     )
-    total_steps = batch_stream.steps_per_epoch * training["epochs"]
+    total_steps = resolve_training_steps(training, batch_stream.steps_per_epoch)
     optimizer = torch.optim.AdamW(
         (parameter for parameter in model.parameters() if parameter.requires_grad),
         lr=training["learning_rate"],

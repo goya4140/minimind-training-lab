@@ -18,7 +18,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from minimind_lab.data import DeterministicBatchStream, JsonlSFTDataset
 from minimind_lab.llm import MiniMindConfig, MiniMindForCausalLM
-from minimind_lab.training import acquire_run_lock, load_config, resolve_device, seed_everything
+from minimind_lab.training import acquire_run_lock, load_config, resolve_device, resolve_training_steps, seed_everything
 from minimind_lab.training.utils import environment_info, write_json
 
 
@@ -88,7 +88,7 @@ def main() -> None:
         train_dataset, batch_size=training["batch_size"], seed=config["experiment"]["seed"]
     )
     validation_loader = DataLoader(validation_dataset, batch_size=training["batch_size"], num_workers=0)
-    total_steps = batch_stream.steps_per_epoch * training["epochs"]
+    total_steps = resolve_training_steps(training, batch_stream.steps_per_epoch)
     model = MiniMindForCausalLM(MiniMindConfig(**config["model"])).to(device)
     initial_checkpoint = ROOT / training["initial_checkpoint"]
     if not initial_checkpoint.exists():

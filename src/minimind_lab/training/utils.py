@@ -34,6 +34,17 @@ def resolve_device(requested: str) -> torch.device:
     return torch.device("cpu")
 
 
+def resolve_training_steps(training: dict, steps_per_epoch: int) -> int:
+    """Resolve an explicit micro-step budget or fall back to whole epochs."""
+    if "steps" in training:
+        total = int(training["steps"])
+    else:
+        total = steps_per_epoch * int(training["epochs"])
+    if total <= 0:
+        raise ValueError("training steps must be positive")
+    return total
+
+
 def write_json(path: str | Path, payload: dict) -> None:
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)

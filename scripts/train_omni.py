@@ -19,7 +19,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from minimind_lab.data import DeterministicBatchStream, ParquetOmniDataset, collate_omni
 from minimind_lab.omni import MiniMindOmni, OmniConfig
 from minimind_lab.omni.external import load_sensevoice
-from minimind_lab.training import acquire_run_lock, load_config, resolve_device, seed_everything
+from minimind_lab.training import acquire_run_lock, load_config, resolve_device, resolve_training_steps, seed_everything
 from minimind_lab.training.utils import environment_info, write_json
 
 PATH_KEYS = {"language_checkpoint", "checkpoint", "audio_encoder", "vision_encoder", "codec"}
@@ -165,7 +165,7 @@ def main() -> None:
     train_dataset = torch.utils.data.Subset(full_dataset, range(split))
     validation = torch.utils.data.Subset(full_dataset, range(split, len(full_dataset)))
     batch_stream = DeterministicBatchStream(train_dataset, training["batch_size"], config["experiment"]["seed"])
-    total_steps = batch_stream.steps_per_epoch * training["epochs"]
+    total_steps = resolve_training_steps(training, batch_stream.steps_per_epoch)
     optimizer = torch.optim.AdamW(
         (parameter for parameter in model.parameters() if parameter.requires_grad),
         lr=training["learning_rate"],

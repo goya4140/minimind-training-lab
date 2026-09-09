@@ -47,16 +47,16 @@
 本机正式路线使用单进程 MPS。显存是统一内存，但仍用 micro-batch + gradient accumulation
 控制激活峰值；下表保持原 CUDA 配置的 effective batch 语义：
 
-| 阶段 | sequence length | micro-batch | accumulation | effective batch |
-|---|---:|---:|---:|---:|
-| LLM pretrain | 340 | 8 | 32 | 256 |
-| LLM SFT | 768 | 4 | 4 | 16 |
-| VLM alignment | 450 | 4 | 4 | 16 |
-| VLM SFT | 768 | 2 | 8 | 16 |
-| Omni T2A | 512 | 8 | 5 | 40 |
-| Omni audio alignment | 640 | 8 | 5 | 40 |
-| Omni A2A SFT | 768 | 4 | 4 | 16 |
-| Omni I2T | 768 | 4 | 4 | 16 |
+| 阶段 | seq len | micro-steps | micro-batch | accumulation | 样本曝光数 |
+|---|---:|---:|---:|---:|---:|
+| LLM pretrain | 340 | 317,048 | 8 | 32 | 2,536,384 |
+| LLM SFT | 768 | 40,000 | 4 | 4 | 160,000 |
+| VLM alignment | 450 | 30,000 | 4 | 4 | 120,000 |
+| VLM SFT | 768 | 30,000 | 2 | 8 | 60,000 |
+| Omni T2A | 512 | 20,000 | 8 | 5 | 160,000 |
+| Omni audio alignment | 640 | 5,000 | 8 | 5 | 40,000 |
+| Omni A2A SFT | 768 | 10,000 | 4 | 4 | 40,000 |
+| Omni I2T | 768 | 10,000 | 4 | 4 | 40,000 |
 
 VLM/Omni 的 batch 是保守起点，正式启动前还会用完整模型做 MPS 峰值和吞吐探针；若需要
 下调 micro-batch，将同比提高 accumulation，保持 effective batch 不变。运行
@@ -66,3 +66,9 @@ VLM/Omni 的 batch 是保守起点，正式启动前还会用完整模型做 MPS
 `scripts/run_mps_pipeline.py` 是可恢复的阶段编排器：已有最终 checkpoint 会被跳过，正在运行的
 阶段按锁等待，中断阶段通过 `--resume` 继续；LLM SFT、VLM SFT 和 Omni I2T 完成后分别触发
 固定评估。pipeline 自身也持有独立锁，避免启动两个编排器。
+
+除 LLM pretrain 完整覆盖约 2 个 epoch 外，后续 MPS 阶段采用固定 micro-step 预算并从完整
+数据池做确定性无放回轮转：LLM SFT 约覆盖 17.7% 数据，VLM alignment 约 9.4%，VLM SFT
+约 2.1%，Omni T2A 约 31.0%，两个 A2A 阶段各约 52.1%，Omni I2T 约 1.4%。这是为了在
+单台 M4 Pro 上完成三模型训练—评估闭环；最终报告必须称为 fixed-budget reproduction，不能
+声称完成上游 full-epoch 训练。

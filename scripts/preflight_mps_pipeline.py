@@ -88,6 +88,8 @@ def inspect_stage(name: str, runner: str, config_path: str, prior_outputs: set[P
         "micro_batch_size": training["batch_size"],
         "gradient_accumulation_steps": training.get("gradient_accumulation_steps", 1),
         "effective_batch_size": training["batch_size"] * training.get("gradient_accumulation_steps", 1),
+        "planned_micro_steps": training.get("steps"),
+        "planned_sample_exposures": training.get("steps", 0) * training["batch_size"],
         "output": relative(output),
         "status": status,
         "lock_owner_pid": owner,
