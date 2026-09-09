@@ -16,10 +16,8 @@ STAGES = [
     ("llm-sft", "scripts/train_sft.py", "configs/llm/sft-mps.yaml"),
     ("vlm-alignment", "scripts/train_vlm.py", "configs/vlm/alignment-mps.yaml"),
     ("vlm-sft", "scripts/train_vlm.py", "configs/vlm/sft-mps.yaml"),
-    ("omni-t2a", "scripts/train_omni.py", "configs/omni/t2a-mps.yaml"),
-    ("omni-audio-alignment", "scripts/train_omni.py", "configs/omni/a2a-alignment-mps.yaml"),
-    ("omni-a2a-sft", "scripts/train_omni.py", "configs/omni/a2a-sft-mps.yaml"),
-    ("omni-i2t", "scripts/train_omni.py", "configs/omni/i2t-mps.yaml"),
+    ("video-omni-alignment", "scripts/train_video_omni.py", "configs/video/alignment-mps.yaml"),
+    ("video-omni-sft", "scripts/train_video_omni.py", "configs/video/sft-mps.yaml"),
 ]
 DEPENDENCY_KEYS = ("language_checkpoint", "alignment_checkpoint", "checkpoint")
 COMPONENT_KEYS = ("vision_encoder", "audio_encoder", "codec")
@@ -55,6 +53,15 @@ def inspect_stage(name: str, runner: str, config_path: str, prior_outputs: set[P
     for path in required:
         if not path.exists():
             missing.append(relative(path))
+
+    data_path = ROOT / config["data"]["path"]
+    if data_path.name == "qivd" and (data_path / "metadata.parquet").is_file():
+        import pyarrow.parquet as pq
+
+        rows = pq.read_table(data_path / "metadata.parquet", columns=["video_file_name"]).to_pylist()
+        missing_videos = sum(not (data_path / row["video_file_name"]).is_file() for row in rows)
+        if missing_videos:
+            missing.append(f"{relative(data_path)}/videos ({missing_videos} files missing)")
 
     dependencies = [model[key] for key in DEPENDENCY_KEYS if model.get(key)]
     if config["training"].get("initial_checkpoint"):

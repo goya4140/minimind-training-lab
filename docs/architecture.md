@@ -14,19 +14,33 @@ VLM 在 LLM 上增加冻结的 SigLIP2 Base P32 视觉编码器。256×256 图�
 仓库实现位于 `src/minimind_lab/vlm/model.py`：既支持只训练 projector 的 alignment 阶段，
 也支持解冻 LLM 首尾边界层的 SFT 阶段。
 
-## 3. Omni
+## 3. Video-Omni（Video → Text）
 
-Omni 使用 Thinker–Talker 双路径：
+第三个模型关注视频理解，而不是语音生成。输入是均匀采样的 8 帧视频和一个文本问题，输出是文本答案：
 
-- Thinker：复用 LLM，接收文本、SenseVoice 音频特征和 SigLIP2 图像特征；
-- Bridge：默认提取 Thinker 中间层 hidden state；
-- Talker：4 层 Decoder，以 Bridge 语义状态和历史 Mimi codes 为条件；
-- MTP heads：同步预测 8 路 Mimi codebook；
-- Mimi decoder：将离散 code 增量还原为 24 kHz 波形；
-- CAM++ speaker embedding：提供音色条件。
+```text
+video.mp4
+  → uniform frame sampler (8 frames, 保留首尾)
+  → frozen SigLIP2 (per-frame patch features)
+  → spatial mean pooling (1 vector / frame)
+  → learned frame-position embeddings
+  → 2-layer temporal Transformer
+  → 16 learned-query temporal tokens
+  → MLP projector (768 → 768)
+  → 替换 16 个 <|video_pad|> embedding
+  → MiniMind causal LLM
+  → text answer
+```
 
-SenseVoice、SigLIP2、Mimi 始终冻结。可训练主体约 113M，但运行时还需加载约 425M 的冻结外部模块。
+`TemporalVideoAdapter` 显式加入帧位置，因此交换帧序会改变视频表示；learned-query resampler
+把可变的帧语义压缩为固定 16 个视频 token。视觉编码器始终冻结，第一阶段只训练 temporal adapter
+和 projector；第二阶段额外解冻 LLM 第一层与最后一层。该设计让三条路线共享同一个语言主干，
+同时能用“倒序帧”消融检验模型是否真正使用时间顺序。
 
-仓库当前实现的是可独立测试的神经网络核心：外部 encoder/codec 以已编码特征和离散 code
-作为明确边界输入，避免把下载、预处理和模型逻辑耦合在一起。`MiniMindOmni` 同时返回文本
-logits、8 路音频 logits 以及分项 loss；Talker 可从 Thinker 后四层复制初始化。
+正式配置共 176,205,312 参数：SigLIP2 94,552,320（冻结）、LLM 63,912,192、temporal adapter
+16,558,080、projector 1,182,720。Alignment 阶段可训练 17,740,800 参数；SFT 阶段加上 LLM
+首尾层后可训练 32,489,856 参数。
+
+这里的“从头训练”指 MiniMind LLM 主干及新增的多模态/时序模块从随机初始化训练；SigLIP2
+作为明确标注的冻结感知器使用公开预训练权重。以 2,900 条视频从零训练视觉 backbone 不足以形成
+有意义的视觉表征，因此不把它伪装成本项目已经完成的目标。

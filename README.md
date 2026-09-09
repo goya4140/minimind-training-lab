@@ -4,7 +4,7 @@
 
 1. **LLM**：文本输入 → 文本输出；
 2. **VLM**：图像 + 文本输入 → 文本输出；
-3. **Omni**：文本 / 图像 / 语音输入 → 文本 / 流式语音输出。
+3. **Video-Omni**：视频 + 文本问题输入 → 文本输出，重点学习跨帧时序建模。
 
 最终交付包括模型代码、训练配置、实验日志、检查点来源、定量评估、定性样例和可复现命令。大体积数据和模型权重通过 release 或外部模型仓库存放，不直接提交到 Git。
 
@@ -14,7 +14,7 @@
 |---|---|---|---|
 | LLM | ✅ 原生 PyTorch 主干（63,912,192 参数正式配置） | 🚧 正式 MPS 预训练进行中 | 🚧 step 12,000 中期评估已记录 |
 | VLM | ✅ Early-fusion 与冻结策略已实现 | ⏳ 真实数据/SigLIP2 已验证，等待 LLM SFT | ✅ 固定 6 图评估入口就绪 |
-| Omni | ✅ Thinker–Bridge–Talker 已实现 | ⏳ 真实 T2A/A2A 管线已验证，等待 LLM SFT | ✅ 文本/音频/图像评估入口就绪 |
+| Video-Omni | ✅ 帧编码器 + 时序适配器 + LLM 已实现 | ⏳ QIVD 下载中，等待 LLM SFT | ✅ 留出集、倒序帧消融与分类型评估就绪 |
 
 状态以 [`docs/progress.md`](docs/progress.md) 中的证据为准。
 
@@ -24,8 +24,8 @@
 MiniMind LLM (Decoder-only, 64M)
   ├── Pretrain → SFT
   ├── + Frozen SigLIP2 + Vision Projector → VLM
-  └── + Frozen SenseVoice/SigLIP2 Projectors
-      + Thinker/Bridge/Talker + Mimi codes → Omni
+  └── + Frozen SigLIP2 + Temporal Adapter
+      + Learned-query Resampler → Video-Omni (Video → Text)
 ```
 
 设计详情：[`docs/architecture.md`](docs/architecture.md)  
@@ -52,7 +52,7 @@ uv run python scripts/fetch_data.py pretrain sft
 uv run python scripts/train_pretrain.py --config configs/llm/pretrain-mps.yaml --resume
 ```
 
-`fetch_data.py all` 会进一步下载 VLM 与 Omni 阶段约 11.7 GB 的固定版本数据。
+`fetch_data.py all` 会进一步下载 VLM 数据。
 冻结的多模态组件使用 `uv run python scripts/fetch_models.py all` 下载并校验。
 
 正式 BPE 评估：
@@ -73,18 +73,20 @@ uv run python scripts/evaluate_vlm.py \
   --checkpoint artifacts/checkpoints/vlm-sft-mps.pt
 ```
 
-Omni 四阶段入口依次为 `t2a → a2a-alignment → a2a-sft → i2t`：
+Video-Omni 使用固定版本 QIVD，先训练时序适配器，再进行视频指令微调：
 
 ```bash
-uv sync --extra multimodal --extra omni --extra dev
+uv sync --extra multimodal --extra video --extra dev
+uv run python scripts/fetch_qivd.py
 uv run python scripts/preflight_mps_pipeline.py
-uv run python scripts/train_omni.py --config configs/omni/t2a-mps.yaml --resume
-uv run python scripts/train_omni.py --config configs/omni/a2a-alignment-mps.yaml --resume
-uv run python scripts/train_omni.py --config configs/omni/a2a-sft-mps.yaml --resume
-uv run python scripts/train_omni.py --config configs/omni/i2t-mps.yaml --resume
+uv run python scripts/train_video_omni.py --config configs/video/alignment-mps.yaml --resume
+uv run python scripts/train_video_omni.py --config configs/video/sft-mps.yaml --resume
+uv run python scripts/evaluate_video_omni.py \
+  --config configs/video/sft-mps.yaml \
+  --checkpoint artifacts/checkpoints/video-omni-sft-mps.pt
 ```
 
-若希望在每个上游 checkpoint 完成后自动接力，并在 LLM、VLM、Omni 末端运行固定评估：
+若希望在每个上游 checkpoint 完成后自动接力，并在 LLM、VLM、Video-Omni 末端运行固定评估：
 
 ```bash
 caffeinate -i uv run python scripts/run_mps_pipeline.py
@@ -105,7 +107,7 @@ caffeinate -i uv run python scripts/run_mps_pipeline.py
 
 - [jingyaogong/minimind](https://github.com/jingyaogong/minimind) — LLM
 - [jingyaogong/minimind-v](https://github.com/jingyaogong/minimind-v) — VLM
-- [jingyaogong/minimind-o](https://github.com/jingyaogong/minimind-o) — Omni
+- [jingyaogong/minimind-o](https://github.com/jingyaogong/minimind-o) — 多模态训练组织方式参考；本项目第三模型按学习目标改为 Video → Text
 
 具体版本记录在 [`docs/upstream.md`](docs/upstream.md)。
 
@@ -115,7 +117,7 @@ caffeinate -i uv run python scripts/run_mps_pipeline.py
 - smoke test 与正式训练结果明确分开；
 - 每个实验记录数据版本、Git commit、随机种子、硬件、耗时和指标；
 - 不把训练 loss 下降等同于模型能力提升；
-- VLM 和 Omni 必须同时做语言能力回归测试；
+- VLM 和 Video-Omni 必须同时做语言能力回归与模态消融测试；
 - 未完成或未验证的内容明确标记，不制造“训练成功”的结论。
 
 ## License

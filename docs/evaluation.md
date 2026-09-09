@@ -24,26 +24,17 @@
 - 多图顺序和指代测试；
 - 重新运行 LLM 文本评估，测量语言能力遗忘。
 
-## Omni
+## Video-Omni
 
-- 语音输入理解 Accuracy、CER/WER；
-- 语音输出 CER/WER 与 Speaker Similarity；
-- VQA/Caption；
-- 首文本 token 延迟、首音频帧延迟、实时系数；
-- barge-in 成功率；
-- LLM/VLM 能力回归测试。
+- 固定 250 条 held-out QIVD test 的 assistant-only loss；
+- 在固定前 100 条 test 样本上报告 normalized exact match、reference containment 与 token F1；
+- 按 QIVD category 分组报告 token F1，避免总体均值掩盖弱项；
+- 对相同视频倒序 8 帧，报告 loss 差值、token F1 差值和回答变化率；
+- 保存至少 12 组问题、参考答案、正常帧回答、倒序帧回答作为定性样例；
+- 报告单样本生成耗时，并重新运行 LLM 文本评估检查能力遗忘。
 
-仓库固定 `data/eval/omni/` 的中英文语音、图像和纯文本输入。`scripts/evaluate_omni.py`
-对同一 checkpoint 运行 T2A、A2A 和 I2A，保存文本回答、音频 code 帧数、端到端耗时，
-并通过冻结 Mimi 解码为 24 kHz WAV。语音输出 CER/WER 已自动量化；speaker similarity 和
-barge-in 属于后续门禁，不能用主观试听替代。
-
-`minimind_lab.evaluation` 已提供不依赖第三方库的 Levenshtein、CER 和 WER，供冻结 ASR
-转写后统一计算；中文 CER 会忽略空白，英文 WER 不区分大小写。
-
-当前 `evaluate_omni.py` 已把语音输出经 Mimi 解码，再用冻结 SenseVoiceSmall 转写，以模型的
-文本回答为 reference 计算逐样本 CER/WER，同时记录音频时长与 real-time factor。转写前会去除
-SenseVoice 控制标签、Unicode 规范化并移除标点。speaker similarity 和 barge-in 仍是未实现门禁，
-最终报告不得把它们写成已通过。
+倒序评估是必要的时间建模门禁：正常输入优于倒序输入才构成模型利用帧序的证据。若两者无差异，
+最终报告必须写成“时序敏感性未建立”，不能仅凭视频 QA 文本分数宣称视频理解成功。后续可使用
+VisualBench 等专门要求跨帧推理的外部数据作第二重检验，但不与 QIVD 训练集混用。
 
 最终报告必须注明模型规模、冻结外部模块规模、数据范围与硬件，不能只展示训练 loss。

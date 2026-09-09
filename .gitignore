@@ -12,6 +12,7 @@ artifacts/checkpoints/
 artifacts/models/
 artifacts/logs/
 artifacts/eval/
+artifacts/*.log
 !artifacts/.gitkeep
 
 # Downloaded upstream/reference models

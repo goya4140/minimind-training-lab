@@ -42,16 +42,16 @@ EVALUATIONS = {
             "artifacts/eval/vlm-final.json",
         ],
     ),
-    "omni-i2t": (
-        "artifacts/eval/omni-final.json",
+    "video-omni-sft": (
+        "artifacts/eval/video-omni-final.json",
         [
-            "scripts/evaluate_omni.py",
+            "scripts/evaluate_video_omni.py",
+            "--config",
+            "configs/video/sft-mps.yaml",
             "--checkpoint",
-            "artifacts/checkpoints/omni-i2t-mps.pt",
-            "--device",
-            "mps",
+            "artifacts/checkpoints/video-omni-sft-mps.pt",
             "--output",
-            "artifacts/eval/omni-final.json",
+            "artifacts/eval/video-omni-final.json",
         ],
     ),
 }

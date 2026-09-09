@@ -8,18 +8,20 @@
 | LLM Pretrain | `pretrain_t2t_mini.jsonl` | 1,270,238 | 1,241,043,656 | `6dd6716c84ab36897bdbfc7f88e04f4441c48c1ab7ecee88ce0b0e7d4685560c` |
 | LLM SFT | `sft_t2t_mini.jsonl` | 905,718 | 1,739,201,170 | `abb1e76b2056e14728beb78db96b7b3c491a0bef1ed3e34a9b381b28f29fa518` |
 | VLM alignment | `pretrain_i2t.parquet` | 1,274,698 | 4,326,415,097 | `65761f37d1947d54a1d85457ff70938275e4ef58ba5cedcd02463a3a247c93fd` |
-| VLM SFT / Omni I2T | `sft_i2t.parquet` | 2,904,511 | 4,934,887,104 | `712f4026cd0e21b369feddca7334b1e465cb8182b5f298006f3f4f877f926643` |
-| Omni T2A mini | `sft_t2a_mini.parquet` | 515,415 | 1,558,442,729 | `dfe44b8b263ecd0579627160cf258b363b4c18457ae03221691e2e1a85e60ab8` |
-| Omni A2A mini | `sft_a2a_mini.parquet` | 76,797 | 881,313,734 | `fba0159e424ee106c9e5a732fe607875b3780d0c9f8b6806038879acd279782b` |
+| VLM SFT | `sft_i2t.parquet` | 2,904,511 | 4,934,887,104 | `712f4026cd0e21b369feddca7334b1e465cb8182b5f298006f3f4f877f926643` |
+| Video-Omni | `QIVD/metadata.parquet + videos` | 2,900 | 下载完成后生成 | 下载完成后生成 |
 
 来源：[jingyaogong/minimind_dataset](https://huggingface.co/datasets/jingyaogong/minimind_dataset)。
 
-固定 revisions：文本 `312afb4f…`、VLM `1e279a8b…`、Omni `d6588e12…`。数据卡声明的许可分别为
-`Apache-2.0 / CC-BY-NC-2.0`、`Apache-2.0`、`Apache-2.0 / GPL-3.0`；模型与数据产物发布时
+固定 revisions：文本 `312afb4f…`、VLM `1e279a8b…`。Video-Omni 使用
+[Qualcomm AI Research QIVD](https://huggingface.co/datasets/Qualcomm-AI-Research/QIVD)，固定 revision
+`c5376ab0b9fd3643545a1503413aee64f26ba22a`。数据卡声明的许可分别为
+`Apache-2.0 / CC-BY-NC-2.0`、`Apache-2.0`；QIVD 为 research-only。模型与数据产物发布时
 必须分别保留适用的来源与许可说明。
 
-Omni mini 数据按上游定义只覆盖英文、无视觉的低成本闭环验证；中文语音能力不能由该数据
-推出。Omni 的视觉阶段复用完整 `sft_i2t.parquet`。
+QIVD 视频不提交到 Git，也不重新分发。`scripts/fetch_qivd.py` 以单并发断点下载，并在全部 2,900
+个文件完成后生成逐文件 SHA-256 与聚合 SHA-256。ID 经过 seed 48 稳定哈希后，固定划分为
+2,400 train / 250 validation / 250 test。
 
 ## SFT 结构验证
 
@@ -35,9 +37,8 @@ tool-call 样本；部分工具元数据以 JSON 字符串存储，因此数据�
 
 这项检查证明 loss mask 与已下载数据格式兼容，不代表 SFT 模型质量。
 
-## Omni T2A 结构验证
+## Video-Omni 结构验证
 
-本地 Parquet 元数据验证为 515,415 行，字段为 `conversations: large_string`、
-`question_audios: list<binary>`、`answer_audios: list<list<int64>>`。真实首条样本完成了
-ChatML 编码、Mimi 帧优先 code 的 8 码本拆分以及延迟 teacher-forcing 标签构造；详细结果见
-`reports/omni-t2a-pipeline-probe.md`。
+QIVD 元数据验证为 2,900 行，包含视频路径、问题、长答案、短答案、类别与时间戳。真实 MP4 已完成
+PyAV 解码、8 帧均匀采样、SigLIP2 预处理及 Video-Omni 前向；详细结果见
+[`reports/video-omni-pipeline-probe.md`](video-omni-pipeline-probe.md)。

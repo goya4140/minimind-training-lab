@@ -1,0 +1,44 @@
+experiment:
+  name: video-omni-sft-mps
+  seed: 48
+  device: mps
+
+model:
+  alignment_checkpoint: artifacts/checkpoints/video-omni-alignment-mps.pt
+  vision_encoder: assets/models/siglip2-base-p32-256-ve
+  vocab_size: 6400
+  hidden_size: 768
+  num_hidden_layers: 8
+  num_attention_heads: 8
+  num_key_value_heads: 4
+  intermediate_size: 2432
+  max_position_embeddings: 32768
+  vision_hidden_size: 768
+  video_token_id: 13
+  num_frames: 8
+  num_video_tokens: 16
+  temporal_layers: 2
+  temporal_heads: 8
+
+tokenizer:
+  path: assets/tokenizer
+
+data:
+  path: data/raw/qivd
+  sequence_length: 384
+  split_seed: 48
+  train_samples: 2400
+  validation_samples: 250
+
+training:
+  stage: video-instruction-tuning
+  # Two passes with only the LLM boundary layers unfrozen.
+  steps: 4800
+  batch_size: 1
+  gradient_accumulation_steps: 8
+  learning_rate: 0.000005
+  weight_decay: 0.1
+  grad_clip: 1.0
+  log_interval: 20
+  save_interval: 400
+  checkpoint_path: artifacts/checkpoints/video-omni-sft-mps.pt
