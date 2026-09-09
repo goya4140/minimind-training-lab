@@ -129,10 +129,12 @@ class MiniMindForCausalLM(nn.Module):
         if isinstance(module, (nn.Linear, nn.Embedding)):
             nn.init.normal_(module.weight, mean=0.0, std=0.02)
 
-    def forward(self, input_ids: torch.Tensor, labels: torch.Tensor | None = None) -> dict[str, torch.Tensor | None]:
-        if input_ids.size(1) > self.config.max_position_embeddings:
+    def forward_from_embeddings(
+        self, inputs_embeds: torch.Tensor, labels: torch.Tensor | None = None
+    ) -> dict[str, torch.Tensor | None]:
+        if inputs_embeds.size(1) > self.config.max_position_embeddings:
             raise ValueError("sequence exceeds max_position_embeddings")
-        hidden = self.dropout(self.embed_tokens(input_ids))
+        hidden = self.dropout(inputs_embeds)
         for layer in self.layers:
             hidden = layer(hidden)
         logits = self.lm_head(self.norm(hidden))
@@ -144,6 +146,9 @@ class MiniMindForCausalLM(nn.Module):
                 ignore_index=-100,
             )
         return {"logits": logits, "loss": loss}
+
+    def forward(self, input_ids: torch.Tensor, labels: torch.Tensor | None = None) -> dict[str, torch.Tensor | None]:
+        return self.forward_from_embeddings(self.embed_tokens(input_ids), labels)
 
     @torch.inference_mode()
     def generate(self, input_ids: torch.Tensor, max_new_tokens: int = 64, temperature: float = 0.8) -> torch.Tensor:

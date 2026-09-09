@@ -1,0 +1,22 @@
+experiment:
+  name: vlm-sft
+  seed: 42
+  device: cuda
+
+model:
+  alignment_checkpoint: artifacts/checkpoints/vlm-alignment.pt
+  vision_encoder: assets/models/siglip2-base-p32-256-ve
+
+data:
+  path: data/raw/sft_i2t.parquet
+  sequence_length: 768
+  image_size: 256
+
+training:
+  stage: projector-and-llm-boundary-layers
+  epochs: 2
+  batch_size: 16
+  learning_rate: 0.000005
+  precision: bfloat16
+  checkpoint_path: artifacts/checkpoints/vlm-sft.pt
+
