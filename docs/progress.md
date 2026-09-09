@@ -43,3 +43,7 @@
 运行恢复点，因此哈希只用于证明当时的原子快照，不作为最终模型哈希。
 
 本节只陈述已验证的运行状态。最终步数、耗时、曲线和 checkpoint 哈希将在训练完成后写入正式报告。
+
+step 12,000 已保留模型中期快照并按 32 条 held-out 样本完成诊断：validation loss 4.0441、
+perplexity 57.06、BPB 2.0264。固定生成已有局部语义能力但仍存在复读、角色漂移和乱码，详见
+[`reports/llm-pretrain-step12000.md`](../reports/llm-pretrain-step12000.md)。

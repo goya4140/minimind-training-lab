@@ -89,12 +89,13 @@ def main() -> None:
     parser.add_argument("--checkpoint", required=True)
     parser.add_argument("--validation-samples", type=int, default=2048)
     parser.add_argument("--max-new-tokens", type=int, default=80)
+    parser.add_argument("--device", default=None)
     parser.add_argument("--output", default="artifacts/eval/llm-bpe.json")
     args = parser.parse_args()
 
     config = load_config(args.config)
     seed_everything(config["experiment"]["seed"])
-    device = resolve_device(config["experiment"]["device"])
+    device = resolve_device(args.device or config["experiment"]["device"])
     tokenizer = AutoTokenizer.from_pretrained(ROOT / config["tokenizer"]["path"], local_files_only=True)
     dataset = JsonlPretrainDataset(
         ROOT / config["data"]["path"], tokenizer, sequence_length=config["data"]["sequence_length"]
