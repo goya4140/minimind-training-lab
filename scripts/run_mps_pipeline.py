@@ -114,6 +114,11 @@ def main() -> None:
     print(json.dumps({"pipeline": "mps", "stages": [item[0] for item in STAGES]}, ensure_ascii=False), flush=True)
 
     for stage, runner, config in STAGES:
+        if stage == "video-omni-alignment":
+            run(
+                ["scripts/cache_video_features.py", "--config", config],
+                console_log=ROOT / "artifacts/logs/video-feature-cache.console.log",
+            )
         output = output_for(config)
         polls = 0
         while active_pid(output) is not None:

@@ -52,6 +52,12 @@ AdamW 更新参数，同时把 weight decay 与 gradient update 分开。Cosine 
 [`scripts/run_mps_pipeline.py`](../scripts/run_mps_pipeline.py) 只运行缺失阶段，等待 active stage，并对
 中断阶段加 `--resume`。这使长时间本地训练不需要人工守在终端旁。
 
+## 冻结特征缓存
+
+冻结 encoder 的输出对同一预处理输入是确定的。`cache_video_features.py` 用 completion bitmap 与
+memory-mapped FP16 数组逐批缓存 QIVD patch features；中断后只补未完成视频。训练仍更新 spatial/
+temporal adapter 和 projector，最终评估仍走原始 MP4，因此缓存不是“跳过视频输入”。
+
 ## 数值门禁
 
 每次训练检查 loss 是否 finite；最终 checkpoint 用

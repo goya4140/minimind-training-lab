@@ -29,6 +29,7 @@ data:
   split_seed: 48
   train_samples: 2400
   validation_samples: 250
+  feature_cache: data/processed/qivd-siglip2-patch-fp16.npy
 
 training:
   stage: video-instruction-tuning

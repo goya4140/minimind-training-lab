@@ -91,6 +91,11 @@ class MiniMindVideoOmni(nn.Module):
         if features.ndim != 3:
             raise ValueError("vision encoder must return [batch*frames, patches, hidden]")
         patch_features = features.view(batch_size, frame_count, features.size(1), features.size(2))
+        return self.encode_patch_features(patch_features)
+
+    def encode_patch_features(self, patch_features: torch.Tensor) -> torch.Tensor:
+        if patch_features.ndim != 4:
+            raise ValueError("patch features must be [batch, frames, patches, hidden]")
         return self.video_projector(self.temporal_adapter(patch_features))
 
     def inject_video_features(
@@ -115,6 +120,11 @@ class MiniMindVideoOmni(nn.Module):
         embeddings = self.language_model.embed_tokens(input_ids)
         embeddings = self.inject_video_features(input_ids, embeddings, video_features)
         return self.language_model.forward_from_embeddings(embeddings, labels)
+
+    def forward_with_patch_features(
+        self, input_ids: torch.Tensor, patch_features: torch.Tensor, labels: torch.Tensor | None = None
+    ) -> dict[str, torch.Tensor | None]:
+        return self.forward_with_features(input_ids, self.encode_patch_features(patch_features), labels)
 
     def forward(
         self, input_ids: torch.Tensor, pixel_values: torch.Tensor, labels: torch.Tensor | None = None

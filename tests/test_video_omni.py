@@ -47,6 +47,19 @@ def test_video_omni_forward_and_loss_are_finite():
     assert torch.isfinite(output["loss"])
 
 
+def test_cached_patch_features_match_direct_adapter_path():
+    model = MiniMindVideoOmni(config(), FakeVision())
+    input_ids = torch.randint(20, 259, (1, 12))
+    input_ids[:, 1:4] = 13
+    pixels = torch.randn(1, 4, 3, 8, 8)
+    with torch.inference_mode():
+        vision_output = model.vision_encoder(pixels.flatten(0, 1)).last_hidden_state
+        patches = vision_output.view(1, 4, 4, 32)
+        direct = model(input_ids, pixels)["logits"]
+        cached = model.forward_with_patch_features(input_ids, patches)["logits"]
+    assert torch.allclose(direct, cached)
+
+
 def test_video_adapter_preserves_frame_order_information():
     torch.manual_seed(7)
     model = MiniMindVideoOmni(config(), FakeVision())

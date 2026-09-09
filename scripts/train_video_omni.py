@@ -54,6 +54,12 @@ def cosine_lr(step: int, total_steps: int, base_lr: float) -> float:
     return base_lr * (0.1 + 0.45 * (1 + math.cos(math.pi * step / total_steps)))
 
 
+def forward_video(model, input_ids, video_inputs, labels):
+    if video_inputs.ndim == 4:
+        return model.forward_with_patch_features(input_ids, video_inputs, labels)
+    return model(input_ids, video_inputs, labels)
+
+
 @torch.inference_mode()
 def validation_losses(model, dataset, batch_size: int, device: torch.device) -> tuple[float, float]:
     model.eval()
@@ -62,8 +68,8 @@ def validation_losses(model, dataset, batch_size: int, device: torch.device) -> 
         samples = [dataset[index] for index in range(start, min(start + batch_size, len(dataset)))]
         input_ids, labels, pixels = collate_video(samples)
         input_ids, labels, pixels = input_ids.to(device), labels.to(device), pixels.to(device)
-        normal_loss = model(input_ids, pixels, labels)["loss"]
-        reversed_loss = model(input_ids, pixels.flip(1), labels)["loss"]
+        normal_loss = forward_video(model, input_ids, pixels, labels)["loss"]
+        reversed_loss = forward_video(model, input_ids, pixels.flip(1), labels)["loss"]
         if torch.isfinite(normal_loss):
             normal.append(float(normal_loss.item()))
         if torch.isfinite(reversed_loss):
@@ -117,6 +123,7 @@ def main() -> None:
         "split_seed": data.get("split_seed", 48),
         "train_samples": data.get("train_samples", 2400),
         "validation_samples": data.get("validation_samples", 250),
+        "feature_cache": ROOT / data["feature_cache"] if data.get("feature_cache") else None,
     }
     dataset = QIVDVideoDataset(**common_data, split="train")
     validation = QIVDVideoDataset(**common_data, split="validation")
@@ -151,7 +158,9 @@ def main() -> None:
         samples = [dataset[index] for index in batch_stream.indices_for_step(step)]
         input_ids, labels, pixels = collate_video(samples)
         with autocast:
-            loss = model(input_ids.to(device), pixels.to(device), labels.to(device))["loss"] / accumulation
+            loss = (
+                forward_video(model, input_ids.to(device), pixels.to(device), labels.to(device))["loss"] / accumulation
+            )
         if not torch.isfinite(loss):
             raise RuntimeError(f"non-finite loss at step {step}")
         loss.backward()

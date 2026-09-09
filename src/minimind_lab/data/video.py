@@ -85,6 +85,7 @@ class QIVDVideoDataset(Dataset):
         train_samples: int = 2400,
         validation_samples: int = 250,
         require_files: bool = True,
+        feature_cache: str | Path | None = None,
     ) -> None:
         import pyarrow.parquet as pq
 
@@ -103,6 +104,17 @@ class QIVDVideoDataset(Dataset):
         self.num_frames = num_frames
         self.num_video_tokens = num_video_tokens
         self.video_placeholder = "<|video_pad|>" * num_video_tokens
+        self.feature_cache = None
+        if feature_cache is not None:
+            import numpy as np
+
+            feature_cache = Path(feature_cache)
+            done_path = feature_cache.with_suffix(".done.npy")
+            if not done_path.is_file() or not bool(np.load(done_path, mmap_mode="r").all()):
+                raise RuntimeError("video feature cache is incomplete; run cache_video_features.py")
+            self.feature_cache = np.load(feature_cache, mmap_mode="r")
+            if self.feature_cache.shape[0] != len(self.rows) or self.feature_cache.shape[1] != num_frames:
+                raise ValueError("video feature cache shape does not match QIVD metadata/config")
         self.assistant_start_ids = tokenizer(f"{tokenizer.bos_token}assistant\n", add_special_tokens=False).input_ids
         self.turn_end_ids = tokenizer(f"{tokenizer.eos_token}\n", add_special_tokens=False).input_ids
 
@@ -126,12 +138,15 @@ class QIVDVideoDataset(Dataset):
         input_ids = self.tokenizer(prompt).input_ids[: self.sequence_length]
         input_ids += [self.tokenizer.pad_token_id] * (self.sequence_length - len(input_ids))
         labels = assistant_token_labels(input_ids, self.assistant_start_ids, self.turn_end_ids, self.sequence_length)
-        frames = decode_uniform_video(self.video_path(row_index), self.num_frames)
-        pixels = self.image_processor(images=frames, return_tensors="pt")["pixel_values"]
+        if self.feature_cache is None:
+            frames = decode_uniform_video(self.video_path(row_index), self.num_frames)
+            video_inputs = self.image_processor(images=frames, return_tensors="pt")["pixel_values"]
+        else:
+            video_inputs = torch.tensor(self.feature_cache[row_index], dtype=torch.float32)
         return {
             "input_ids": torch.tensor(input_ids, dtype=torch.long),
             "labels": torch.tensor(labels, dtype=torch.long),
-            "pixel_values": pixels,
+            "video_inputs": video_inputs,
             "metadata": row,
         }
 
@@ -140,5 +155,5 @@ def collate_video(samples: list[dict]) -> tuple[torch.Tensor, torch.Tensor, torc
     return (
         torch.stack([sample["input_ids"] for sample in samples]),
         torch.stack([sample["labels"] for sample in samples]),
-        torch.stack([sample["pixel_values"] for sample in samples]),
+        torch.stack([sample["video_inputs"] for sample in samples]),
     )

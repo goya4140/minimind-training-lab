@@ -50,6 +50,10 @@ MP4 → 8 RGB frames → [8, 3, 256, 256] → SigLIP2 patch features
 QIVD 的 2,900 条记录使用 seed 48 对 ID 做 SHA-256 排序，固定切成 2400/250/250。哈希划分避免
 依赖源文件排列，同时保证每次运行完全相同。
 
+由于 SigLIP2 始终冻结，正式训练先把每个视频的 `[8, 64, 768]` patch features 缓存为本地 FP16
+memory map。两个训练阶段读取相同特征，不重复进行约五轮视觉编码。缓存只改变计算成本，不参与评估、
+不上传 GitHub；最终 Video-QA 评估仍从原始 MP4 解码。
+
 训练前对全部 metadata 做过一次静态审计：最长序列 138 tokens，低于正式上限 384；所有样本都有
 且仅有 16 个视频占位符，assistant 监督 token 最少为 9，没有空 label 样本。原始统计见
 [`reports/video-data-audit.md`](../reports/video-data-audit.md)。
