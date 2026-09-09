@@ -7,6 +7,7 @@ from minimind_lab.reporting import (
     render_training_curves,
     validate_final_evaluations,
     validate_qivd_manifest,
+    validate_training_summaries,
 )
 
 
@@ -133,3 +134,22 @@ def test_qivd_manifest_validator_requires_pinned_upstream_evidence():
         validate_qivd_manifest({**manifest, "upstream_lfs_verified": False}, revision, video_count=2)
     with pytest.raises(ValueError, match="enumerate every video"):
         validate_qivd_manifest({**manifest, "files": []}, revision, video_count=2)
+
+
+def test_training_summary_validator_locks_steps_parameters_time_and_checkpoint():
+    report = {
+        "status": "complete",
+        "total_steps": 100,
+        "parameters": 200,
+        "training_seconds": 30.0,
+        "artifact_verification": {"all_finite": True, "checkpoint_sha256": "a" * 64},
+    }
+    validate_training_summaries({"llm": report}, {"llm": (100, 200)})
+    with pytest.raises(ValueError, match="step count"):
+        validate_training_summaries({"llm": {**report, "total_steps": 99}}, {"llm": (100, 200)})
+    with pytest.raises(ValueError, match="cumulative time"):
+        validate_training_summaries({"llm": {**report, "training_seconds": 0}}, {"llm": (100, 200)})
+    with pytest.raises(ValueError, match="finite verification"):
+        validate_training_summaries(
+            {"llm": {**report, "artifact_verification": {"all_finite": False}}}, {"llm": (100, 200)}
+        )

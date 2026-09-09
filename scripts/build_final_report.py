@@ -20,9 +20,18 @@ from minimind_lab.reporting import (
     validate_final_evaluations,
     validate_language_evaluation,
     validate_qivd_manifest,
+    validate_training_summaries,
 )
 
 QIVD_REVISION = "c5376ab0b9fd3643545a1503413aee64f26ba22a"
+EXPECTED_STAGES = {
+    "llm_pretrain": (317_048, 63_912_192),
+    "llm_sft": (40_000, 63_912_192),
+    "vlm_alignment": (30_000, 1_182_720),
+    "vlm_sft": (30_000, 15_931_776),
+    "video_alignment": (7_200, 20_105_472),
+    "video_sft": (4_800, 34_854_528),
+}
 
 REQUIRED = {
     "LLM pretrain log": "artifacts/logs/llm-64m-pretrain-mps.json",
@@ -109,6 +118,7 @@ def main() -> None:
         "video_alignment": read_json(REQUIRED["Video alignment log"]),
         "video_sft": read_json(REQUIRED["Video SFT log"]),
     }
+    validate_training_summaries(logs, EXPECTED_STAGES)
     llm_eval = read_json(REQUIRED["LLM evaluation"])
     llm_pretrain_eval = read_json(REQUIRED["LLM pretrain evaluation"])
     vlm_eval = read_json(REQUIRED["VLM evaluation"])

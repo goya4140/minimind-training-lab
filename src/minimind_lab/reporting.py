@@ -144,6 +144,34 @@ def validate_qivd_manifest(manifest: dict, revision: str, video_count: int = 290
         raise ValueError("QIVD manifest must enumerate every video")
 
 
+def validate_training_summaries(logs: dict[str, dict], expected: dict[str, tuple[int, int]]) -> None:
+    """Validate completed stage summaries before condensing them into the handbook."""
+    if set(logs) != set(expected):
+        raise ValueError("training summary stages do not match the expected pipeline")
+    for stage, (steps, trainable_parameters) in expected.items():
+        report = logs[stage]
+        if report.get("status") != "complete":
+            raise ValueError(f"training stage is not complete: {stage}")
+        if report.get("total_steps") != steps:
+            raise ValueError(f"training stage step count is incorrect: {stage}")
+        reported_parameters = report.get("trainable_parameters", report.get("parameters"))
+        if reported_parameters != trainable_parameters:
+            raise ValueError(f"training stage parameter count is incorrect: {stage}")
+        seconds = report.get("training_seconds")
+        if (
+            isinstance(seconds, bool)
+            or not isinstance(seconds, (int, float))
+            or not math.isfinite(seconds)
+            or seconds <= 0
+        ):
+            raise ValueError(f"training stage cumulative time is invalid: {stage}")
+        verification = report.get("artifact_verification")
+        if not isinstance(verification, dict) or verification.get("all_finite") is not True:
+            raise ValueError(f"training stage checkpoint lacks finite verification: {stage}")
+        if not re.fullmatch(r"[0-9a-f]{64}", str(verification.get("checkpoint_sha256", ""))):
+            raise ValueError(f"training stage checkpoint SHA-256 is malformed: {stage}")
+
+
 def render_training_curves(histories: dict[str, list[dict]], output: str | Path) -> None:
     width, height = 960, 600
     columns, rows = 3, 2

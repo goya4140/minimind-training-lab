@@ -30,6 +30,8 @@ def test_formal_vlm_projector_parameter_count_matches_handbook():
     assert projector == 1_182_720
     model.set_alignment_trainable()
     assert sum(parameter.numel() for parameter in model.parameters() if parameter.requires_grad) == 1_182_720
+    model.set_instruction_trainable()
+    assert sum(parameter.numel() for parameter in model.parameters() if parameter.requires_grad) == 15_931_776
 
 
 def test_formal_video_trainable_counts_match_handbook():
