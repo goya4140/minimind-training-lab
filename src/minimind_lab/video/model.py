@@ -21,10 +21,15 @@ class VideoOmniConfig(MiniMindConfig):
 
 
 class TemporalVideoAdapter(nn.Module):
-    """Order-aware temporal encoder followed by learned-query resampling."""
+    """Spatial attention pooling, order-aware encoding, and temporal resampling."""
 
     def __init__(self, config: VideoOmniConfig) -> None:
         super().__init__()
+        self.spatial_query = nn.Parameter(torch.empty(1, config.vision_hidden_size))
+        self.spatial_pooler = nn.MultiheadAttention(
+            config.vision_hidden_size, config.temporal_heads, dropout=config.dropout, batch_first=True
+        )
+        self.spatial_norm = nn.LayerNorm(config.vision_hidden_size)
         self.frame_positions = nn.Parameter(torch.empty(config.num_frames, config.vision_hidden_size))
         layer = nn.TransformerEncoderLayer(
             d_model=config.vision_hidden_size,
@@ -43,17 +48,22 @@ class TemporalVideoAdapter(nn.Module):
             config.vision_hidden_size, config.temporal_heads, dropout=config.dropout, batch_first=True
         )
         self.norm = nn.LayerNorm(config.vision_hidden_size)
+        nn.init.normal_(self.spatial_query, std=0.02)
         nn.init.normal_(self.frame_positions, std=0.02)
         nn.init.normal_(self.queries, std=0.02)
 
-    def forward(self, frame_features: torch.Tensor) -> torch.Tensor:
-        if frame_features.ndim != 3:
-            raise ValueError("frame features must be [batch, frames, hidden]")
-        frame_count = frame_features.size(1)
+    def forward(self, patch_features: torch.Tensor) -> torch.Tensor:
+        if patch_features.ndim != 4:
+            raise ValueError("patch features must be [batch, frames, patches, hidden]")
+        batch_size, frame_count, patch_count, hidden_size = patch_features.shape
         if frame_count > self.frame_positions.size(0):
             raise ValueError("video has more frames than configured")
+        flattened = patch_features.view(batch_size * frame_count, patch_count, hidden_size)
+        spatial_queries = self.spatial_query.unsqueeze(0).expand(batch_size * frame_count, -1, -1)
+        frame_features, _ = self.spatial_pooler(spatial_queries, flattened, flattened, need_weights=False)
+        frame_features = self.spatial_norm(frame_features.squeeze(1)).view(batch_size, frame_count, hidden_size)
         temporal = self.temporal_encoder(frame_features + self.frame_positions[:frame_count])
-        queries = self.queries.unsqueeze(0).expand(frame_features.size(0), -1, -1)
+        queries = self.queries.unsqueeze(0).expand(batch_size, -1, -1)
         resampled, _ = self.resampler(queries, temporal, temporal, need_weights=False)
         return self.norm(resampled)
 
@@ -80,8 +90,8 @@ class MiniMindVideoOmni(nn.Module):
         features = output.last_hidden_state if hasattr(output, "last_hidden_state") else output
         if features.ndim != 3:
             raise ValueError("vision encoder must return [batch*frames, patches, hidden]")
-        frame_features = features.mean(dim=1).view(batch_size, frame_count, -1)
-        return self.video_projector(self.temporal_adapter(frame_features))
+        patch_features = features.view(batch_size, frame_count, features.size(1), features.size(2))
+        return self.video_projector(self.temporal_adapter(patch_features))
 
     def inject_video_features(
         self, input_ids: torch.Tensor, text_embeddings: torch.Tensor, video_features: torch.Tensor
