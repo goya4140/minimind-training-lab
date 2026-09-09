@@ -28,5 +28,10 @@
     "image": "image-06-racecar-drift.jpg",
     "prompt": "描述赛车的运动状态，并指出支持判断的视觉线索。",
     "keywords": ["赛车", "漂移"]
+  },
+  {
+    "images": ["image-04-yellow-car.jpg", "image-02-rainbow-umbrella-street.jpg"],
+    "prompt": "按输入顺序分别说明第一张和第二张图的最显眼主体，不要交换顺序。",
+    "keywords": ["黄色", "汽车", "彩虹", "伞"]
   }
 ]

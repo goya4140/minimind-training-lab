@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 import torch
 
@@ -25,3 +26,13 @@ def test_vlm_collate_pads_variable_image_counts():
     assert images.shape == (2, 2, 3, 2, 2)
     assert counts.tolist() == [1, 2]
     assert images[0, 1].count_nonzero() == 0
+
+
+def test_fixed_vlm_evaluation_includes_single_and_ordered_multi_image_cases():
+    root = Path(__file__).resolve().parents[1]
+    cases = json.loads((root / "data/eval/vlm/prompts.json").read_text(encoding="utf-8"))
+    assert sum("image" in case for case in cases) == 6
+    multi_image = [case for case in cases if "images" in case]
+    assert len(multi_image) == 1
+    assert len(multi_image[0]["images"]) == 2
+    assert all((root / "data/eval/vlm" / name).is_file() for name in multi_image[0]["images"])

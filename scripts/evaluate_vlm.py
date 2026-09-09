@@ -49,17 +49,25 @@ def qualitative_samples(model, tokenizer, processor, device, max_new_tokens: int
     from PIL import Image
 
     for case in cases:
-        content = f"<image>\n{case['prompt']}".replace("<image>", "<|image_pad|>" * model.config.image_token_length)
+        image_names = case.get("images") or [case["image"]]
+        if not isinstance(image_names, list) or not image_names:
+            raise ValueError(f"VLM evaluation case has no images: {case}")
+        placeholders = "\n".join("<image>" for _ in image_names)
+        content = f"{placeholders}\n{case['prompt']}".replace(
+            "<image>", "<|image_pad|>" * model.config.image_token_length
+        )
         prompt = tokenizer.apply_chat_template(
             [{"role": "user", "content": content}], tokenize=False, add_generation_prompt=True
         )
         prompt_ids = tokenizer(prompt).input_ids
         input_ids = torch.tensor([prompt_ids], device=device)
-        pixels = processor(images=Image.open(eval_dir / case["image"]).convert("RGB"), return_tensors="pt")
+        images = [Image.open(eval_dir / image_name).convert("RGB") for image_name in image_names]
+        pixels = processor(images=images, return_tensors="pt")["pixel_values"].unsqueeze(0)
         started = time.perf_counter()
         generated = model.generate(
             input_ids,
-            pixels["pixel_values"].to(device),
+            pixels.to(device),
+            image_counts=torch.tensor([len(images)], device=device),
             max_new_tokens=max_new_tokens,
             temperature=0.0,
             eos_token_id=tokenizer.eos_token_id,
@@ -71,6 +79,7 @@ def qualitative_samples(model, tokenizer, processor, device, max_new_tokens: int
         results.append(
             {
                 **case,
+                "image_count": len(images),
                 "completion": completion,
                 "keyword_recall": sum(keyword in completion for keyword in keywords) / len(keywords)
                 if keywords

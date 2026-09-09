@@ -232,11 +232,12 @@ def main() -> None:
         "",
         "### VLM",
         "",
-        "| Prompt | Completion |",
-        "|---|---|",
+        "| Images | Prompt | Completion |",
+        "|---:|---|---|",
         *[
-            f"| {one_line(item.get('prompt', item.get('id', '')))} | {one_line(item['completion'])} |"
-            for item in qualitative_vlm[:6]
+            f"| {item.get('image_count', 1)} | {one_line(item.get('prompt', item.get('id', '')))} | "
+            f"{one_line(item['completion'])} |"
+            for item in qualitative_vlm
         ],
         "",
         "### Video-Omni — QIVD",

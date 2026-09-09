@@ -19,9 +19,9 @@
 
 ## VLM
 
-- Caption、VQA、OCR 与视觉幻觉测试；
+- 固定图像描述、VQA 与视觉幻觉检查；
 - 固定图像提示词记录关键词召回率，作为轻量、可复现的客观下限；
-- 多图顺序和指代测试；
+- 固定双图顺序和指代测试；
 - 重新运行 LLM 文本评估，测量语言能力遗忘。
 
 VLM 和 Video-Omni 的纯文本回归使用与 LLM 相同的 held-out 文本、tokenizer、loss/PPL/BPB
