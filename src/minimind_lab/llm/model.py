@@ -42,7 +42,9 @@ class RMSNorm(nn.Module):
         return (self.weight * normalized).to(x.dtype)
 
 
-def rope_frequencies(head_dim: int, length: int, theta: float, device: torch.device) -> tuple[torch.Tensor, torch.Tensor]:
+def rope_frequencies(
+    head_dim: int, length: int, theta: float, device: torch.device
+) -> tuple[torch.Tensor, torch.Tensor]:
     inverse = 1.0 / (theta ** (torch.arange(0, head_dim, 2, device=device).float() / head_dim))
     positions = torch.arange(length, device=device).float()
     angles = torch.outer(positions, inverse)

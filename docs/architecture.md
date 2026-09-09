@@ -11,6 +11,8 @@
 VLM 在 LLM 上增加冻结的 SigLIP2 Base P32 视觉编码器。256×256 图像被编码为 64 个 patch token，经 `LayerNorm → Linear → GELU → Linear` 投影到 768 维，并替换文本序列中的 `<|image_pad|>` 占位 embedding。
 
 视觉特征和文本 embedding 随后进入同一个 causal Transformer，不增加 cross-attention。
+仓库实现位于 `src/minimind_lab/vlm/model.py`：既支持只训练 projector 的 alignment 阶段，
+也支持解冻 LLM 首尾边界层的 SFT 阶段。
 
 ## 3. Omni
 
@@ -25,3 +27,6 @@ Omni 使用 Thinker–Talker 双路径：
 
 SenseVoice、SigLIP2、Mimi 始终冻结。可训练主体约 113M，但运行时还需加载约 425M 的冻结外部模块。
 
+仓库当前实现的是可独立测试的神经网络核心：外部 encoder/codec 以已编码特征和离散 code
+作为明确边界输入，避免把下载、预处理和模型逻辑耦合在一起。`MiniMindOmni` 同时返回文本
+logits、8 路音频 logits 以及分项 loss；Talker 可从 Thinker 后四层复制初始化。

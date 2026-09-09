@@ -37,7 +37,9 @@ def main() -> None:
     tokenizer = ByteTokenizer()
     model_config = MiniMindConfig(**config["model"])
     if model_config.vocab_size != tokenizer.vocab_size:
-        raise ValueError("smoke trainer requires ByteTokenizer vocab_size=259; formal BPE trainer is tracked separately")
+        raise ValueError(
+            "smoke trainer requires ByteTokenizer vocab_size=259; formal BPE trainer is tracked separately"
+        )
 
     text = (ROOT / config["data"]["path"]).read_text(encoding="utf-8")
     # Repeat a deliberately tiny corpus so the smoke run tests optimization rather than data quality.

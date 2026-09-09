@@ -1,0 +1,20 @@
+experiment:
+  name: omni-audio-alignment
+  seed: 45
+  device: cuda
+
+model:
+  checkpoint: artifacts/checkpoints/omni-t2a.pt
+  audio_encoder: assets/models/SenseVoiceSmall
+
+data:
+  path: data/raw/sft_a2a_mini.parquet
+  sequence_length: 640
+
+training:
+  stage: audio-projector-only
+  epochs: 1
+  batch_size: 40
+  learning_rate: 0.0005
+  checkpoint_path: artifacts/checkpoints/omni-audio-alignment.pt
+

@@ -58,4 +58,3 @@ def test_instruction_stage_unfreezes_boundary_layers():
     assert any(name.startswith("vision_projector.") for name in trainable)
     assert any(name.startswith("language_model.layers.0.") for name in trainable)
     assert any(name.startswith("language_model.layers.1.") for name in trainable)
-

@@ -151,7 +151,10 @@ def main() -> None:
         "elapsed_seconds": round(elapsed, 3),
         "training_seconds": training_elapsed,
         "seconds_per_step": training_elapsed / max(training["steps"] - start_step, 1),
-        "tokens_per_second": training["batch_size"] * config["data"]["sequence_length"] * max(training["steps"] - start_step, 1) / training_elapsed,
+        "tokens_per_second": training["batch_size"]
+        * config["data"]["sequence_length"]
+        * max(training["steps"] - start_step, 1)
+        / training_elapsed,
         "validation_loss": val_loss,
         "validation_perplexity": math.exp(min(val_loss, 20)),
         "environment": environment_info(device),

@@ -89,4 +89,3 @@ class MiniMindVLM(nn.Module):
         for layer_index in (0, self.config.num_hidden_layers - 1):
             for parameter in self.language_model.layers[layer_index].parameters():
                 parameter.requires_grad = True
-

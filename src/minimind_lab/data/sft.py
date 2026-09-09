@@ -7,6 +7,20 @@ import torch
 from torch.utils.data import Dataset
 
 
+def normalize_conversations(conversations: list[dict]) -> tuple[list[dict], list[dict] | None]:
+    messages = []
+    tools = None
+    for raw_message in conversations:
+        message = dict(raw_message)
+        if message.get("role") == "system" and message.get("tools"):
+            tools = json.loads(message["tools"]) if isinstance(message["tools"], str) else message["tools"]
+            message.pop("tools", None)
+        if message.get("tool_calls") and isinstance(message["tool_calls"], str):
+            message["tool_calls"] = json.loads(message["tool_calls"])
+        messages.append(message)
+    return messages, tools
+
+
 def assistant_token_labels(
     input_ids: list[int], assistant_start_ids: list[int], turn_end_ids: list[int], max_length: int
 ) -> list[int]:
@@ -44,9 +58,7 @@ class JsonlSFTDataset(Dataset):
                 if line.strip():
                     self.offsets.append(offset)
                 offset += len(line)
-        self.assistant_start_ids = tokenizer(
-            f"{tokenizer.bos_token}assistant\n", add_special_tokens=False
-        ).input_ids
+        self.assistant_start_ids = tokenizer(f"{tokenizer.bos_token}assistant\n", add_special_tokens=False).input_ids
         self.turn_end_ids = tokenizer(f"{tokenizer.eos_token}\n", add_special_tokens=False).input_ids
 
     def __len__(self) -> int:
@@ -61,18 +73,14 @@ class JsonlSFTDataset(Dataset):
         handle = self._file()
         handle.seek(self.offsets[index])
         conversations = json.loads(handle.readline())["conversations"]
-        prompt = self.tokenizer.apply_chat_template(
-            conversations, tokenize=False, add_generation_prompt=False
-        )
+        messages, tools = normalize_conversations(conversations)
+        prompt = self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=False, tools=tools)
         input_ids = self.tokenizer(prompt).input_ids[: self.sequence_length]
         input_ids += [self.tokenizer.pad_token_id] * (self.sequence_length - len(input_ids))
-        labels = assistant_token_labels(
-            input_ids, self.assistant_start_ids, self.turn_end_ids, self.sequence_length
-        )
+        labels = assistant_token_labels(input_ids, self.assistant_start_ids, self.turn_end_ids, self.sequence_length)
         return torch.tensor(input_ids, dtype=torch.long), torch.tensor(labels, dtype=torch.long)
 
     def __getstate__(self):
         state = self.__dict__.copy()
         state["_handle"] = None
         return state
-

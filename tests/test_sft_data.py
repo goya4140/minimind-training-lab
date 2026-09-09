@@ -1,4 +1,6 @@
-from minimind_lab.data import assistant_token_labels
+import json
+
+from minimind_lab.data import assistant_token_labels, normalize_conversations
 
 
 def test_assistant_only_labels_cover_multiple_turns():
@@ -16,3 +18,15 @@ def test_truncated_assistant_response_is_still_supervised():
     labels = assistant_token_labels(tokens, [1, 9], [2, 10], max_length=5)
     assert labels == [-100, -100, 30, 31, 32]
 
+
+def test_tool_metadata_strings_are_normalized():
+    tools = [{"type": "function", "function": {"name": "weather"}}]
+    calls = [{"function": {"name": "weather", "arguments": "{}"}}]
+    raw = [
+        {"role": "system", "content": "", "tools": json.dumps(tools)},
+        {"role": "assistant", "content": "checking", "tool_calls": json.dumps(calls)},
+    ]
+    messages, normalized_tools = normalize_conversations(raw)
+    assert normalized_tools == tools
+    assert "tools" not in messages[0]
+    assert messages[1]["tool_calls"] == calls

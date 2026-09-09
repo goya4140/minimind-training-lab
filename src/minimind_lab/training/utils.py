@@ -44,4 +44,3 @@ def environment_info(device: torch.device) -> dict[str, str]:
         "torch": torch.__version__,
         "device": str(device),
     }
-

@@ -12,9 +12,9 @@
 
 | 阶段 | 架构 | 训练 | 评估 |
 |---|---|---|---|
-| LLM | ✅ 原生 PyTorch 主干（63,912,192 参数正式配置） | 🚧 Byte/BPE mini 已通过，正式训练待运行 | 🚧 mini 生成已记录，正式评估待运行 |
-| VLM | 📋 已定版 | ⏳ | ⏳ |
-| Omni | 📋 已定版 | ⏳ | ⏳ |
+| LLM | ✅ 原生 PyTorch 主干（63,912,192 参数正式配置） | 🚧 正式 MPS 预训练进行中 | 🚧 mini 生成已记录，正式评估待运行 |
+| VLM | ✅ Early-fusion 骨架及冻结策略已实现 | ⏳ 等待 LLM SFT 权重 | ⏳ |
+| Omni | ✅ Thinker–Bridge–Talker 骨架已实现 | ⏳ 等待 LLM/VLM 权重 | ⏳ |
 
 状态以 [`docs/progress.md`](docs/progress.md) 中的证据为准。
 
@@ -47,13 +47,15 @@ uv run pytest
 
 ```bash
 uv run python scripts/fetch_tokenizer.py
-uv run python scripts/fetch_pretrain_data.py
+uv run python scripts/fetch_data.py all
 uv run python scripts/train_pretrain.py --config configs/llm/pretrain-mps.yaml --resume
 ```
 
-`smoke.yaml` 是本机链路验证配置，不代表最终模型。正式复现使用 `configs/llm/full.yaml`。
+`smoke.yaml` 是本机链路验证配置，不代表最终模型。当前正式本机复现使用
+`configs/llm/pretrain-mps.yaml`，后续阶段严格从前一阶段 checkpoint 初始化。
 
 首次本地运行的训练曲线和失败样例见 [`reports/llm-smoke-001.md`](reports/llm-smoke-001.md)，正式 BPE 词表的 mini 验证见 [`reports/llm-bpe-mini-001.md`](reports/llm-bpe-mini-001.md)。
+已固定的数据版本、大小和校验和见 [`reports/data-manifest.md`](reports/data-manifest.md)。
 
 ## 上游基线
 
