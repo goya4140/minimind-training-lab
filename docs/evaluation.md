@@ -35,10 +35,15 @@
 
 仓库固定 `data/eval/omni/` 的中英文语音、图像和纯文本输入。`scripts/evaluate_omni.py`
 对同一 checkpoint 运行 T2A、A2A 和 I2A，保存文本回答、音频 code 帧数、端到端耗时，
-并通过冻结 Mimi 解码为 24 kHz WAV。CER/WER、speaker similarity 和 barge-in 属于后续自动量化门禁，
-不能用主观试听替代。
+并通过冻结 Mimi 解码为 24 kHz WAV。语音输出 CER/WER 已自动量化；speaker similarity 和
+barge-in 属于后续门禁，不能用主观试听替代。
 
 `minimind_lab.evaluation` 已提供不依赖第三方库的 Levenshtein、CER 和 WER，供冻结 ASR
 转写后统一计算；中文 CER 会忽略空白，英文 WER 不区分大小写。
+
+当前 `evaluate_omni.py` 已把语音输出经 Mimi 解码，再用冻结 SenseVoiceSmall 转写，以模型的
+文本回答为 reference 计算逐样本 CER/WER，同时记录音频时长与 real-time factor。转写前会去除
+SenseVoice 控制标签、Unicode 规范化并移除标点。speaker similarity 和 barge-in 仍是未实现门禁，
+最终报告不得把它们写成已通过。
 
 最终报告必须注明模型规模、冻结外部模块规模、数据范围与硬件，不能只展示训练 loss。

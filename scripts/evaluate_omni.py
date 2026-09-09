@@ -13,6 +13,7 @@ from transformers import AutoTokenizer, MimiModel, SiglipImageProcessor, SiglipV
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
+from minimind_lab.evaluation import character_error_rate, normalize_transcript, word_error_rate
 from minimind_lab.omni import MiniMindOmni, OmniConfig
 from minimind_lab.omni.external import load_sensevoice
 from minimind_lab.training import resolve_device, seed_everything
@@ -25,6 +26,18 @@ def audio_features(path: Path, processor):
     waveform, _ = librosa.load(path, sr=16_000, mono=True)
     inputs = processor(waveform, sampling_rate=16_000, return_tensors="pt", return_attention_mask=True)
     return inputs.input_features, inputs.attention_mask.sum(dim=1)
+
+
+def transcribe(waveform, asr_model) -> tuple[str, str]:
+    result = asr_model.generate(
+        input=waveform,
+        cache={},
+        language="auto",
+        use_itn=True,
+        batch_size_s=60,
+    )
+    raw = result[0]["text"] if result else ""
+    return raw, normalize_transcript(raw)
 
 
 @torch.inference_mode()
@@ -113,15 +126,53 @@ def main() -> None:
         codes = result.pop("audio_codes")
         result["audio_frames"] = codes.size(-1)
         if codes.size(-1):
-            audio = codec.decode(codes).audio_values.squeeze().float().cpu().numpy()
+            with torch.inference_mode():
+                audio = codec.decode(codes).audio_values.squeeze().float().cpu().numpy()
             audio_path = output_dir / f"{case['id']}.wav"
             sf.write(audio_path, audio, 24_000)
             result["audio_path"] = str(audio_path.relative_to(ROOT))
+            result["audio_seconds"] = len(audio) / 24_000
+            result["real_time_factor"] = result["seconds"] / result["audio_seconds"]
         results.append(result)
 
+    del audio_bundle, model, vision, codec
+    if device.type == "mps":
+        torch.mps.empty_cache()
+    from funasr import AutoModel
+
+    asr_model = AutoModel(
+        model=str(ROOT / args.audio_encoder), trust_remote_code=True, disable_update=True, device="cpu"
+    )
+    import librosa
+
+    for result in results:
+        if "audio_path" not in result:
+            continue
+        waveform, _ = librosa.load(ROOT / result["audio_path"], sr=16_000, mono=True)
+        raw, transcript = transcribe(waveform, asr_model)
+        reference = normalize_transcript(result["completion"])
+        result["asr_transcript_raw"] = raw
+        result["asr_transcript"] = transcript
+        result["speech_cer"] = character_error_rate(reference, transcript)
+        result["speech_wer"] = word_error_rate(reference, transcript)
+
+    speech_results = [result for result in results if "speech_cer" in result]
     report = {
         "checkpoint": args.checkpoint,
         "environment": environment_info(device),
+        "summary": {
+            "cases": len(results),
+            "audio_cases": len(speech_results),
+            "mean_speech_cer": sum(result["speech_cer"] for result in speech_results) / len(speech_results)
+            if speech_results
+            else None,
+            "mean_speech_wer": sum(result["speech_wer"] for result in speech_results) / len(speech_results)
+            if speech_results
+            else None,
+            "mean_real_time_factor": sum(result["real_time_factor"] for result in speech_results) / len(speech_results)
+            if speech_results
+            else None,
+        },
         "cases": results,
     }
     write_json(ROOT / args.output, report)

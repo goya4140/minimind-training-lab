@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+import re
+import unicodedata
+
+SENSEVOICE_TAG = re.compile(r"<\|[^|>]+\|>")
+
 
 def levenshtein(reference: list[str], hypothesis: list[str]) -> int:
     previous = list(range(len(hypothesis) + 1))
@@ -27,3 +32,10 @@ def word_error_rate(reference: str, hypothesis: str) -> float:
     expected = reference.lower().split()
     actual = hypothesis.lower().split()
     return levenshtein(expected, actual) / max(len(expected), 1)
+
+
+def normalize_transcript(text: str) -> str:
+    """Normalize ASR/reference text for language-agnostic intelligibility metrics."""
+    text = SENSEVOICE_TAG.sub("", unicodedata.normalize("NFKC", text)).lower()
+    text = "".join(" " if unicodedata.category(character).startswith("P") else character for character in text)
+    return " ".join(text.split())

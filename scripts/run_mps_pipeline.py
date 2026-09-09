@@ -81,6 +81,10 @@ def evaluate_if_needed(stage: str, checkpoint: Path) -> None:
     run(command)
 
 
+def verify_stage(config: str) -> None:
+    run(["scripts/verify_stage_artifact.py", "--config", config])
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Resume the complete MiniMind MPS training and evaluation chain.")
     parser.add_argument("--poll-seconds", type=float, default=30.0)
@@ -91,7 +95,7 @@ def main() -> None:
     for stage, runner, config in STAGES:
         output = output_for(config)
         polls = 0
-        while not output.exists() and active_pid(output) is not None:
+        while active_pid(output) is not None:
             if polls % 20 == 0:
                 print(f"waiting for active stage: {stage} (lock owner {active_pid(output)})", flush=True)
             polls += 1
@@ -102,6 +106,7 @@ def main() -> None:
             run([runner, "--config", config, "--resume"])
         if not output.exists():
             raise RuntimeError(f"stage exited without final checkpoint: {stage}")
+        verify_stage(config)
         evaluate_if_needed(stage, output)
 
     print("MPS training and evaluation pipeline complete", flush=True)

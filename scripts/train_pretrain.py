@@ -144,11 +144,12 @@ def main() -> None:
     elapsed = time.time() - started
     report = {
         "experiment": config["experiment"]["name"],
-        "status": "throughput-probe-only",
+        "status": "complete",
         "parameters": model.parameter_count(),
         "dataset_samples": len(dataset),
         "train_samples": len(train_dataset),
         "validation_samples": len(validation_dataset),
+        "total_steps": training["steps"],
         "elapsed_seconds": round(elapsed, 3),
         "training_seconds": training_elapsed,
         "seconds_per_step": training_elapsed / max(training["steps"] - start_step, 1),
