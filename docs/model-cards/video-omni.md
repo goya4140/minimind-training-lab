@@ -14,7 +14,7 @@ trainable parameters.
 
 QIVD is pinned to revision `c5376ab0b9fd3643545a1503413aee64f26ba22a` and split by a stable seeded
 hash into 2,400 train, 250 validation and 250 held-out test samples. QIVD is research-only, so videos are
-not redistributed through this repository or its release.
+not redistributed through this repository.
 
 Only sampled visual frames and the written question enter the model; audio is ignored. SigLIP2 remains
 frozen. The MiniMind language core and newly introduced temporal/projector modules follow the repository's

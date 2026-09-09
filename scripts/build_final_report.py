@@ -59,7 +59,7 @@ def training_loss(checkpoint_path: str) -> tuple[float, float]:
     return float(history[0]["loss"]), float(history[-1]["loss"])
 
 
-def release_entry(name: str, relative_path: str) -> dict:
+def local_artifact_entry(name: str, relative_path: str) -> dict:
     path = ROOT / relative_path
     return {"name": name, "path": relative_path, "bytes": path.stat().st_size, "sha256": sha256(path)}
 
@@ -74,7 +74,7 @@ def one_line(value: object, limit: int = 180) -> str:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Build the evidence-backed final report and release manifest.")
+    parser = argparse.ArgumentParser(description="Build the evidence-backed final handbook report.")
     parser.add_argument("--check", action="store_true", help="Only check that every required artifact exists.")
     args = parser.parse_args()
     missing = {name: path for name, path in REQUIRED.items() if not (ROOT / path).is_file()}
@@ -97,14 +97,14 @@ def main() -> None:
     vlm_eval = read_json(REQUIRED["VLM evaluation"])
     video_eval = read_json(REQUIRED["Video evaluation"])
     qivd = read_json(REQUIRED["QIVD manifest"])
-    release_assets = [
-        release_entry("llm-64m-sft-mps.pt", REQUIRED["LLM checkpoint"]),
-        release_entry("vlm-sft-mps.pt", REQUIRED["VLM checkpoint"]),
-        release_entry("video-omni-sft-mps.pt", REQUIRED["Video checkpoint"]),
-        release_entry("llm-sft-final.json", REQUIRED["LLM evaluation"]),
-        release_entry("vlm-final.json", REQUIRED["VLM evaluation"]),
-        release_entry("video-omni-final.json", REQUIRED["Video evaluation"]),
-        release_entry("qivd.json", REQUIRED["QIVD manifest"]),
+    local_artifacts = [
+        local_artifact_entry("llm-64m-sft-mps.pt", REQUIRED["LLM checkpoint"]),
+        local_artifact_entry("vlm-sft-mps.pt", REQUIRED["VLM checkpoint"]),
+        local_artifact_entry("video-omni-sft-mps.pt", REQUIRED["Video checkpoint"]),
+        local_artifact_entry("llm-sft-final.json", REQUIRED["LLM evaluation"]),
+        local_artifact_entry("vlm-final.json", REQUIRED["VLM evaluation"]),
+        local_artifact_entry("video-omni-final.json", REQUIRED["Video evaluation"]),
+        local_artifact_entry("qivd.json", REQUIRED["QIVD manifest"]),
     ]
     losses = {
         key: training_loss(REQUIRED[checkpoint_name])
@@ -164,16 +164,18 @@ def main() -> None:
             "order; a zero or negative result must be interpreted as failure to establish temporal sensitivity."
         ),
         "",
-        "## Data and release",
+        "## Data and local artifacts",
         "",
         (
             f"QIVD: {qivd['video_count']:,} videos, pinned revision `{qivd['revision']}`, aggregate SHA-256 "
             f"`{qivd['aggregate_sha256']}`. QIVD is research-only and is not redistributed."
         ),
         "",
-        "| Release asset | Bytes | SHA-256 |",
+        "The following files stay local and are **not uploaded to GitHub**. Their hashes make a local run auditable.",
+        "",
+        "| Local artifact | Bytes | SHA-256 |",
         "|---|---:|---|",
-        *[f"| `{item['name']}` | {item['bytes']:,} | `{item['sha256']}` |" for item in release_assets],
+        *[f"| `{item['name']}` | {item['bytes']:,} | `{item['sha256']}` |" for item in local_artifacts],
         "",
         "## Fixed qualitative examples",
         "",
@@ -217,14 +219,14 @@ def main() -> None:
         "",
         (
             "See `docs/model-cards/` for intended use and limitations, `docs/evaluation.md` for the protocol, "
-            "and the JSON evaluation artifacts attached to the release for full qualitative outputs."
+            "and the local JSON evaluation artifacts for full qualitative outputs."
         ),
         "",
     ]
     report_path = ROOT / "reports/final-results.md"
     report_path.write_text("\n".join(lines), encoding="utf-8")
-    manifest = {"tag": "v0.1.0-trained-mps", "source_commit": commit, "assets": release_assets}
-    (ROOT / "reports/release-manifest.json").write_text(
+    manifest = {"source_commit": commit, "uploaded": False, "local_artifacts": local_artifacts}
+    (ROOT / "reports/local-artifact-manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
 
@@ -243,7 +245,7 @@ def main() -> None:
     if replacements != 1:
         raise RuntimeError("README status markers are missing or duplicated")
     readme_path.write_text(readme, encoding="utf-8")
-    print(json.dumps({"report": str(report_path), "release_manifest": manifest}, ensure_ascii=False, indent=2))
+    print(json.dumps({"report": str(report_path), "local_artifact_manifest": manifest}, ensure_ascii=False, indent=2))
 
 
 if __name__ == "__main__":

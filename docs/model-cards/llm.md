@@ -14,7 +14,7 @@ then instruction-tuned with assistant-only labels. Formal MPS configuration and 
 
 ## Evaluation and limitations
 
-Final validation loss, perplexity, bits-per-byte, throughput and fixed generation samples are published in
+Final validation loss, perplexity, bits-per-byte, throughput and fixed generation samples are summarized in
 `reports/final-results.md` after the run. This is a compact educational model, not a production assistant;
 it can hallucinate, repeat text, produce unsafe content, and has not received a safety-alignment certification.
 
