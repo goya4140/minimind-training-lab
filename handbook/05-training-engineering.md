@@ -45,6 +45,15 @@ AdamW 更新参数，同时把 weight decay 与 gradient update 分开。Cosine 
 Resume checkpoint 只在 optimizer update 之后写入。如果在 accumulation 中间保存却不保存
 尚未提交的 gradient，恢复时就会静默丢掉部分 micro-batch；边界保存避免了这个问题。
 
+可以在训练进行中安全地审计最近一个原子快照：
+
+```bash
+uv run python scripts/verify_resume_checkpoint.py --config configs/llm/pretrain-mps.yaml
+```
+
+审计器会读取但不修改文件，并核对 optimizer state、config、RNG state、history、累计耗时、有限参数与
+optimizer 边界。输出只有尺寸、SHA-256 和汇总计数，不会把权重内容写入报告。
+
 ## 防止重复训练
 
 每个阶段持有 advisory lock，锁文件记录 owner PID。第二个同 checkpoint 任务会拒绝启动；preflight

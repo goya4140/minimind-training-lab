@@ -1,4 +1,4 @@
-from .artifacts import file_sha256, verify_checkpoint
+from .artifacts import file_sha256, verify_checkpoint, verify_resume_checkpoint
 from .utils import (
     acquire_run_lock,
     load_config,
@@ -21,4 +21,5 @@ __all__ = [
     "seed_everything",
     "should_save_resume",
     "verify_checkpoint",
+    "verify_resume_checkpoint",
 ]

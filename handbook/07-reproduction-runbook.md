@@ -68,6 +68,15 @@ uv run python scripts/train_video_omni.py --config configs/video/sft-mps.yaml --
 
 不要同时启动两个写入同一 checkpoint 的进程。
 
+长任务运行期间，可以只读审计最近一次可恢复快照：
+
+```bash
+uv run python scripts/verify_resume_checkpoint.py --config configs/llm/pretrain-mps.yaml
+```
+
+该命令会验证模型、optimizer、随机状态、历史、累计耗时、配置一致性和 optimizer 保存边界，且不影响
+持有训练锁的进程。
+
 ## 6. 最终报告
 
 ```bash
