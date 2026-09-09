@@ -66,10 +66,15 @@ def qualitative_samples(model, tokenizer, processor, device, max_new_tokens: int
         )[0]
         elapsed = time.perf_counter() - started
         completion_ids = generated[len(prompt_ids) :].tolist()
+        completion = tokenizer.decode(completion_ids, skip_special_tokens=True)
+        keywords = case.get("keywords", [])
         results.append(
             {
                 **case,
-                "completion": tokenizer.decode(completion_ids, skip_special_tokens=True),
+                "completion": completion,
+                "keyword_recall": sum(keyword in completion for keyword in keywords) / len(keywords)
+                if keywords
+                else None,
                 "new_tokens": len(completion_ids),
                 "seconds": elapsed,
                 "tokens_per_second": len(completion_ids) / elapsed,

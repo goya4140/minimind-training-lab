@@ -1,3 +1,4 @@
+from .error_rate import character_error_rate, levenshtein, word_error_rate
 from .text import distinct_n
 
-__all__ = ["distinct_n"]
+__all__ = ["character_error_rate", "distinct_n", "levenshtein", "word_error_rate"]

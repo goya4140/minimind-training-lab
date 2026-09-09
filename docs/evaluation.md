@@ -20,6 +20,7 @@
 ## VLM
 
 - Caption、VQA、OCR 与视觉幻觉测试；
+- 固定图像提示词记录关键词召回率，作为轻量、可复现的客观下限；
 - 多图顺序和指代测试；
 - 重新运行 LLM 文本评估，测量语言能力遗忘。
 
@@ -36,5 +37,8 @@
 对同一 checkpoint 运行 T2A、A2A 和 I2A，保存文本回答、音频 code 帧数、端到端耗时，
 并通过冻结 Mimi 解码为 24 kHz WAV。CER/WER、speaker similarity 和 barge-in 属于后续自动量化门禁，
 不能用主观试听替代。
+
+`minimind_lab.evaluation` 已提供不依赖第三方库的 Levenshtein、CER 和 WER，供冻结 ASR
+转写后统一计算；中文 CER 会忽略空白，英文 WER 不区分大小写。
 
 最终报告必须注明模型规模、冻结外部模块规模、数据范围与硬件，不能只展示训练 loss。
