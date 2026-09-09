@@ -20,6 +20,74 @@ def _finite_points(history: list[dict], limit: int = 500) -> list[tuple[float, f
     return sampled
 
 
+def _nested_value(report: dict, path: str):
+    value = report
+    for key in path.split("."):
+        if not isinstance(value, dict) or key not in value:
+            raise ValueError(f"final evaluation is missing: {path}")
+        value = value[key]
+    return value
+
+
+def _finite_metric(report: dict, path: str, minimum: float | None = None, maximum: float | None = None) -> float:
+    value = _nested_value(report, path)
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(float(value)):
+        raise ValueError(f"final evaluation metric must be finite: {path}")
+    value = float(value)
+    if minimum is not None and value < minimum:
+        raise ValueError(f"final evaluation metric is below {minimum}: {path}")
+    if maximum is not None and value > maximum:
+        raise ValueError(f"final evaluation metric is above {maximum}: {path}")
+    return value
+
+
+def _qualitative_rows(report: dict, path: str, required_fields: tuple[str, ...]) -> None:
+    rows = _nested_value(report, path)
+    if not isinstance(rows, list) or not rows:
+        raise ValueError(f"final evaluation needs at least one qualitative row: {path}")
+    for index, row in enumerate(rows):
+        if not isinstance(row, dict) or any(field not in row for field in required_fields):
+            raise ValueError(f"malformed qualitative row: {path}[{index}]")
+
+
+def validate_final_evaluations(llm: dict, vlm: dict, video: dict) -> None:
+    """Reject incomplete or non-finite evidence before publishing the final report."""
+    _finite_metric(llm, "corpus.validation_loss", minimum=0)
+    _finite_metric(llm, "corpus.validation_perplexity", minimum=1)
+    _finite_metric(llm, "corpus.bits_per_byte", minimum=0)
+    _qualitative_rows(llm, "generation", ("prompt", "completion"))
+
+    _finite_metric(vlm, "validation_loss", minimum=0)
+    _qualitative_rows(vlm, "qualitative", ("prompt", "completion", "keyword_recall"))
+    for index, row in enumerate(vlm["qualitative"]):
+        recall = row["keyword_recall"]
+        if recall is not None and (
+            isinstance(recall, bool)
+            or not isinstance(recall, (int, float))
+            or not math.isfinite(float(recall))
+            or not 0 <= float(recall) <= 1
+        ):
+            raise ValueError(f"VLM keyword recall must be null or in [0, 1]: qualitative[{index}]")
+
+    _finite_metric(video, "test_loss", minimum=0)
+    for section in ("qivd_generation", "controlled_temporal"):
+        _finite_metric(video, f"{section}.generated_samples", minimum=1)
+        for metric in (
+            "normalized_exact_match",
+            "reversed_frame_exact_match",
+            "token_f1",
+            "reversed_frame_token_f1",
+            "completion_change_rate_on_reversal",
+        ):
+            _finite_metric(video, f"{section}.{metric}", minimum=0, maximum=1)
+        _finite_metric(video, f"{section}.normal_minus_reversed_token_f1", minimum=-1, maximum=1)
+        _qualitative_rows(
+            video,
+            f"{section}.qualitative",
+            ("question", "answer", "normal_completion", "reversed_completion"),
+        )
+
+
 def render_training_curves(histories: dict[str, list[dict]], output: str | Path) -> None:
     width, height = 960, 600
     columns, rows = 3, 2

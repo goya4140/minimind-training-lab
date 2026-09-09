@@ -14,7 +14,7 @@ import torch
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from minimind_lab.reporting import render_temporal_ablation, render_training_curves
+from minimind_lab.reporting import render_temporal_ablation, render_training_curves, validate_final_evaluations
 
 REQUIRED = {
     "LLM pretrain log": "artifacts/logs/llm-64m-pretrain-mps.json",
@@ -84,9 +84,6 @@ def main() -> None:
     if missing:
         print(json.dumps({"ready": False, "missing": missing}, ensure_ascii=False, indent=2))
         sys.exit(1)
-    if args.check:
-        print(json.dumps({"ready": True, "artifacts": REQUIRED}, ensure_ascii=False, indent=2))
-        return
 
     logs = {
         "llm_pretrain": read_json(REQUIRED["LLM pretrain log"]),
@@ -99,6 +96,7 @@ def main() -> None:
     llm_eval = read_json(REQUIRED["LLM evaluation"])
     vlm_eval = read_json(REQUIRED["VLM evaluation"])
     video_eval = read_json(REQUIRED["Video evaluation"])
+    validate_final_evaluations(llm_eval, vlm_eval, video_eval)
     qivd = read_json(REQUIRED["QIVD manifest"])
     local_artifacts = [
         local_artifact_entry("llm-64m-sft-mps.pt", REQUIRED["LLM checkpoint"]),
@@ -120,6 +118,9 @@ def main() -> None:
             ("video_sft", "Video checkpoint"),
         )
     }
+    if args.check:
+        print(json.dumps({"ready": True, "artifacts": REQUIRED}, ensure_ascii=False, indent=2))
+        return
     losses = {key: (float(history[0]["loss"]), float(history[-1]["loss"])) for key, history in histories.items()}
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     qivd_generation = video_eval["qivd_generation"]
