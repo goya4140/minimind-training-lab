@@ -30,12 +30,25 @@ def test_checkpoint_verification_deduplicates_tied_storage(tmp_path):
 
 
 def resume_payload(step=32):
+    history = [
+        {"step": 1, "loss": 3.0, "grad_norm": None, "seconds_per_step": 0.1, "learning_rate": 1e-3},
+        {
+            "step": min(step, 20),
+            "loss": 2.0,
+            "grad_norm": 0.5,
+            "seconds_per_step": 0.1,
+            "learning_rate": 9e-4,
+        },
+    ]
     return {
         "model": {"weight": torch.ones(2, 3)},
-        "optimizer": {"state": {0: {"step": torch.tensor(1)}}, "param_groups": [{"params": [0]}]},
+        "optimizer": {
+            "state": {0: {"step": torch.tensor(1), "exp_avg": torch.zeros(2, 3)}},
+            "param_groups": [{"params": [0]}],
+        },
         "config": {"training": {"steps": 100, "gradient_accumulation_steps": 8}},
         "step": step,
-        "history": [{"step": 1}, {"step": min(step, 20)}],
+        "history": history,
         "training_seconds": 12.5,
         "torch_rng_state": torch.get_rng_state(),
     }
@@ -49,6 +62,8 @@ def test_resume_verification_checks_recoverable_state(tmp_path):
     assert result["resume_step"] == 32
     assert result["optimizer_boundary"] is True
     assert result["optimizer_state_entries"] == 1
+    assert result["optimizer_state_tensors"] == 2
+    assert result["optimizer_all_finite"] is True
     assert result["history_records"] == 2
     assert result["training_seconds"] == 12.5
     assert result["all_finite"] is True
@@ -73,7 +88,18 @@ def test_resume_verification_can_require_final_step(tmp_path):
         (lambda value: value.update(step=31), "optimizer boundary"),
         (lambda value: value.update(training_seconds=0), "cumulative training time"),
         (lambda value: value["optimizer"].update(state={}), "optimizer state is empty"),
-        (lambda value: value.update(history=[{"step": 20}, {"step": 10}]), "history steps"),
+        (
+            lambda value: value.update(history=[value["history"][1], value["history"][0]]),
+            "history steps",
+        ),
+        (
+            lambda value: value["history"][0].update(loss=float("nan")),
+            "history metric",
+        ),
+        (
+            lambda value: value["optimizer"]["state"][0].update(exp_avg=torch.tensor([float("nan")])),
+            "non-finite tensors",
+        ),
     ],
 )
 def test_resume_verification_rejects_incomplete_state(tmp_path, mutation, message):

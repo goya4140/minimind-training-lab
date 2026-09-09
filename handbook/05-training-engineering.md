@@ -52,8 +52,9 @@ uv run python scripts/verify_resume_checkpoint.py --config configs/llm/pretrain-
 ```
 
 审计器会读取但不修改文件，并核对 optimizer state、config、RNG state、history、累计耗时、有限参数与
-optimizer 边界。输出只有尺寸、SHA-256 和汇总计数，不会把权重内容写入报告。六阶段流水线在每个阶段
-完成后还会加上 `--require-complete`，阻止未到最终步数的 resume 文件通过完成门禁。
+optimizer 边界。模型参数与 AdamW 动量张量都必须没有 NaN/Inf，history 中的 loss、速度、学习率与
+grad norm 也必须有效。输出只有尺寸、SHA-256 和汇总计数，不会把权重内容写入报告。六阶段流水线在
+每个阶段完成后还会加上 `--require-complete`，阻止未到最终步数的 resume 文件通过完成门禁。
 
 ## 防止重复训练
 

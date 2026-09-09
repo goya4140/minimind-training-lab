@@ -90,6 +90,24 @@ def verify_resume_checkpoint(
         raise ValueError("every resume history row must contain an integer step")
     if history_steps != sorted(set(history_steps)) or (history_steps and history_steps[-1] > step):
         raise ValueError("resume history steps must be unique, increasing, and no later than the checkpoint")
+    for index, row in enumerate(history):
+        for field in ("loss", "seconds_per_step", "learning_rate"):
+            value = row.get(field)
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(float(value))
+                or float(value) < 0
+            ):
+                raise ValueError(f"resume history metric is invalid: history[{index}].{field}")
+        grad_norm = row.get("grad_norm")
+        if grad_norm is not None and (
+            isinstance(grad_norm, bool)
+            or not isinstance(grad_norm, (int, float))
+            or not math.isfinite(float(grad_norm))
+            or float(grad_norm) < 0
+        ):
+            raise ValueError(f"resume history grad norm is invalid: history[{index}]")
 
     training_seconds = checkpoint["training_seconds"]
     if (
@@ -113,6 +131,18 @@ def verify_resume_checkpoint(
         raise ValueError("resume optimizer state is empty after training has started")
     if not isinstance(param_groups, list) or not param_groups:
         raise ValueError("resume optimizer parameter groups are missing")
+    optimizer_tensors = [
+        value
+        for state_values in optimizer_state.values()
+        if isinstance(state_values, dict)
+        for value in state_values.values()
+        if isinstance(value, torch.Tensor)
+    ]
+    if step > 0 and not optimizer_tensors:
+        raise ValueError("resume optimizer state does not contain tensors after training has started")
+    optimizer_all_finite = all(bool(torch.isfinite(tensor).all()) for tensor in optimizer_tensors)
+    if not optimizer_all_finite:
+        raise ValueError("resume optimizer state contains non-finite tensors")
 
     model_verification = _verify_model_state(target, checkpoint)
     return {
@@ -120,6 +150,8 @@ def verify_resume_checkpoint(
         "resume_step": step,
         "optimizer_boundary": True,
         "optimizer_state_entries": len(optimizer_state),
+        "optimizer_state_tensors": len(optimizer_tensors),
+        "optimizer_all_finite": optimizer_all_finite,
         "history_records": len(history),
         "training_seconds": float(training_seconds),
         "rng_state_bytes": rng_state.numel() * rng_state.element_size(),
