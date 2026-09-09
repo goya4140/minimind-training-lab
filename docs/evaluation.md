@@ -32,5 +32,9 @@
 - barge-in 成功率；
 - LLM/VLM 能力回归测试。
 
-最终报告必须注明模型规模、冻结外部模块规模、数据范围与硬件，不能只展示训练 loss。
+仓库固定 `data/eval/omni/` 的中英文语音、图像和纯文本输入。`scripts/evaluate_omni.py`
+对同一 checkpoint 运行 T2A、A2A 和 I2A，保存文本回答、音频 code 帧数、端到端耗时，
+并通过冻结 Mimi 解码为 24 kHz WAV。CER/WER、speaker similarity 和 barge-in 属于后续自动量化门禁，
+不能用主观试听替代。
 
+最终报告必须注明模型规模、冻结外部模块规模、数据范围与硬件，不能只展示训练 loss。
