@@ -128,8 +128,11 @@ def main() -> None:
     qivd = read_json(REQUIRED["QIVD manifest"])
     validate_qivd_manifest(qivd, QIVD_REVISION)
     local_artifacts = [
+        local_artifact_entry("llm-64m-pretrain-mps.pt", REQUIRED["LLM pretrain checkpoint"]),
         local_artifact_entry("llm-64m-sft-mps.pt", REQUIRED["LLM checkpoint"]),
+        local_artifact_entry("vlm-alignment-mps.pt", REQUIRED["VLM alignment checkpoint"]),
         local_artifact_entry("vlm-sft-mps.pt", REQUIRED["VLM checkpoint"]),
+        local_artifact_entry("video-omni-alignment-mps.pt", REQUIRED["Video alignment checkpoint"]),
         local_artifact_entry("video-omni-sft-mps.pt", REQUIRED["Video checkpoint"]),
         local_artifact_entry("llm-sft-final.json", REQUIRED["LLM evaluation"]),
         local_artifact_entry("llm-pretrain-final.json", REQUIRED["LLM pretrain evaluation"]),
