@@ -14,7 +14,7 @@
 |---|---|---|---|
 | M0 | GitHub 仓库与复现规范 | 已完成 | `goya4140/minimind-training-lab` 与首次远端提交 |
 | M1 | LLM 原生架构 | 已完成 | 4 个测试通过；正式配置参数量 63,912,192 |
-| M2 | LLM 从零 Pretrain | 进行中 | 已超过 step 40,000；step 12,000 中期评估已提交 |
+| M2 | LLM 从零 Pretrain | 进行中 | 已超过 step 52,000；step 12,000 中期评估与 step 52,000 恢复审计已提交 |
 | M3 | LLM SFT 与评估 | 已准备 | assistant-only 数据管线、配置和训练入口已测试 |
 | M4 | VLM 对齐与 SFT | 管线就绪 | 真实 Parquet + SigLIP2 前向探针通过，等待 LLM SFT |
 | M5 | Video-Omni Video→Text | 管线就绪 | 时序 Transformer、倒序消融、QIVD 划分与训练/评估入口已测试；2,900 个视频已完成上游 LFS 哈希核验 |
@@ -43,9 +43,11 @@
 运行恢复点，因此哈希只用于证明当时的原子快照，不作为最终模型哈希。
 
 step 40,000 在完整的 32-micro-batch optimizer 边界保存后，已由后台六阶段流水线成功重载。
-step 48,000 再次于完整边界切换至包含累计耗时和 Pretrain/SFT 对照评估的新版流水线，并继续至
-step 48,040 以上；恢复点记录此前累计训练 `17,393.61s`。这些切换验证了修正后的边界 checkpoint 恢复路径；
-训练器也会对最后不足一个 accumulation 的 micro-batch 执行尾部 optimizer update。
+step 48,000 再次于完整边界切换至包含累计耗时和 Pretrain/SFT 对照评估的新版流水线；step 52,000
+由新版训练器自动写出后，完整恢复审计通过并继续训练。累计耗时由 `17,393.61s` 增至
+`18,790.01s`，与新增 4,000 个 micro-step 的实测速度一致，证明恢复后计时没有归零。完整字段与哈希见
+[`reports/llm-resume-step52000.md`](../reports/llm-resume-step52000.md)。这些证据验证了修正后的边界
+checkpoint 恢复路径；训练器也会对最后不足一个 accumulation 的 micro-batch 执行尾部 optimizer update。
 
 本节只陈述已验证的运行状态。最终步数、耗时、曲线和 checkpoint 哈希将在训练完成后写入正式报告。
 
