@@ -51,6 +51,14 @@ uv run python scripts/fetch_data.py all
 uv run python scripts/train_pretrain.py --config configs/llm/pretrain-mps.yaml --resume
 ```
 
+正式 BPE 评估：
+
+```bash
+uv run python scripts/evaluate_bpe_llm.py \
+  --config configs/llm/pretrain-mps.yaml \
+  --checkpoint artifacts/checkpoints/llm-64m-pretrain-mps.pt
+```
+
 `smoke.yaml` 是本机链路验证配置，不代表最终模型。当前正式本机复现使用
 `configs/llm/pretrain-mps.yaml`，后续阶段严格从前一阶段 checkpoint 初始化。
 

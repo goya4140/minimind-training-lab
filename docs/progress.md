@@ -14,7 +14,7 @@
 |---|---|---|---|
 | M0 | GitHub 仓库与复现规范 | 已完成 | `goya4140/minimind-training-lab` 与首次远端提交 |
 | M1 | LLM 原生架构 | 已完成 | 4 个测试通过；正式配置参数量 63,912,192 |
-| M2 | LLM 从零 Pretrain | 进行中 | 正式进程已启动；首个完整恢复点为 step 2000 |
+| M2 | LLM 从零 Pretrain | 进行中 | step 2000 完整恢复点已校验；训练继续运行 |
 | M3 | LLM SFT 与评估 | 已准备 | assistant-only 数据管线、配置和训练入口已测试 |
 | M4 | VLM 对齐与 SFT | 架构就绪 | early-fusion、projector 与分阶段冻结测试通过 |
 | M5 | Omni T2A/A2A/I2T | 架构就绪 | Thinker–Bridge–Talker、MTP heads 与三阶段配置测试通过 |
@@ -37,5 +37,9 @@
 - 配置：sequence length 340、batch size 8、gradient accumulation 32、2 epochs；
 - checkpoint 采用原子替换写入，并保存 optimizer、随机状态、历史和全局步数；
 - 样本顺序由 seed、epoch 与全局步数决定，恢复后不会从 DataLoader 起点重放。
+
+首个恢复点已于 step 2000 读取验证：文件大小 767,066,797 bytes，SHA-256 为
+`2496b17f64d428275920954ebfcbf936fd47ee5f945b48cd94c0b7b1d7fdd5fc`。该文件是持续覆盖的
+运行恢复点，因此哈希只用于证明当时的原子快照，不作为最终模型哈希。
 
 本节只陈述已验证的运行状态。最终步数、耗时、曲线和 checkpoint 哈希将在训练完成后写入正式报告。

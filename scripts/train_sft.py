@@ -18,7 +18,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from minimind_lab.data import DeterministicBatchStream, JsonlSFTDataset
 from minimind_lab.llm import MiniMindConfig, MiniMindForCausalLM
-from minimind_lab.training import load_config, resolve_device, seed_everything
+from minimind_lab.training import acquire_run_lock, load_config, resolve_device, seed_everything
 from minimind_lab.training.utils import environment_info, write_json
 
 
@@ -70,6 +70,7 @@ def main() -> None:
     parser.add_argument("--resume", action="store_true")
     args = parser.parse_args()
     config = load_config(args.config)
+    run_lock = acquire_run_lock((ROOT / config["training"]["checkpoint_path"]).with_suffix(".lock"))
     seed_everything(config["experiment"]["seed"])
     device = resolve_device(config["experiment"]["device"])
     tokenizer = AutoTokenizer.from_pretrained(ROOT / config["tokenizer"]["path"], local_files_only=True)
@@ -165,6 +166,7 @@ def main() -> None:
     }
     write_json(ROOT / f"artifacts/logs/{config['experiment']['name']}.json", report)
     print(json.dumps(report, ensure_ascii=False, indent=2))
+    run_lock.close()
 
 
 if __name__ == "__main__":
