@@ -58,8 +58,14 @@ def valid_evaluations():
     vlm = {
         "validation_loss": 1.5,
         "qualitative": [{"prompt": "describe", "completion": "a dog", "keyword_recall": 1.0}],
+        "language_regression": {"corpus": dict(llm["corpus"]), "generation": list(llm["generation"])},
     }
-    video = {"test_loss": 1.0, "qivd_generation": generation, "controlled_temporal": dict(generation)}
+    video = {
+        "test_loss": 1.0,
+        "qivd_generation": generation,
+        "controlled_temporal": dict(generation),
+        "language_regression": {"corpus": dict(llm["corpus"]), "generation": list(llm["generation"])},
+    }
     return llm, vlm, video
 
 

@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from minimind_lab.data import ParquetVLMDataset, collate_vlm
-from minimind_lab.evaluation import distinct_n
+from minimind_lab.evaluation import distinct_n, evaluate_language_regression
 from minimind_lab.training import load_config, resolve_device, seed_everything
 from minimind_lab.training.utils import environment_info, write_json
 from minimind_lab.vlm import MiniMindVLM, VLMConfig
@@ -90,6 +90,8 @@ def main() -> None:
     parser.add_argument("--checkpoint", required=True)
     parser.add_argument("--validation-samples", type=int, default=128)
     parser.add_argument("--max-new-tokens", type=int, default=96)
+    parser.add_argument("--language-config", default="configs/llm/pretrain-mps.yaml")
+    parser.add_argument("--language-validation-samples", type=int, default=2048)
     parser.add_argument("--output", default="artifacts/eval/vlm.json")
     args = parser.parse_args()
     config = load_config(args.config)
@@ -114,12 +116,23 @@ def main() -> None:
         image_token_length=model.config.image_token_length,
     )
     validation = Subset(full_dataset, range(len(full_dataset) - args.validation_samples, len(full_dataset)))
+    language_config = load_config(ROOT / args.language_config)
     report = {
         "experiment": config["experiment"]["name"],
         "checkpoint": args.checkpoint,
         "environment": environment_info(device),
         "validation_loss": validation_loss(model, validation, config["training"]["batch_size"], device),
         "qualitative": qualitative_samples(model, tokenizer, processor, device, args.max_new_tokens),
+        "language_regression": evaluate_language_regression(
+            model.language_model,
+            tokenizer,
+            ROOT / language_config["data"]["path"],
+            sequence_length=language_config["data"]["sequence_length"],
+            validation_samples=args.language_validation_samples,
+            batch_size=language_config["training"]["batch_size"],
+            device=device,
+            max_new_tokens=args.max_new_tokens,
+        ),
     }
     write_json(ROOT / args.output, report)
     print(json.dumps(report, ensure_ascii=False, indent=2))

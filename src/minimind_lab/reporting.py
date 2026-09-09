@@ -50,15 +50,21 @@ def _qualitative_rows(report: dict, path: str, required_fields: tuple[str, ...])
             raise ValueError(f"malformed qualitative row: {path}[{index}]")
 
 
+def _validate_language_evaluation(report: dict, prefix: str = "") -> None:
+    base = f"{prefix}." if prefix else ""
+    _finite_metric(report, f"{base}corpus.validation_loss", minimum=0)
+    _finite_metric(report, f"{base}corpus.validation_perplexity", minimum=1)
+    _finite_metric(report, f"{base}corpus.bits_per_byte", minimum=0)
+    _qualitative_rows(report, f"{base}generation", ("prompt", "completion"))
+
+
 def validate_final_evaluations(llm: dict, vlm: dict, video: dict) -> None:
     """Reject incomplete or non-finite evidence before publishing the final report."""
-    _finite_metric(llm, "corpus.validation_loss", minimum=0)
-    _finite_metric(llm, "corpus.validation_perplexity", minimum=1)
-    _finite_metric(llm, "corpus.bits_per_byte", minimum=0)
-    _qualitative_rows(llm, "generation", ("prompt", "completion"))
+    _validate_language_evaluation(llm)
 
     _finite_metric(vlm, "validation_loss", minimum=0)
     _qualitative_rows(vlm, "qualitative", ("prompt", "completion", "keyword_recall"))
+    _validate_language_evaluation(vlm, "language_regression")
     for index, row in enumerate(vlm["qualitative"]):
         recall = row["keyword_recall"]
         if recall is not None and (
@@ -70,6 +76,7 @@ def validate_final_evaluations(llm: dict, vlm: dict, video: dict) -> None:
             raise ValueError(f"VLM keyword recall must be null or in [0, 1]: qualitative[{index}]")
 
     _finite_metric(video, "test_loss", minimum=0)
+    _validate_language_evaluation(video, "language_regression")
     for section in ("qivd_generation", "controlled_temporal"):
         _finite_metric(video, f"{section}.generated_samples", minimum=1)
         for metric in (

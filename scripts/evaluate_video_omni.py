@@ -16,7 +16,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from minimind_lab.data import QIVDVideoDataset, collate_video, decode_uniform_video
 from minimind_lab.data.temporal_benchmark import generate_temporal_benchmark
-from minimind_lab.evaluation import normalize_qa_answer, token_f1
+from minimind_lab.evaluation import evaluate_language_regression, normalize_qa_answer, token_f1
 from minimind_lab.training import load_config, resolve_device, seed_everything
 from minimind_lab.training.utils import environment_info, write_json
 from minimind_lab.video import MiniMindVideoOmni, VideoOmniConfig
@@ -133,6 +133,8 @@ def main() -> None:
     parser.add_argument("--generation-samples", type=int, default=100)
     parser.add_argument("--temporal-generation-samples", type=int, default=160)
     parser.add_argument("--max-new-tokens", type=int, default=48)
+    parser.add_argument("--language-config", default="configs/llm/pretrain-mps.yaml")
+    parser.add_argument("--language-validation-samples", type=int, default=2048)
     parser.add_argument("--output", default="artifacts/eval/video-omni-final.json")
     args = parser.parse_args()
     config = load_config(args.config)
@@ -194,6 +196,7 @@ def main() -> None:
         args.temporal_generation_samples,
         args.max_new_tokens,
     )
+    language_config = load_config(ROOT / args.language_config)
     report = {
         "experiment": config["experiment"]["name"],
         "checkpoint": args.checkpoint,
@@ -210,6 +213,16 @@ def main() -> None:
             "reversed_minus_normal_loss": temporal_reversed_loss - temporal_loss,
             **generation_summary(temporal_cases),
         },
+        "language_regression": evaluate_language_regression(
+            model.language_model,
+            tokenizer,
+            ROOT / language_config["data"]["path"],
+            sequence_length=language_config["data"]["sequence_length"],
+            validation_samples=args.language_validation_samples,
+            batch_size=language_config["training"]["batch_size"],
+            device=device,
+            max_new_tokens=args.max_new_tokens,
+        ),
     }
     write_json(ROOT / args.output, report)
     print(json.dumps(report, ensure_ascii=False, indent=2))

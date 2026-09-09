@@ -24,6 +24,10 @@
 - 多图顺序和指代测试；
 - 重新运行 LLM 文本评估，测量语言能力遗忘。
 
+VLM 和 Video-Omni 的纯文本回归使用与 LLM 相同的 held-out 文本、tokenizer、loss/PPL/BPB
+计算和固定提示。最终报告同时展示 PPL 变化与同一提示的三模型回答，用于区分“多模态能力增加”
+与“语言能力被破坏”。
+
 ## Video-Omni
 
 - 固定 250 条 held-out QIVD test 的 assistant-only loss；

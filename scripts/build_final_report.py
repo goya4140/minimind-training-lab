@@ -125,6 +125,9 @@ def main() -> None:
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     qivd_generation = video_eval["qivd_generation"]
     temporal = video_eval["controlled_temporal"]
+    llm_language = llm_eval["corpus"]
+    vlm_language = vlm_eval["language_regression"]["corpus"]
+    video_language = video_eval["language_regression"]["corpus"]
     qualitative_vlm = vlm_eval.get("qualitative", [])
     vlm_keyword_recall = [item["keyword_recall"] for item in qualitative_vlm if item.get("keyword_recall") is not None]
     total_training_seconds = sum(float(log.get("training_seconds", 0)) for log in logs.values())
@@ -174,10 +177,12 @@ def main() -> None:
         "",
         "| Model / set | Primary metrics |",
         "|---|---|",
-        f"| LLM held-out text | loss {fmt(llm_eval['corpus']['validation_loss'])}; perplexity {fmt(llm_eval['corpus']['validation_perplexity'])}; BPB {fmt(llm_eval['corpus']['bits_per_byte'])} |",
+        f"| LLM held-out text | loss {fmt(llm_language['validation_loss'])}; perplexity {fmt(llm_language['validation_perplexity'])}; BPB {fmt(llm_language['bits_per_byte'])} |",
         f"| VLM validation + fixed images | loss {fmt(vlm_eval['validation_loss'])}; mean keyword recall {fmt(sum(vlm_keyword_recall) / len(vlm_keyword_recall)) if vlm_keyword_recall else 'n/a'} |",
+        f"| VLM language regression | perplexity {fmt(vlm_language['validation_perplexity'])}; delta vs LLM {fmt(vlm_language['validation_perplexity'] - llm_language['validation_perplexity'])} |",
         f"| Video QIVD held-out | loss {fmt(video_eval['test_loss'])}; exact {fmt(qivd_generation['normalized_exact_match'])}; token F1 {fmt(qivd_generation['token_f1'])} |",
         f"| Controlled temporal | exact {fmt(temporal['normalized_exact_match'])}; reversed exact {fmt(temporal['reversed_frame_exact_match'])}; token F1 delta {fmt(temporal['normal_minus_reversed_token_f1'])} |",
+        f"| Video language regression | perplexity {fmt(video_language['validation_perplexity'])}; delta vs LLM {fmt(video_language['validation_perplexity'] - llm_language['validation_perplexity'])} |",
         "",
         "![Controlled temporal normal versus reversed metrics](assets/temporal-ablation.svg)",
         "",
@@ -208,6 +213,21 @@ def main() -> None:
         *[
             f"| {one_line(item['prompt'])} | {one_line(item['completion'])} |"
             for item in llm_eval.get("generation", [])[:4]
+        ],
+        "",
+        "### Language retention across variants",
+        "",
+        "| Prompt | LLM | VLM language core | Video-Omni language core |",
+        "|---|---|---|---|",
+        *[
+            f"| {one_line(llm_row['prompt'])} | {one_line(llm_row['completion'])} | "
+            f"{one_line(vlm_row['completion'])} | {one_line(video_row['completion'])} |"
+            for llm_row, vlm_row, video_row in zip(
+                llm_eval["generation"],
+                vlm_eval["language_regression"]["generation"],
+                video_eval["language_regression"]["generation"],
+                strict=True,
+            )
         ],
         "",
         "### VLM",
