@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 
 import torch
+import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -17,6 +18,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from minimind_lab.reporting import (
     render_temporal_ablation,
     render_training_curves,
+    summarize_training_config,
     validate_checkpoint_bindings,
     validate_final_evaluations,
     validate_language_evaluation,
@@ -32,6 +34,15 @@ EXPECTED_STAGES = {
     "vlm_sft": (30_000, 15_931_776),
     "video_alignment": (7_200, 20_105_472),
     "video_sft": (4_800, 34_854_528),
+}
+
+STAGE_CONFIGS = {
+    "LLM 预训练": "configs/llm/pretrain-mps.yaml",
+    "LLM SFT": "configs/llm/sft-mps.yaml",
+    "VLM 对齐": "configs/vlm/alignment-mps.yaml",
+    "VLM SFT": "configs/vlm/sft-mps.yaml",
+    "Video-Omni 对齐": "configs/video/alignment-mps.yaml",
+    "Video-Omni SFT": "configs/video/sft-mps.yaml",
 }
 
 REQUIRED = {
@@ -100,6 +111,17 @@ def mean_field(rows: list[dict], field: str) -> float:
     if not values:
         raise ValueError(f"no values available for summary field: {field}")
     return sum(values) / len(values)
+
+
+def training_config_row(stage: str, relative_path: str) -> str:
+    with (ROOT / relative_path).open(encoding="utf-8") as handle:
+        config = yaml.safe_load(handle)
+    values = summarize_training_config(config)
+    return (
+        f"| {stage} | `{relative_path}` | {values['seed']} | {values['micro_batch']} | "
+        f"{values['accumulation']} | {values['effective_batch']} | {values['optimizer_updates']:,} | "
+        f"{values['base_learning_rate']:.2g} | {values['sequence_length']} | `{values['data_path']}` |"
+    )
 
 
 def main() -> None:
@@ -171,6 +193,11 @@ def main() -> None:
         return
     losses = {key: (float(history[0]["loss"]), float(history[-1]["loss"])) for key, history in histories.items()}
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
+    source_dirty = bool(
+        subprocess.check_output(
+            ["git", "status", "--porcelain", "--untracked-files=normal"], cwd=ROOT, text=True
+        ).strip()
+    )
     qivd_generation = video_eval["qivd_generation"]
     temporal = video_eval["controlled_temporal"]
     llm_pretrain_language = llm_pretrain_eval["corpus"]
@@ -200,7 +227,8 @@ def main() -> None:
         "",
         (
             f"证据对应提交：`{commit}`。硬件：Apple M4 Pro / MPS。六阶段记录的训练总耗时："
-            f"**{duration(total_training_seconds)}**。"
+            f"**{duration(total_training_seconds)}**。报告生成前工作区："
+            f"**{'dirty' if source_dirty else 'clean'}**。"
         ),
         "",
         "## 结论",
@@ -208,6 +236,18 @@ def main() -> None:
         (
             "本次实验从随机初始化训练一个语言核心，再从其指令微调 checkpoint 分别扩展图像与视频理解。"
             "SigLIP2 始终冻结，因此不把视觉编码器描述为从零训练。"
+        ),
+        "",
+        "## 可复现训练配置",
+        "",
+        "| 阶段 | 配置 | Seed | Micro-batch | Accumulation | Effective batch | Optimizer updates | Base LR | Seq length | 数据路径 |",
+        "|---|---|---:|---:|---:|---:|---:|---:|---:|---|",
+        *[training_config_row(stage, path) for stage, path in STAGE_CONFIGS.items()],
+        "",
+        (
+            "`Effective batch = micro-batch × accumulation`；最后不足一个 accumulation 的尾部仍执行一次更新。"
+            "数据文件版本与校验和见 [`reports/data-manifest.md`](data-manifest.md)，上游代码版本见 "
+            "[`docs/upstream.md`](../docs/upstream.md)。"
         ),
         "",
         "## 训练结果",
@@ -337,7 +377,12 @@ def main() -> None:
     ]
     report_path = ROOT / "reports/final-results.md"
     report_path.write_text("\n".join(lines), encoding="utf-8")
-    manifest = {"source_commit": commit, "uploaded": False, "local_artifacts": local_artifacts}
+    manifest = {
+        "source_commit": commit,
+        "source_dirty": source_dirty,
+        "uploaded": False,
+        "local_artifacts": local_artifacts,
+    }
     (ROOT / "reports/local-artifact-manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )

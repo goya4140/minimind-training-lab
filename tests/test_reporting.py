@@ -5,6 +5,7 @@ import pytest
 from minimind_lab.reporting import (
     render_temporal_ablation,
     render_training_curves,
+    summarize_training_config,
     validate_checkpoint_bindings,
     validate_final_evaluations,
     validate_qivd_manifest,
@@ -198,3 +199,21 @@ def test_checkpoint_binding_requires_exact_path_size_and_hash():
             {"stage": report},
             {"stage": {**artifact, "path": "artifacts/checkpoints/other.pt"}},
         )
+
+
+def test_training_config_summary_exposes_effective_batch_and_updates():
+    config = {
+        "experiment": {"seed": 42},
+        "training": {"steps": 101, "batch_size": 8, "gradient_accumulation_steps": 32, "learning_rate": 5e-4},
+        "data": {"sequence_length": 340, "path": "data/train.jsonl"},
+    }
+    assert summarize_training_config(config) == {
+        "seed": 42,
+        "micro_batch": 8,
+        "accumulation": 32,
+        "effective_batch": 256,
+        "optimizer_updates": 4,
+        "base_learning_rate": 5e-4,
+        "sequence_length": 340,
+        "data_path": "data/train.jsonl",
+    }

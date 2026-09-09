@@ -203,6 +203,28 @@ def validate_checkpoint_bindings(logs: dict[str, dict], artifacts: dict[str, dic
             raise ValueError(f"training report checkpoint SHA-256 does not match the artifact: {stage}")
 
 
+def summarize_training_config(config: dict) -> dict[str, int | float | str]:
+    """Expose the quantities a reader needs to interpret one training stage."""
+    experiment = config["experiment"]
+    training = config["training"]
+    data = config["data"]
+    micro_steps = int(training["steps"])
+    micro_batch = int(training["batch_size"])
+    accumulation = int(training.get("gradient_accumulation_steps", 1))
+    if min(micro_steps, micro_batch, accumulation) <= 0:
+        raise ValueError("training steps, batch size, and accumulation must be positive")
+    return {
+        "seed": int(experiment["seed"]),
+        "micro_batch": micro_batch,
+        "accumulation": accumulation,
+        "effective_batch": micro_batch * accumulation,
+        "optimizer_updates": (micro_steps + accumulation - 1) // accumulation,
+        "base_learning_rate": float(training["learning_rate"]),
+        "sequence_length": int(data["sequence_length"]),
+        "data_path": str(data["path"]),
+    }
+
+
 def render_training_curves(histories: dict[str, list[dict]], output: str | Path) -> None:
     width, height = 960, 600
     columns, rows = 3, 2
