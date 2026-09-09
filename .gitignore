@@ -8,6 +8,7 @@ __pycache__/
 # Local datasets, checkpoints and generated artifacts
 data/raw/
 data/processed/
+data/manifests/
 data/eval/temporal-video/
 artifacts/checkpoints/
 artifacts/models/
