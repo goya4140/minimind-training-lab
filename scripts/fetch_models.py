@@ -14,8 +14,14 @@ MODELS = {
         "revision": "9465d1dc89db6bc6227c5b6b0e0ca9b940325d62",
         "directory": "siglip2-base-p32-256-ve",
         "files": {
-            "config.json": (410, None),
-            "preprocessor_config.json": (394, None),
+            "config.json": (
+                410,
+                "5ad8dda7d55541c7749f9b1cc43fe8eb8c70d8664588d89f710242ce06b3167e",
+            ),
+            "preprocessor_config.json": (
+                394,
+                "d14ba2ee3fd816f3de8abaddc31953565128eaf37c73ad4bed32101a98465aff",
+            ),
             "model.safetensors": (
                 189_129_296,
                 "c1e9cc19ed6704b87353ee00b9ff5d6191886d741898339984364f789c62810d",
