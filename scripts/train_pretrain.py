@@ -103,6 +103,7 @@ def main() -> None:
     iterator = iter(loader)
     model.train()
     optimizer.zero_grad(set_to_none=True)
+    last_grad_norm = None
     for step in range(start_step + 1, training["steps"] + 1):
         try:
             input_ids, labels = next(iterator)
@@ -112,12 +113,12 @@ def main() -> None:
         output = model(input_ids.to(device), labels.to(device))
         loss = output["loss"] / accumulation
         loss.backward()
-        grad_norm = torch.tensor(float("nan"))
         if step % accumulation == 0:
             current_lr = learning_rate(step, training["steps"], training["learning_rate"])
             for group in optimizer.param_groups:
                 group["lr"] = current_lr
             grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), training["grad_clip"])
+            last_grad_norm = grad_norm.detach().item()
             optimizer.step()
             optimizer.zero_grad(set_to_none=True)
         if step == 1 or step % training["log_interval"] == 0:
@@ -126,7 +127,7 @@ def main() -> None:
             record = {
                 "step": step,
                 "loss": loss.detach().item() * accumulation,
-                "grad_norm": grad_norm.detach().item(),
+                "grad_norm": last_grad_norm,
                 "seconds_per_step": elapsed / completed_this_run,
                 "learning_rate": optimizer.param_groups[0]["lr"],
             }
