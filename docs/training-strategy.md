@@ -62,3 +62,7 @@ VLM/Omni 的 batch 是保守起点，正式启动前还会用完整模型做 MPS
 下调 micro-batch，将同比提高 accumulation，保持 effective batch 不变。运行
 `python scripts/preflight_mps_pipeline.py` 可检查设备、数据、冻结组件、阶段 checkpoint 链与
 每阶段 effective batch。`pending` 表示资源齐全但必须等待上游 checkpoint，并非错误。
+
+`scripts/run_mps_pipeline.py` 是可恢复的阶段编排器：已有最终 checkpoint 会被跳过，正在运行的
+阶段按锁等待，中断阶段通过 `--resume` 继续；LLM SFT、VLM SFT 和 Omni I2T 完成后分别触发
+固定评估。pipeline 自身也持有独立锁，避免启动两个编排器。

@@ -84,6 +84,15 @@ uv run python scripts/train_omni.py --config configs/omni/a2a-sft-mps.yaml --res
 uv run python scripts/train_omni.py --config configs/omni/i2t-mps.yaml --resume
 ```
 
+若希望在每个上游 checkpoint 完成后自动接力，并在 LLM、VLM、Omni 末端运行固定评估：
+
+```bash
+caffeinate -i uv run python scripts/run_mps_pipeline.py
+```
+
+执行器会跳过已有的最终 checkpoint、等待正在持锁的阶段、对中断阶段使用 `--resume`，并用
+独立 pipeline lock 防止重复执行；任一阶段失败时会立即停止，保留已有 checkpoint 和日志。
+
 `smoke.yaml` 是本机链路验证配置，不代表最终模型。当前正式本机复现使用
 `configs/llm/pretrain-mps.yaml`，后续阶段严格从前一阶段 checkpoint 初始化。
 
