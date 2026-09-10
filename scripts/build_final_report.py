@@ -231,6 +231,7 @@ def main() -> None:
     llm_generation_tps = mean_field(llm_eval["generation"], "tokens_per_second")
     vlm_generation_tps = mean_field(qualitative_vlm, "tokens_per_second")
     total_training_seconds = sum(float(log.get("training_seconds", 0)) for log in logs.values())
+    total_suspended_seconds = sum(float(log.get("suspended_seconds", 0)) for log in logs.values())
     assets = ROOT / "reports/assets"
     render_training_curves(
         {
@@ -249,7 +250,8 @@ def main() -> None:
         "",
         (
             f"证据对应提交：`{commit}`。硬件：Apple M4 Pro / MPS。六阶段记录的训练总耗时："
-            f"**{duration(total_training_seconds)}**。报告生成前工作区："
+            f"**{duration(total_training_seconds)}**（另排除系统休眠/暂停 "
+            f"**{duration(total_suspended_seconds)}**）。报告生成前工作区："
             f"**{'dirty' if source_dirty else 'clean'}**。"
         ),
         "",
@@ -274,14 +276,14 @@ def main() -> None:
         "",
         "## 训练结果",
         "",
-        "| 阶段 | Micro-steps | 可训练参数 | 首次 train loss | 最后 train loss | Validation loss | 耗时 |",
-        "|---|---:|---:|---:|---:|---:|---:|",
-        f"| LLM 预训练 | {logs['llm_pretrain']['total_steps']:,} | 63,912,192 | {fmt(losses['llm_pretrain'][0])} | {fmt(losses['llm_pretrain'][1])} | {fmt(logs['llm_pretrain']['validation_loss'])} | {duration(logs['llm_pretrain']['training_seconds'])} |",
-        f"| LLM SFT | {logs['llm_sft']['total_steps']:,} | 63,912,192 | {fmt(losses['llm_sft'][0])} | {fmt(losses['llm_sft'][1])} | {fmt(logs['llm_sft']['validation_loss'])} | {duration(logs['llm_sft']['training_seconds'])} |",
-        f"| VLM 对齐 | {logs['vlm_alignment']['total_steps']:,} | {logs['vlm_alignment']['trainable_parameters']:,} | {fmt(losses['vlm_alignment'][0])} | {fmt(losses['vlm_alignment'][1])} | {fmt(logs['vlm_alignment']['validation_loss'])} | {duration(logs['vlm_alignment']['training_seconds'])} |",
-        f"| VLM SFT | {logs['vlm_sft']['total_steps']:,} | {logs['vlm_sft']['trainable_parameters']:,} | {fmt(losses['vlm_sft'][0])} | {fmt(losses['vlm_sft'][1])} | {fmt(logs['vlm_sft']['validation_loss'])} | {duration(logs['vlm_sft']['training_seconds'])} |",
-        f"| Video-Omni 对齐 | {logs['video_alignment']['total_steps']:,} | {logs['video_alignment']['trainable_parameters']:,} | {fmt(losses['video_alignment'][0])} | {fmt(losses['video_alignment'][1])} | {fmt(logs['video_alignment']['validation_loss'])} | {duration(logs['video_alignment']['training_seconds'])} |",
-        f"| Video-Omni SFT | {logs['video_sft']['total_steps']:,} | {logs['video_sft']['trainable_parameters']:,} | {fmt(losses['video_sft'][0])} | {fmt(losses['video_sft'][1])} | {fmt(logs['video_sft']['validation_loss'])} | {duration(logs['video_sft']['training_seconds'])} |",
+        "| 阶段 | Micro-steps | 可训练参数 | 首次 train loss | 最后 train loss | Validation loss | 活跃耗时 | 排除休眠/暂停 |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|",
+        f"| LLM 预训练 | {logs['llm_pretrain']['total_steps']:,} | 63,912,192 | {fmt(losses['llm_pretrain'][0])} | {fmt(losses['llm_pretrain'][1])} | {fmt(logs['llm_pretrain']['validation_loss'])} | {duration(logs['llm_pretrain']['training_seconds'])} | {duration(logs['llm_pretrain']['suspended_seconds'])} |",
+        f"| LLM SFT | {logs['llm_sft']['total_steps']:,} | 63,912,192 | {fmt(losses['llm_sft'][0])} | {fmt(losses['llm_sft'][1])} | {fmt(logs['llm_sft']['validation_loss'])} | {duration(logs['llm_sft']['training_seconds'])} | {duration(logs['llm_sft']['suspended_seconds'])} |",
+        f"| VLM 对齐 | {logs['vlm_alignment']['total_steps']:,} | {logs['vlm_alignment']['trainable_parameters']:,} | {fmt(losses['vlm_alignment'][0])} | {fmt(losses['vlm_alignment'][1])} | {fmt(logs['vlm_alignment']['validation_loss'])} | {duration(logs['vlm_alignment']['training_seconds'])} | {duration(logs['vlm_alignment']['suspended_seconds'])} |",
+        f"| VLM SFT | {logs['vlm_sft']['total_steps']:,} | {logs['vlm_sft']['trainable_parameters']:,} | {fmt(losses['vlm_sft'][0])} | {fmt(losses['vlm_sft'][1])} | {fmt(logs['vlm_sft']['validation_loss'])} | {duration(logs['vlm_sft']['training_seconds'])} | {duration(logs['vlm_sft']['suspended_seconds'])} |",
+        f"| Video-Omni 对齐 | {logs['video_alignment']['total_steps']:,} | {logs['video_alignment']['trainable_parameters']:,} | {fmt(losses['video_alignment'][0])} | {fmt(losses['video_alignment'][1])} | {fmt(logs['video_alignment']['validation_loss'])} | {duration(logs['video_alignment']['training_seconds'])} | {duration(logs['video_alignment']['suspended_seconds'])} |",
+        f"| Video-Omni SFT | {logs['video_sft']['total_steps']:,} | {logs['video_sft']['trainable_parameters']:,} | {fmt(losses['video_sft'][0])} | {fmt(losses['video_sft'][1])} | {fmt(logs['video_sft']['validation_loss'])} | {duration(logs['video_sft']['training_seconds'])} | {duration(logs['video_sft']['suspended_seconds'])} |",
         "",
         "![六阶段训练 loss 曲线](assets/training-curves.svg)",
         "",

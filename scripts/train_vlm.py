@@ -6,7 +6,6 @@ import json
 import math
 import os
 import sys
-import time
 from contextlib import nullcontext
 from pathlib import Path
 
@@ -19,6 +18,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from minimind_lab.data import DeterministicBatchStream, ParquetVLMDataset, collate_vlm
 from minimind_lab.training import (
+    ActiveTrainingTimer,
     acquire_run_lock,
     load_config,
     optimizer_step_size,
@@ -37,7 +37,14 @@ def trainable_state(model: MiniMindVLM) -> dict[str, torch.Tensor]:
 
 
 def save_resume(
-    path: Path, model, optimizer, config: dict, step: int, history: list[dict], training_seconds: float
+    path: Path,
+    model,
+    optimizer,
+    config: dict,
+    step: int,
+    history: list[dict],
+    training_seconds: float,
+    suspended_seconds: float,
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".tmp")
@@ -49,6 +56,7 @@ def save_resume(
             "step": step,
             "history": history,
             "training_seconds": training_seconds,
+            "suspended_seconds": suspended_seconds,
             "torch_rng_state": torch.get_rng_state(),
         },
         temporary,
@@ -146,6 +154,7 @@ def main() -> None:
     resume_path = (ROOT / training["checkpoint_path"]).with_suffix(".resume.pt")
     start_step, history = 0, []
     prior_training_seconds = 0.0
+    prior_suspended_seconds = 0.0
     if args.resume and resume_path.exists():
         resume = torch.load(resume_path, map_location="cpu", weights_only=False)
         model.load_state_dict(resume["model"], strict=False)
@@ -154,11 +163,12 @@ def main() -> None:
         torch.set_rng_state(resume["torch_rng_state"])
         start_step, history = resume["step"], resume["history"]
         prior_training_seconds = float(resume.get("training_seconds", 0))
+        prior_suspended_seconds = float(resume.get("suspended_seconds", 0))
         print(f"resuming from step {start_step}: {resume_path}")
 
     use_amp = device.type == "cuda" and training.get("precision") == "bfloat16"
     autocast = torch.autocast("cuda", dtype=torch.bfloat16) if use_amp else nullcontext()
-    started = time.time()
+    timer = ActiveTrainingTimer(prior_training_seconds, prior_suspended_seconds)
     optimizer.zero_grad(set_to_none=True)
     model.train()
     last_grad_norm = None
@@ -188,12 +198,13 @@ def main() -> None:
             )
             optimizer.step()
             optimizer.zero_grad(set_to_none=True)
+        timer.tick()
         if step == 1 or step % training.get("log_interval", 20) == 0:
             record = {
                 "step": step,
                 "loss": float(loss.detach().item() * accumulation),
                 "grad_norm": last_grad_norm,
-                "seconds_per_step": (time.time() - started) / (step - start_step),
+                "seconds_per_step": timer.segment_seconds / (step - start_step),
                 "learning_rate": optimizer.param_groups[0]["lr"],
             }
             history.append(record)
@@ -206,16 +217,26 @@ def main() -> None:
                 config,
                 step,
                 history,
-                prior_training_seconds + time.time() - started,
+                timer.training_seconds,
+                timer.suspended_seconds,
             )
             print(f"saved resume checkpoint: {resume_path}", flush=True)
 
-    training_seconds = prior_training_seconds + time.time() - started
+    training_seconds = timer.training_seconds
     val_loss = validation_loss(model, validation, training["batch_size"], device)
     checkpoint_path = ROOT / training["checkpoint_path"]
     checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
     torch.save({"model": trainable_state(model), "config": config, "history": history}, checkpoint_path)
-    save_resume(resume_path, model, optimizer, config, total_steps, history, training_seconds)
+    save_resume(
+        resume_path,
+        model,
+        optimizer,
+        config,
+        total_steps,
+        history,
+        training_seconds,
+        timer.suspended_seconds,
+    )
     report = {
         "experiment": config["experiment"]["name"],
         "status": "complete",
@@ -223,6 +244,7 @@ def main() -> None:
         "dataset_samples": len(full_dataset),
         "total_steps": total_steps,
         "training_seconds": training_seconds,
+        "suspended_seconds": timer.suspended_seconds,
         "validation_loss": val_loss,
         "trainable_parameters": sum(p.numel() for p in model.parameters() if p.requires_grad),
         "environment": environment_info(device),

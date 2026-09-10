@@ -4,11 +4,28 @@ import pytest
 import torch
 
 from minimind_lab.training import (
+    ActiveTrainingTimer,
     acquire_run_lock,
     optimizer_step_size,
     rescale_partial_accumulation,
     should_save_resume,
 )
+
+
+def test_active_training_timer_excludes_suspend_sized_gaps():
+    readings = iter([100.0, 100.5, 101.0, 33_401.0, 33_401.5])
+    timer = ActiveTrainingTimer(
+        prior_training_seconds=20.0,
+        prior_suspended_seconds=3.0,
+        maximum_step_gap_seconds=60.0,
+        clock=lambda: next(readings),
+    )
+    assert timer.tick() == 0.5
+    assert timer.tick() == 0.5
+    assert timer.tick() == 0.0
+    assert timer.tick() == 0.5
+    assert timer.training_seconds == 21.5
+    assert timer.suspended_seconds == 33_303.0
 
 
 def test_run_lock_rejects_a_second_writer(tmp_path: Path):

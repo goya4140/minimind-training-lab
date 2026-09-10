@@ -1,7 +1,12 @@
 import pytest
 import torch
 
-from minimind_lab.training import file_sha256, verify_checkpoint, verify_resume_checkpoint
+from minimind_lab.training import (
+    file_sha256,
+    repair_resume_timing,
+    verify_checkpoint,
+    verify_resume_checkpoint,
+)
 
 
 def test_checkpoint_verification_hashes_and_counts_finite_state(tmp_path):
@@ -79,6 +84,32 @@ def test_resume_verification_can_require_final_step(tmp_path):
     payload["step"] = 100
     torch.save(payload, path)
     assert verify_resume_checkpoint(path, require_complete=True)["training_complete"] is True
+
+
+def test_resume_timing_repair_is_atomic_and_idempotent(tmp_path):
+    path = tmp_path / "model.resume.pt"
+    payload = resume_payload()
+    payload["training_seconds"] = 100.0
+    torch.save(payload, path)
+    result = repair_resume_timing(
+        path,
+        expected_step=32,
+        excluded_seconds=25.0,
+        reason="test-suspend",
+    )
+    assert result["training_seconds_after"] == 75.0
+    repaired = torch.load(path, map_location="cpu", weights_only=False)
+    assert repaired["training_seconds"] == 75.0
+    assert repaired["suspended_seconds"] == 25.0
+    assert repaired["timing_repairs"][0]["reason"] == "test-suspend"
+    assert torch.equal(repaired["model"]["weight"], payload["model"]["weight"])
+    with pytest.raises(ValueError, match="already applied"):
+        repair_resume_timing(
+            path,
+            expected_step=32,
+            excluded_seconds=25.0,
+            reason="test-suspend",
+        )
 
 
 @pytest.mark.parametrize(

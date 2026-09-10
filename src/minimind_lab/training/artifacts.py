@@ -2,10 +2,78 @@ from __future__ import annotations
 
 import hashlib
 import math
+import os
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 import torch
+
+
+def repair_resume_timing(
+    path: str | Path,
+    *,
+    expected_step: int,
+    excluded_seconds: float,
+    reason: str,
+) -> dict[str, int | float | str]:
+    """Atomically move a known interruption from active to suspended time."""
+    target = Path(path)
+    checkpoint = torch.load(target, map_location="cpu", weights_only=False)
+    if not isinstance(checkpoint, dict):
+        raise TypeError("resume checkpoint root must be a mapping")
+    if checkpoint.get("step") != expected_step:
+        raise ValueError(f"resume step is not the expected repair boundary: {expected_step}")
+    if not reason.strip():
+        raise ValueError("timing repair reason must be non-empty")
+    if isinstance(excluded_seconds, bool) or not math.isfinite(excluded_seconds) or excluded_seconds <= 0:
+        raise ValueError("excluded timing repair duration must be finite and positive")
+    before = checkpoint.get("training_seconds")
+    suspended_before = checkpoint.get("suspended_seconds", 0.0)
+    if (
+        isinstance(before, bool)
+        or not isinstance(before, int | float)
+        or not math.isfinite(before)
+        or before <= excluded_seconds
+    ):
+        raise ValueError("resume training time is too small for the requested repair")
+    if (
+        isinstance(suspended_before, bool)
+        or not isinstance(suspended_before, int | float)
+        or not math.isfinite(suspended_before)
+        or suspended_before < 0
+    ):
+        raise ValueError("resume suspended time is invalid")
+    repairs = checkpoint.get("timing_repairs", [])
+    if not isinstance(repairs, list):
+        raise TypeError("resume timing repairs must be a list")
+    if any(isinstance(item, dict) and item.get("reason") == reason for item in repairs):
+        raise ValueError(f"timing repair was already applied: {reason}")
+
+    after = float(before) - float(excluded_seconds)
+    suspended_after = float(suspended_before) + float(excluded_seconds)
+    repair = {
+        "step": expected_step,
+        "reason": reason,
+        "excluded_seconds": float(excluded_seconds),
+        "training_seconds_before": float(before),
+        "training_seconds_after": after,
+        "applied_at_utc": datetime.now(UTC).isoformat(),
+    }
+    checkpoint["training_seconds"] = after
+    checkpoint["suspended_seconds"] = suspended_after
+    checkpoint["timing_repairs"] = [*repairs, repair]
+    temporary = target.with_suffix(target.suffix + ".timing-repair.tmp")
+    torch.save(checkpoint, temporary)
+    os.replace(temporary, target)
+    return {
+        "step": expected_step,
+        "reason": reason,
+        "excluded_seconds": float(excluded_seconds),
+        "training_seconds_before": float(before),
+        "training_seconds_after": after,
+        "suspended_seconds_after": suspended_after,
+    }
 
 
 def file_sha256(path: str | Path) -> str:
@@ -117,6 +185,14 @@ def verify_resume_checkpoint(
         or (step > 0 and training_seconds <= 0)
     ):
         raise ValueError("resume cumulative training time must be finite and positive after step zero")
+    suspended_seconds = checkpoint.get("suspended_seconds", 0.0)
+    if (
+        isinstance(suspended_seconds, bool)
+        or not isinstance(suspended_seconds, int | float)
+        or not math.isfinite(suspended_seconds)
+        or suspended_seconds < 0
+    ):
+        raise ValueError("resume suspended time must be finite and non-negative")
 
     rng_state = checkpoint["torch_rng_state"]
     if not isinstance(rng_state, torch.Tensor) or rng_state.numel() == 0:
@@ -154,6 +230,7 @@ def verify_resume_checkpoint(
         "optimizer_all_finite": optimizer_all_finite,
         "history_records": len(history),
         "training_seconds": float(training_seconds),
+        "suspended_seconds": float(suspended_seconds),
         "rng_state_bytes": rng_state.numel() * rng_state.element_size(),
         "config_matches": expected_config is None or config == expected_config,
         "training_complete": step == total_steps,

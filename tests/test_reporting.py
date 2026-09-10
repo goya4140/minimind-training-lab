@@ -197,6 +197,7 @@ def test_training_summary_validator_locks_steps_parameters_time_and_checkpoint()
         "parameters": 200,
         "validation_loss": 1.0,
         "training_seconds": 30.0,
+        "suspended_seconds": 0.0,
         "artifact_verification": {"all_finite": True, "checkpoint_sha256": "a" * 64},
     }
     validate_training_summaries({"llm": report}, {"llm": (100, 200)})
@@ -204,6 +205,8 @@ def test_training_summary_validator_locks_steps_parameters_time_and_checkpoint()
         validate_training_summaries({"llm": {**report, "total_steps": 99}}, {"llm": (100, 200)})
     with pytest.raises(ValueError, match="cumulative time"):
         validate_training_summaries({"llm": {**report, "training_seconds": 0}}, {"llm": (100, 200)})
+    with pytest.raises(ValueError, match="suspended time"):
+        validate_training_summaries({"llm": {**report, "suspended_seconds": -1}}, {"llm": (100, 200)})
     with pytest.raises(ValueError, match="validation loss"):
         validate_training_summaries({"llm": {**report, "validation_loss": float("nan")}}, {"llm": (100, 200)})
     with pytest.raises(ValueError, match="finite verification"):

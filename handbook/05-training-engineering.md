@@ -56,6 +56,12 @@ optimizer 边界。模型参数与 AdamW 动量张量都必须没有 NaN/Inf，h
 grad norm 也必须有效。输出只有尺寸、SHA-256 和汇总计数，不会把权重内容写入报告。六阶段流水线在
 每个阶段完成后还会加上 `--require-complete`，阻止未到最终步数的 resume 文件通过完成门禁。
 
+本项目用逐 micro-step 的活跃计时器统计训练耗时。相邻两步若间隔超过 60 秒，就记为系统休眠/暂停，
+从训练吞吐分母中排除并单独累计为 `suspended_seconds`。这避免笔记本合盖或低电量休眠让 tokens/s
+失真；checkpoint 写盘等正常短开销仍计入活跃耗时。
+step 60,000 的真实低电量休眠恢复案例与元数据修复审计见
+[`reports/llm-sleep-recovery-step60000.md`](../reports/llm-sleep-recovery-step60000.md)。
+
 ## 防止重复训练
 
 每个阶段持有 advisory lock，锁文件记录 owner PID。第二个同 checkpoint 任务会拒绝启动；preflight

@@ -297,6 +297,14 @@ def validate_training_summaries(logs: dict[str, dict], expected: dict[str, tuple
             or seconds <= 0
         ):
             raise ValueError(f"training stage cumulative time is invalid: {stage}")
+        suspended = report.get("suspended_seconds")
+        if (
+            isinstance(suspended, bool)
+            or not isinstance(suspended, (int, float))
+            or not math.isfinite(suspended)
+            or suspended < 0
+        ):
+            raise ValueError(f"training stage suspended time is invalid: {stage}")
         verification = report.get("artifact_verification")
         if not isinstance(verification, dict) or verification.get("all_finite") is not True:
             raise ValueError(f"training stage checkpoint lacks finite verification: {stage}")

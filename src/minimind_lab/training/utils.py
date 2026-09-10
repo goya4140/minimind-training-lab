@@ -4,6 +4,8 @@ import json
 import os
 import platform
 import random
+import time
+from collections.abc import Callable
 from fcntl import LOCK_EX, LOCK_NB, flock
 from pathlib import Path
 from typing import TextIO
@@ -11,6 +13,47 @@ from typing import TextIO
 import numpy as np
 import torch
 import yaml
+
+
+class ActiveTrainingTimer:
+    """Accumulate step-to-step active time while excluding suspend-sized gaps."""
+
+    def __init__(
+        self,
+        prior_training_seconds: float = 0.0,
+        prior_suspended_seconds: float = 0.0,
+        maximum_step_gap_seconds: float = 60.0,
+        clock: Callable[[], float] = time.time,
+    ) -> None:
+        if prior_training_seconds < 0 or prior_suspended_seconds < 0 or maximum_step_gap_seconds <= 0:
+            raise ValueError("training timer durations must be non-negative and its gap threshold positive")
+        self.prior_training_seconds = float(prior_training_seconds)
+        self.prior_suspended_seconds = float(prior_suspended_seconds)
+        self.maximum_step_gap_seconds = float(maximum_step_gap_seconds)
+        self._clock = clock
+        self.segment_seconds = 0.0
+        self.segment_suspended_seconds = 0.0
+        self._last_tick = self._clock()
+
+    def tick(self) -> float:
+        now = self._clock()
+        delta = now - self._last_tick
+        self._last_tick = now
+        if delta < 0:
+            raise RuntimeError("training timer clock moved backwards")
+        if delta > self.maximum_step_gap_seconds:
+            self.segment_suspended_seconds += delta
+            return 0.0
+        self.segment_seconds += delta
+        return delta
+
+    @property
+    def training_seconds(self) -> float:
+        return self.prior_training_seconds + self.segment_seconds
+
+    @property
+    def suspended_seconds(self) -> float:
+        return self.prior_suspended_seconds + self.segment_suspended_seconds
 
 
 def load_config(path: str | Path) -> dict:

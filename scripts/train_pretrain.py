@@ -6,7 +6,6 @@ import json
 import math
 import os
 import sys
-import time
 from pathlib import Path
 
 import torch
@@ -19,6 +18,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from minimind_lab.data import DeterministicBatchStream, JsonlPretrainDataset
 from minimind_lab.llm import MiniMindConfig, MiniMindForCausalLM
 from minimind_lab.training import (
+    ActiveTrainingTimer,
     acquire_run_lock,
     load_config,
     optimizer_step_size,
@@ -46,7 +46,14 @@ def learning_rate(step: int, total_steps: int, base_lr: float) -> float:
 
 
 def save_resume(
-    path: Path, model, optimizer, config: dict, step: int, history: list[dict], training_seconds: float
+    path: Path,
+    model,
+    optimizer,
+    config: dict,
+    step: int,
+    history: list[dict],
+    training_seconds: float,
+    suspended_seconds: float,
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".tmp")
@@ -58,6 +65,7 @@ def save_resume(
             "step": step,
             "history": history,
             "training_seconds": training_seconds,
+            "suspended_seconds": suspended_seconds,
             "torch_rng_state": torch.get_rng_state(),
         },
         temporary,
@@ -104,6 +112,7 @@ def main() -> None:
     history = []
     start_step = 0
     prior_training_seconds = 0.0
+    prior_suspended_seconds = 0.0
     resume_path = (ROOT / training["checkpoint_path"]).with_suffix(".resume.pt")
     if args.resume and resume_path.exists():
         resume = torch.load(resume_path, map_location="cpu", weights_only=False)
@@ -114,8 +123,9 @@ def main() -> None:
         start_step = resume["step"]
         history = resume["history"]
         prior_training_seconds = float(resume.get("training_seconds", 0))
+        prior_suspended_seconds = float(resume.get("suspended_seconds", 0))
         print(f"resuming from step {start_step}: {resume_path}")
-    started = time.time()
+    timer = ActiveTrainingTimer(prior_training_seconds, prior_suspended_seconds)
     model.train()
     optimizer.zero_grad(set_to_none=True)
     last_grad_norm = None
@@ -134,14 +144,14 @@ def main() -> None:
             last_grad_norm = grad_norm.detach().item()
             optimizer.step()
             optimizer.zero_grad(set_to_none=True)
+        timer.tick()
         if step == 1 or step % training["log_interval"] == 0:
-            elapsed = time.time() - started
             completed_this_run = step - start_step
             record = {
                 "step": step,
                 "loss": loss.detach().item() * accumulation,
                 "grad_norm": last_grad_norm,
-                "seconds_per_step": elapsed / completed_this_run,
+                "seconds_per_step": timer.segment_seconds / completed_this_run,
                 "learning_rate": optimizer.param_groups[0]["lr"],
             }
             history.append(record)
@@ -155,16 +165,25 @@ def main() -> None:
                 config,
                 step,
                 history,
-                prior_training_seconds + time.time() - started,
+                timer.training_seconds,
+                timer.suspended_seconds,
             )
             print(f"saved resume checkpoint: {resume_path}", flush=True)
-    training_elapsed = prior_training_seconds + time.time() - started
+    training_elapsed = timer.training_seconds
     val_loss = validation_loss(model, validation_loader, device)
     checkpoint_path = ROOT / training["checkpoint_path"]
     checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
     torch.save({"model": model.state_dict(), "config": config, "history": history}, checkpoint_path)
-    save_resume(resume_path, model, optimizer, config, training["steps"], history, training_elapsed)
-    elapsed = time.time() - started
+    save_resume(
+        resume_path,
+        model,
+        optimizer,
+        config,
+        training["steps"],
+        history,
+        training_elapsed,
+        timer.suspended_seconds,
+    )
     report = {
         "experiment": config["experiment"]["name"],
         "status": "complete",
@@ -173,8 +192,9 @@ def main() -> None:
         "train_samples": len(train_dataset),
         "validation_samples": len(validation_dataset),
         "total_steps": training["steps"],
-        "elapsed_seconds": round(elapsed, 3),
+        "elapsed_seconds": round(timer.segment_seconds, 3),
         "training_seconds": training_elapsed,
+        "suspended_seconds": timer.suspended_seconds,
         "seconds_per_step": training_elapsed / training["steps"],
         "tokens_per_second": training["batch_size"]
         * config["data"]["sequence_length"]
