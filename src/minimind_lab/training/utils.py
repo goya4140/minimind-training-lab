@@ -40,7 +40,9 @@ class ActiveTrainingTimer:
         delta = now - self._last_tick
         self._last_tick = now
         if delta < 0:
-            raise RuntimeError("training timer clock moved backwards")
+            # Wall time can move backwards when macOS corrects its clock. Dropping
+            # this one interval keeps timing conservative without stopping training.
+            return 0.0
         if delta > self.maximum_step_gap_seconds:
             self.segment_suspended_seconds += delta
             return 0.0

@@ -28,6 +28,16 @@ def test_active_training_timer_excludes_suspend_sized_gaps():
     assert timer.suspended_seconds == 33_303.0
 
 
+def test_active_training_timer_ignores_a_backward_wall_clock_adjustment():
+    readings = iter([100.0, 100.5, 99.5, 100.0])
+    timer = ActiveTrainingTimer(clock=lambda: next(readings))
+    assert timer.tick() == 0.5
+    assert timer.tick() == 0.0
+    assert timer.tick() == 0.5
+    assert timer.training_seconds == 1.0
+    assert timer.suspended_seconds == 0.0
+
+
 def test_run_lock_rejects_a_second_writer(tmp_path: Path):
     lock_path = tmp_path / "experiment.lock"
     first = acquire_run_lock(lock_path)

@@ -58,7 +58,8 @@ grad norm 也必须有效。输出只有尺寸、SHA-256 和汇总计数，不�
 
 本项目用逐 micro-step 的活跃计时器统计训练耗时。相邻两步若间隔超过 60 秒，就记为系统休眠/暂停，
 从训练吞吐分母中排除并单独累计为 `suspended_seconds`。这避免笔记本合盖或低电量休眠让 tokens/s
-失真；checkpoint 写盘等正常短开销仍计入活跃耗时。
+失真；checkpoint 写盘等正常短开销仍计入活跃耗时。若系统时间同步导致 wall clock 短暂向后校正，
+计时器只忽略该单个区间，不会中断训练，也不会把负时长写入 checkpoint。
 step 60,000 的真实低电量休眠恢复案例与元数据修复审计见
 [`reports/llm-sleep-recovery-step60000.md`](../reports/llm-sleep-recovery-step60000.md)。
 
