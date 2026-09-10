@@ -10,6 +10,10 @@ import torch
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+
+from minimind_lab.data.integrity import QIVD_REVISION, QIVD_ROOT_FILES, file_matches
+from minimind_lab.reporting import validate_qivd_manifest
 
 STAGES = [
     ("llm-pretrain", "scripts/train_pretrain.py", "configs/llm/pretrain-mps.yaml"),
@@ -71,8 +75,22 @@ def inspect_stage(name: str, runner: str, config_path: str, prior_outputs: set[P
             except (json.JSONDecodeError, OSError):
                 missing.append(f"{relative(manifest_path)} (unreadable)")
             else:
-                if manifest.get("video_count") != len(rows) or manifest.get("upstream_lfs_verified") is not True:
+                try:
+                    validate_qivd_manifest(
+                        manifest,
+                        QIVD_REVISION,
+                        video_count=len(rows),
+                        expected_root_files=QIVD_ROOT_FILES,
+                    )
+                except ValueError:
                     missing.append(f"{relative(manifest_path)} (upstream verification missing)")
+                for root_name, expected in QIVD_ROOT_FILES.items():
+                    if not file_matches(
+                        data_path / root_name,
+                        expected_size=int(expected["bytes"]),
+                        expected_sha256=str(expected["sha256"]),
+                    ):
+                        missing.append(f"{relative(data_path / root_name)} (pinned hash mismatch)")
 
     dependencies = [model[key] for key in DEPENDENCY_KEYS if model.get(key)]
     if config["training"].get("initial_checkpoint"):

@@ -15,11 +15,18 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from minimind_lab.data.integrity import file_matches, verified_dataset_manifest
+from minimind_lab.data.integrity import (
+    QIVD_REPOSITORY,
+    QIVD_REVISION,
+    QIVD_ROOT_FILES,
+    file_matches,
+    verified_dataset_manifest,
+)
 
-REPO = "Qualcomm-AI-Research/QIVD"
-REVISION = "c5376ab0b9fd3643545a1503413aee64f26ba22a"
+REPO = QIVD_REPOSITORY
+REVISION = QIVD_REVISION
 BASE_URL = f"https://huggingface.co/datasets/{REPO}/resolve/{REVISION}/"
+ROOT_FILES = QIVD_ROOT_FILES
 
 
 def download_file(
@@ -86,8 +93,15 @@ def main() -> None:
     args = parser.parse_args()
     root = ROOT / args.output
     root.mkdir(parents=True, exist_ok=True)
-    for relative_path in ("metadata.parquet", "LICENSE", "license.pdf"):
-        download_file(relative_path, root / relative_path, args.retries, args.base_delay)
+    for relative_path, upstream in ROOT_FILES.items():
+        download_file(
+            relative_path,
+            root / relative_path,
+            args.retries,
+            args.base_delay,
+            expected_size=int(upstream["bytes"]),
+            expected_sha256=str(upstream["sha256"]),
+        )
 
     import pyarrow.parquet as pq
 
@@ -110,7 +124,14 @@ def main() -> None:
             completed = sum((root / path).is_file() for path in video_files)
             print(json.dumps({"completed": completed, "total": len(video_files)}), flush=True)
 
-    manifest = verified_dataset_manifest(root, video_files, expected, REPO, REVISION)
+    manifest = verified_dataset_manifest(
+        root,
+        video_files,
+        expected,
+        REPO,
+        REVISION,
+        root_files_expected=ROOT_FILES,
+    )
     manifest_path = ROOT / "data/manifests/qivd.json"
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
     temporary = manifest_path.with_suffix(".tmp")

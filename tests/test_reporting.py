@@ -172,13 +172,22 @@ def test_qivd_manifest_validator_requires_pinned_upstream_evidence():
         "total_video_bytes": 10,
         "aggregate_sha256": "b" * 64,
         "upstream_lfs_verified": True,
+        "root_files": [{"path": "metadata.parquet", "bytes": 5, "sha256": "c" * 64}],
         "files": [{"path": "0.mp4"}, {"path": "1.mp4"}],
     }
-    validate_qivd_manifest(manifest, revision, video_count=2)
+    expected_root = {"metadata.parquet": {"bytes": 5, "sha256": "c" * 64}}
+    validate_qivd_manifest(manifest, revision, video_count=2, expected_root_files=expected_root)
     with pytest.raises(ValueError, match="upstream LFS"):
         validate_qivd_manifest({**manifest, "upstream_lfs_verified": False}, revision, video_count=2)
     with pytest.raises(ValueError, match="enumerate every video"):
         validate_qivd_manifest({**manifest, "files": []}, revision, video_count=2)
+    with pytest.raises(ValueError, match="root file"):
+        validate_qivd_manifest(
+            {**manifest, "root_files": []},
+            revision,
+            video_count=2,
+            expected_root_files=expected_root,
+        )
 
 
 def test_training_summary_validator_locks_steps_parameters_time_and_checkpoint():

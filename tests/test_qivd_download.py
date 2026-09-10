@@ -18,13 +18,20 @@ def test_qivd_manifest_records_upstream_verification(tmp_path):
     path.parent.mkdir()
     path.write_bytes(b"video")
     digest = hashlib.sha256(b"video").hexdigest()
+    metadata = tmp_path / "metadata.parquet"
+    metadata.write_bytes(b"metadata")
+    metadata_digest = hashlib.sha256(b"metadata").hexdigest()
     manifest = verified_dataset_manifest(
         tmp_path,
         [relative],
         {relative: {"bytes": len(b"video"), "sha256": digest}},
         repository="example/QIVD",
         revision="abc123",
+        root_files_expected={
+            "metadata.parquet": {"bytes": len(b"metadata"), "sha256": metadata_digest}
+        },
     )
     assert manifest["video_count"] == 1
     assert manifest["upstream_lfs_verified"] is True
     assert manifest["files"][0]["sha256"] == digest
+    assert manifest["root_files"][0]["sha256"] == metadata_digest

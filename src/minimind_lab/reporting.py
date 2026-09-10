@@ -236,7 +236,12 @@ def validate_prompt_alignment(*generations: list[dict]) -> None:
         raise ValueError("language evaluations do not use identical ordered prompts")
 
 
-def validate_qivd_manifest(manifest: dict, revision: str, video_count: int = 2900) -> None:
+def validate_qivd_manifest(
+    manifest: dict,
+    revision: str,
+    video_count: int = 2900,
+    expected_root_files: dict[str, dict[str, int | str]] | None = None,
+) -> None:
     """Require locally enumerated files that match the pinned upstream LFS tree."""
     if manifest.get("revision") != revision:
         raise ValueError("QIVD manifest revision does not match the pinned revision")
@@ -251,6 +256,16 @@ def validate_qivd_manifest(manifest: dict, revision: str, video_count: int = 290
     files = manifest.get("files")
     if not isinstance(files, list) or len(files) != video_count:
         raise ValueError("QIVD manifest must enumerate every video")
+    if expected_root_files is not None:
+        root_files = manifest.get("root_files")
+        if not isinstance(root_files, list):
+            raise ValueError("QIVD manifest must enumerate its root metadata and license files")
+        actual = {entry.get("path"): entry for entry in root_files if isinstance(entry, dict)}
+        if set(actual) != set(expected_root_files):
+            raise ValueError("QIVD manifest root files are incomplete")
+        for path, expected in expected_root_files.items():
+            if actual[path].get("bytes") != expected["bytes"] or actual[path].get("sha256") != expected["sha256"]:
+                raise ValueError(f"QIVD manifest root file does not match pinned upstream: {path}")
 
 
 def validate_training_summaries(logs: dict[str, dict], expected: dict[str, tuple[int, int]]) -> None:

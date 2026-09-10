@@ -30,6 +30,12 @@ SHA-256；本地自洽但不同于上游的截断或损坏文件不会通过，m
 本次本机下载已完成该核验：2,900/2,900 个视频匹配固定 revision；上述聚合值由按路径排序后的
 `path bytes sha256` 记录计算。逐文件 manifest 留在 Git 忽略目录，不上传或重新分发。
 
+决定问题、答案、类别和数据划分的 `metadata.parquet` 也已与同一固定 revision 的 LFS 对象核验：
+147,549 bytes，SHA-256
+`32ba00adfd99cbcf70fa882009882c0261bfd5d773a7dde4f1888ab255cfde3f`。`LICENSE` 与
+`license.pdf` 同样执行大小和哈希校验；三项根文件证据写入本地 QIVD manifest，最终报告缺少或不匹配
+任一项都会拒绝发布。
+
 ## SFT 结构验证
 
 SFT 样本使用 ChatML 模板，只对 assistant 片段计算 loss。真实数据包含普通单轮、多轮及

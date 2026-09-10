@@ -15,6 +15,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
+from minimind_lab.data.integrity import QIVD_REVISION, QIVD_ROOT_FILES
 from minimind_lab.reporting import (
     render_temporal_ablation,
     render_training_curves,
@@ -28,7 +29,6 @@ from minimind_lab.reporting import (
     validate_training_summaries,
 )
 
-QIVD_REVISION = "c5376ab0b9fd3643545a1503413aee64f26ba22a"
 EXPECTED_STAGES = {
     "llm_pretrain": (317_048, 63_912_192),
     "llm_sft": (40_000, 63_912_192),
@@ -171,7 +171,7 @@ def main() -> None:
         video_eval["language_regression"]["generation"],
     )
     qivd = read_json(REQUIRED["QIVD manifest"])
-    validate_qivd_manifest(qivd, QIVD_REVISION)
+    validate_qivd_manifest(qivd, QIVD_REVISION, expected_root_files=QIVD_ROOT_FILES)
     local_artifacts = [
         local_artifact_entry("llm-64m-pretrain-mps.pt", REQUIRED["LLM pretrain checkpoint"]),
         local_artifact_entry("llm-64m-sft-mps.pt", REQUIRED["LLM checkpoint"]),
@@ -327,7 +327,9 @@ def main() -> None:
         "",
         (
             f"QIVD：{qivd['video_count']:,} 个视频，固定 revision `{qivd['revision']}`，聚合 SHA-256 "
-            f"`{qivd['aggregate_sha256']}`。QIVD 仅限研究使用，本项目不重新分发。"
+            f"`{qivd['aggregate_sha256']}`；metadata SHA-256 "
+            f"`{next(item['sha256'] for item in qivd['root_files'] if item['path'] == 'metadata.parquet')}`。"
+            "QIVD 仅限研究使用，本项目不重新分发。"
         ),
         "",
         "下列文件仅保存在本机，**不会上传 GitHub**；哈希用于审计本地运行。",
