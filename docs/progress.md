@@ -14,7 +14,7 @@
 |---|---|---|---|
 | M0 | GitHub 仓库与复现规范 | 已完成 | `goya4140/minimind-training-lab` 与首次远端提交 |
 | M1 | LLM 原生架构 | 已完成 | 4 个测试通过；正式配置参数量 63,912,192 |
-| M2 | LLM 从零 Pretrain | 进行中 | 已超过 step 60,000；中期评估、恢复与休眠计时审计已提交 |
+| M2 | LLM 从零 Pretrain | 进行中 | 已超过 step 100,000；中期评估与三次恢复/计时审计已提交 |
 | M3 | LLM SFT 与评估 | 已准备 | assistant-only 数据管线、配置和训练入口已测试 |
 | M4 | VLM 对齐与 SFT | 管线就绪 | 真实 Parquet + SigLIP2 前向探针通过，等待 LLM SFT |
 | M5 | Video-Omni Video→Text | 管线就绪 | 时序 Transformer、倒序消融、QIVD 划分与训练/评估入口已测试；2,900 个视频已完成上游 LFS 哈希核验 |
@@ -54,6 +54,10 @@ step 60,000 时又验证了一次完整恢复，并处理了低电量休眠导�
 回到 0.3420 秒/micro-step。修复依据、前后 SHA-256 与防重复机制见
 [`reports/llm-sleep-recovery-step60000.md`](../reports/llm-sleep-recovery-step60000.md)。后续训练器会自动识别
 超过 60 秒的步间隔，防止休眠再次污染吞吐统计。
+
+step 100,000 的只读审计再次确认 63,912,192 个模型参数与 270 个 optimizer 张量全部有限，config、
+RNG 和 optimizer 边界完整，累计 active / suspended time 分别为 35,873.93 / 33,228 秒；详见
+[`reports/llm-resume-step100000.md`](../reports/llm-resume-step100000.md)。
 
 本节只陈述已验证的运行状态。最终步数、耗时、曲线和 checkpoint 哈希将在训练完成后写入正式报告。
 
