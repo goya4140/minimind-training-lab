@@ -10,6 +10,44 @@ from torch.utils.data import Dataset
 from .sft import assistant_token_labels
 
 
+def image_marker_count(conversations: list[dict] | str) -> int:
+    if isinstance(conversations, str):
+        conversations = json.loads(conversations)
+    return sum(
+        str(message.get("content", "")).count("<image>")
+        for message in conversations
+        if message.get("role") != "system"
+    )
+
+
+def single_image_valid_indices(path: str | Path) -> tuple[list[int], dict]:
+    """Filter scalar-image Parquet rows without loading their image bytes."""
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
+    parquet = pq.ParquetFile(path)
+    image_type = parquet.schema_arrow.field("image_bytes").type
+    if not (pa.types.is_binary(image_type) or pa.types.is_large_binary(image_type)):
+        return list(range(parquet.metadata.num_rows)), {"policy": "multi-image-unchanged", "excluded": 0}
+    valid = []
+    counts = {}
+    index = 0
+    for batch in parquet.iter_batches(columns=["conversations"], batch_size=8192):
+        for conversations in batch.column(0).to_pylist():
+            count = image_marker_count(conversations)
+            counts[count] = counts.get(count, 0) + 1
+            if count == 1:
+                valid.append(index)
+            index += 1
+    return valid, {
+        "policy": "single-image-exactly-one-marker-v1",
+        "source_rows": index,
+        "retained_rows": len(valid),
+        "excluded": index - len(valid),
+        "marker_counts": counts,
+    }
+
+
 def normalize_vlm_conversations(
     conversations: list[dict], image_placeholder: str
 ) -> tuple[list[dict], list[dict] | None]:
@@ -39,6 +77,10 @@ class ParquetVLMDataset(Dataset):
         from datasets import Dataset as HFDataset
 
         self.dataset = HFDataset.from_parquet(str(path))
+        valid_indices, self.data_quality = single_image_valid_indices(path)
+        if self.data_quality["excluded"]:
+            self.dataset = self.dataset.select(valid_indices)
+        print(json.dumps({"vlm_data_quality": self.data_quality, "path": str(path)}), flush=True)
         self.tokenizer = tokenizer
         self.image_processor = image_processor
         self.sequence_length = sequence_length

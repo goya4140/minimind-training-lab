@@ -4,6 +4,25 @@ from pathlib import Path
 import torch
 
 from minimind_lab.data import collate_vlm, normalize_vlm_conversations
+from minimind_lab.data.vlm import single_image_valid_indices
+
+
+def test_single_image_filter_keeps_order_and_excludes_missing_or_duplicate_markers(tmp_path):
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
+    rows = [
+        [{"role": "user", "content": "<image> describe"}],
+        [{"role": "user", "content": "<image><image>"}],
+        [{"role": "user", "content": "no image"}],
+        [{"role": "system", "content": "<image>"}, {"role": "user", "content": "<image>"}],
+    ]
+    path = tmp_path / "images.parquet"
+    pq.write_table(pa.table({"conversations": [json.dumps(row) for row in rows], "image_bytes": [b"x"] * 4}), path)
+    indices, audit = single_image_valid_indices(path)
+    assert indices == [0, 3]
+    assert audit["excluded"] == 2
+    assert audit["marker_counts"] == {1: 2, 2: 1, 0: 1}
 
 
 def test_vlm_conversations_expand_images_and_tools():

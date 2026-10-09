@@ -242,6 +242,7 @@ def main() -> None:
         "status": "complete",
         "stage": stage,
         "dataset_samples": len(full_dataset),
+        "data_quality": full_dataset.data_quality,
         "total_steps": total_steps,
         "training_seconds": training_seconds,
         "suspended_seconds": timer.suspended_seconds,

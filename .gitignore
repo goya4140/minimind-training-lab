@@ -15,6 +15,8 @@ artifacts/models/
 artifacts/logs/
 artifacts/eval/
 artifacts/*.log
+artifacts/monitor-events.jsonl
+artifacts/monitor-state.json
 !artifacts/.gitkeep
 
 # Downloaded upstream/reference models
