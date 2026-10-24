@@ -18,6 +18,8 @@ from preflight_mps_pipeline import STAGES, active_pid
 
 from minimind_lab.training import acquire_run_lock
 from minimind_lab.training.evidence import RunEvidence
+from minimind_lab.training import verify_checkpoint, verify_resume_checkpoint
+from minimind_lab.training.artifacts import file_sha256
 
 EVALUATIONS = {
     "llm-pretrain": (
@@ -121,6 +123,44 @@ def verify_stage(config: str) -> None:
     run(["scripts/verify_resume_checkpoint.py", "--config", config, "--require-complete"])
 
 
+def verify_preserved_stage(stage: str, config_path: str, evidence) -> bool:
+    """Read-only reuse of completed/inherited stages; never rewrite archived reports."""
+    events = [json.loads(line) for line in (evidence.directory / "events.jsonl").read_text().splitlines()]
+    preserved = [e for e in events if e.get("stage") == stage
+                 and e.get("kind") in {"stage_completed", "stage_inherited"}]
+    if not preserved:
+        return False
+    config = yaml.safe_load((ROOT / config_path).read_text())
+    output = ROOT / config["training"]["checkpoint_path"]
+    if active_pid(output) is not None:
+        raise RuntimeError("A preserved stage still has an active trainer; refuse concurrent reuse")
+    expected = {output, output.with_suffix(".resume.pt"),
+                ROOT / f"artifacts/logs/{config['experiment']['name']}.json",
+                ROOT / f"artifacts/logs/{config['experiment']['name']}.console.log"}
+    if stage in EVALUATIONS:
+        expected.add(ROOT / EVALUATIONS[stage][0])
+    entries = {a["source"]: a for e in events if e.get("kind") == "artifacts_archived"
+               and e.get("stage") == stage for a in e["artifacts"]}
+    if set(entries) != {str(p.relative_to(ROOT)) for p in expected}:
+        raise RuntimeError("Preserved stage archive does not cover its exact required artifacts")
+    for relative, entry in entries.items():
+        source, archive = ROOT / relative, ROOT / entry["archive"]
+        if not archive.resolve().is_relative_to(evidence.directory / "stages" / stage):
+            raise RuntimeError("Preserved artifact escapes its run archive")
+        for path in (source, archive):
+            if not path.is_file() or file_sha256(path) != entry["sha256"]:
+                raise RuntimeError(f"Preserved artifact changed: {path}")
+    if not verify_checkpoint(output)["all_finite"]:
+        raise RuntimeError("Preserved model contains non-finite parameters")
+    audit = verify_resume_checkpoint(output.with_suffix(".resume.pt"), expected_config=config, require_complete=True)
+    inherited = any(e.get("kind") == "stage_inherited" for e in preserved)
+    evidence.event("preserved_stage_verified", stage=stage, inherited=inherited, resume_audit=audit)
+    evidence.event("evaluation_reused", stage=stage, required=stage in EVALUATIONS, inherited=inherited)
+    evidence.event("stage_completed", stage=stage, preserved=True, inherited=inherited)
+    print(f"read-only verified preserved stage: {stage}", flush=True)
+    return True
+
+
 def main() -> None:
     global EVALUATIONS
     parser = argparse.ArgumentParser(description="Resume the complete MiniMind MPS training and evaluation chain.")
@@ -149,6 +189,8 @@ def main() -> None:
         if evidence:
             evidence.assert_sources_unchanged()
             evidence.event("stage_started", stage=stage, config=config)
+            if verify_preserved_stage(stage, config, evidence):
+                continue
         if stage == "video-omni-alignment":
             run(
                 ["scripts/verify_qivd_local.py" if args.profile == "cuda" else "scripts/fetch_qivd.py"],
