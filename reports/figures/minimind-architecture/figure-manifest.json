@@ -1,0 +1,76 @@
+{
+  "schema": 1,
+  "evidence_id": "E007",
+  "kind": "design-schematic-not-runtime-evidence",
+  "run_id": "mm64-cuda-20261024T075332Z",
+  "training_commit": "53f9b9f46560bee446d1c74e89cac991b71a8053",
+  "scope": "Architecture and configured training strategy only; does not establish stage completion or measured model capability.",
+  "delivery": {
+    "public_formats": [
+      "png",
+      "json",
+      "markdown"
+    ],
+    "docx_pptx": "Canceled by user's sidebar update; historical editable sources retained privately, not published."
+  },
+  "rendering": {
+    "authoring_backend": "powerpoint-file-backed-ooxml",
+    "host_application": "Microsoft PowerPoint 16.99.2",
+    "preview_renderer": "LibreOffice and Poppler",
+    "application_screenshot": false,
+    "width_px": 1600,
+    "height_px": 1200
+  },
+  "quality": {
+    "native_objects": 71,
+    "native_nodes": 27,
+    "native_textboxes": 21,
+    "native_attached_connectors": 23,
+    "embedded_raster_images": 0,
+    "structure_audit_hard_failures": 0,
+    "structure_audit_warnings": 0,
+    "visual_review": "All four final PNGs reviewed individually; arrow directions, text, clipping and readability checked.",
+    "known_issue": "Initial native rectangle left/right connector-site inversion was invisible to geometry audit; corrected and re-rendered. See connector-correction.json.",
+    "scores_are_model_metrics": false
+  },
+  "figures": [
+    {
+      "id": "A01",
+      "file": "A01.png",
+      "bytes": 183856,
+      "sha256": "f87ac532947750b4147f5932bb002cf3a902c09484c91b1a5586d910d61dd1c4",
+      "native_objects": 17,
+      "caption": "Six-stage independent branch inheritance and freezing"
+    },
+    {
+      "id": "A02",
+      "file": "A02.png",
+      "bytes": 176700,
+      "sha256": "de690ff7c7367e87782d939e096c1981ce1d0a69e33744ebb793ad06dd0488fd",
+      "native_objects": 15,
+      "caption": "Language architecture and next-token supervision"
+    },
+    {
+      "id": "A03",
+      "file": "A03.png",
+      "bytes": 152696,
+      "sha256": "ce34e297fc819f0194de0556f4f288a966df13eb5dfbea43cfacc915ff84ee28",
+      "native_objects": 18,
+      "caption": "Frozen vision features and image-slot injection"
+    },
+    {
+      "id": "A04",
+      "file": "A04.png",
+      "bytes": 193881,
+      "sha256": "b7d4b3d2687ae1cf554046db1f0efbf687d2033ddb4804c85b894118b6dad7eb",
+      "native_objects": 21,
+      "caption": "Video spatial pooling, temporal adapter and text output"
+    }
+  ],
+  "sources": [
+    "../../../reporting/figures/design-spec.json",
+    "../../../reporting/figures/powerpoint-operations.json",
+    "../../../reporting/figures/connector-correction.json",
+    "../../../docs/design-implementation.md"
+  ]
+}

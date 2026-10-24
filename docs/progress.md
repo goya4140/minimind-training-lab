@@ -6,6 +6,9 @@
 本次记录见[正式实验登记](../reports/formal-run-mm64-cuda-20261024.md)。新环境与命令见
 [`docs/cuda-training.md`](cuda-training.md)。
 
+交付范围更新：根据用户经侧边对话转达的最新要求，取消 DOCX/PPTX 制作和交付。继续六阶段训练、
+固定评估、实验日志、真实截图、图表与 GitHub 学习文档；已有文件样稿仅作内部历史保留。
+
 ## 环境基线
 
 - 主机：Apple M4 Pro，20-core GPU，48 GiB unified memory；

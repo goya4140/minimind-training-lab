@@ -1,0 +1,17 @@
+{
+  "correction_id": "C01-native-horizontal-ports",
+  "finding_id": "F01-rendered-port-inversion",
+  "backend": "powerpoint-file-backed-ooxml",
+  "region": "A01-multimodal-branches",
+  "objects": [
+    "A01-fork-vlm",
+    "A01-fork-video",
+    "A01-vlm-next",
+    "A01-video-next"
+  ],
+  "root_cause": "The adapter maps source_site/target_site 2 to geometric right and 4 to geometric left, but writes raw OOXML idx=site-1. The rectangle preset renders idx 1 on the left and idx 3 on the right. Horizontal bindings therefore render opposite to their planned sides.",
+  "operations": "Delete only the four defective named connectors, recreate with left/right native-site argument remapping 2<->4. Keep top/bottom 1 and 3 unchanged. Inspect the actual renderer; do not accept the initial all-clear geometry audit as proof.",
+  "preserve": "All node geometry, exact stage labels, budgets and freeze text; existing vertical connectors.",
+  "acceptance": "Rendered arrows exit the source's intended boundary and enter target's intended boundary without traversing node text, while native bindings remain attached and audit has no hard failure.",
+  "rollback_signal": "Any unrelated node moves, changed label, crossed label, or new hard audit finding."
+}
