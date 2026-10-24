@@ -4,7 +4,8 @@
 `/root/autodl-tmp/wlh_goya/MiniMind`，计划重新训练全部六阶段。下面的 MPS 里程碑属于历史实验。
 2026-10-25 更新：原 run 的 LLM Pretrain/SFT 已完成，VLM Alignment 因槽位截断失败。
 当前有效修复 run 为 `mm64-cuda-vlmfix-v3-20261024T170500Z`，VLM Alignment 已完成 30,000 步并归档，
-VLM SFT 也已完成30,000步并归档固定评估，视频分支已启动；
+VLM SFT 也已完成30,000步并归档固定评估；Video Alignment已完成7,200步并归档，Video SFT已启动；
+见[视频对齐结果](../reports/cuda-video-alignment-final.md)。
 见[Alignment 结果](../reports/cuda-vlm-alignment-final.md)与[VLM SFT 评估/失败分析](../reports/cuda-vlm-sft-final.md)。
 不重复语言模型训练；见[修复运行登记](../reports/cuda-vlm-repair-run.md)。无持续监控。
 两个 LLM 最终检查点已完成冻结 8 题 CPU 对话诊断，严格评分均为 0/8；

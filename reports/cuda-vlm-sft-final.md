@@ -100,7 +100,8 @@ tensors、optimizer 28 个 entries / 84 个张量全部有限，配置、RNG与�
 [最终5张曲线与CSV](evidence/mm64-cuda-vlmfix-v3-20261024T170500Z/E002-vlm-sft-final/README.md)
 来自最终归档恢复文件：150个200-step桶全部复算，5图逐张检查且哈希核对通过。
 首末桶训练loss均值为2.853958390→2.618599463，不把下降当作视觉能力验证。
-固定评估的真实终端截图仍待补齐，不以图表或输入图片冒充运行截图。
+固定评估的[真实终端截图E010](evidence/mm64-cuda-vlmfix-v3-20261024T170500Z/README.md#e010固定-vlm-评估真实终端截图)
+已补齐，不以图表或输入图片冒充运行截图。
 
 服务器根目录：`/root/autodl-tmp/wlh_goya/MiniMind/experiments/vlm-slot-v3`。
 阶段归档目录：`artifacts/runs/mm64-cuda-vlmfix-v3-20261024T170500Z/stages/vlm-sft/`。

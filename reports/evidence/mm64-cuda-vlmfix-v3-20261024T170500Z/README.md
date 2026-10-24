@@ -37,3 +37,27 @@
 
 [5 张最终曲线与来源](E002-vlm-alignment-final/README.md)是最终归档 history 生成图，
 与上述真实截图分开登记。
+
+## E010：固定 VLM 评估真实终端截图
+
+![VLM实际固定评估查看窗口](E010-vlm-final-evaluation-terminal.png)
+
+- 实际macOS Terminal原图，无重绘、无像素修改；只读查看完成阶段的归档评估，不是重新推理。
+- 查看UTC：2026-10-24 18:20:39.128616；文件保存UTC：18:20:44.107980。
+- 先核对阶段完成事件、归档路径及评估SHA，再显示全部7题正常/反事实分数、语言PPL，
+  以及第2题的原问题和完整正常回答，明确其把伞描述为小熊猫的错误。
+- PNG：2424×1844，1,230,381 bytes；SHA-256：
+  `ff9a85a01d19a07a034417186f6e4321ab74058ef0ec39197889db3587cc7169`。
+- 入口：`reporting/review_vlm_evidence.py --run-id mm64-cuda-vlmfix-v3-20261024T170500Z`；
+  `capture_run_evidence.applescript`新增可选`vlm-evaluation`视图，默认训练截图行为不变。
+- 逐张检查：表格、来源、完整回答与限制说明可读，无裁切、密码、token或连接参数。
+  回答末尾的替代字符来自原解码文本，未改成“干净答案”，不是为美化结果而删去。
+- 读取器5个synthetic测试覆盖正常读取、篡改、不完整阶段、非法run ID、越界归档；
+  实际归档另外验证。全部reporting工具43项测试通过，不把这些测试当作模型性能通过。
+- [7个固定输入与全部案例分析](E004-vlm-fixed-cases/README.md)是输入图和报告摘录，
+  与本真实终端截图分开登记；[VLM最终报告](../../cuda-vlm-sft-final.md)不宣称视觉能力达标。
+
+## E002f / E002g：新增最终日志图表
+
+[VLM SFT](E002-vlm-sft-final/README.md)与[Video Alignment](E002-video-alignment-final/README.md)
+各包含5张最终曲线、CSV及来源/图像校验信息，均不是运行截图。
