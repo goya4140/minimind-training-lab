@@ -1,0 +1,140 @@
+{
+  "schema": 1,
+  "status": "methods-draft",
+  "title": "MiniMind 三模型训练复现",
+  "subtitle": "模型设计与实现方法",
+  "run_id": "mm64-cuda-20261024T075332Z",
+  "training_commit": "53f9b9f46560bee446d1c74e89cac991b71a8053",
+  "documentation_commit": "b46104c",
+  "scope": "本部分解释固定实现和实验方法。六阶段正式训练与最终评估仍待完成，不构成完整实验结论。",
+  "missing_final_sections": ["六阶段完成与恢复审计", "最终训练曲线", "LLM 与 SFT 评估", "图像问答与错图对照", "视频留出与倒序消融", "真实输出展示", "最终结果解读", "完整复现命令与交付审计"],
+  "sections": [
+    {
+      "id": "M01",
+      "title": "三模型与六阶段训练",
+      "summary": "语言预训练和 SFT 先建立共同语言主干。图像与视频分支各自从同一个 LLM SFT 权重扩展。",
+      "paragraphs": [
+        "我们以理解模型训练流程为目的，选择 64M 语言核心，再分别接入图像和视频。三种模型共享语言架构，但视觉编码器来自公开预训练权重并始终冻结，因此只有语言主干与新建适配模块属于从零训练的范围。",
+        "LLM 预训练学习文本中的下一个 token 分布，assistant-only SFT 学习对话中的回答行为。图像和视频均先训练新增接口，再开放语言模型首尾两个 Decoder Block。先对齐再有限解冻，意在减少随机模态接口对既有语言表示的扰动，这一设计动机仍需实际评估检验。",
+        "Video-Omni 不继承 VLM SFT 权重。这里的 Omni 是视频理解分支名称，实际输入为视频和问题，输出为文本答案，没有音频生成。固定步数预算也不等于复现上游所有数据的完整 epoch。"
+      ],
+      "table": {
+        "headers": ["阶段", "micro-step", "有效 batch", "训练范围"],
+        "rows": [["LLM Pretrain", "317048", "256", "全部语言参数"], ["LLM SFT", "40000", "16", "全部语言参数"], ["VLM Alignment", "30000", "16", "Projector"], ["VLM SFT", "30000", "16", "Projector 与首尾 Block"], ["Video Alignment", "7200", "8", "时序模块与 Projector"], ["Video SFT", "4800", "8", "时序接口与首尾 Block"]],
+        "widths": [0.27, 0.17, 0.16, 0.40]
+      },
+      "sources": ["docs/design-implementation.md", "configs/llm/pretrain-cuda.yaml", "configs/llm/sft-cuda.yaml", "configs/vlm/alignment-cuda.yaml", "configs/vlm/sft-cuda.yaml", "configs/video/alignment-cuda.yaml", "configs/video/sft-cuda.yaml"]
+    },
+    {
+      "id": "M02",
+      "title": "语言模型的关键结构",
+      "summary": "8 层 Decoder 将 token 序列变成下一个 token 的词表分布。共享输入与输出权重后，独立参数为 63,912,192。",
+      "paragraphs": [
+        "Tokenizer 将文本映射到词表中的整数 ID。Embedding 将每个 ID 变成 768 维向量，8 层 Decoder 逐层整合此前的上下文，最后的归一化与词表投影给出每个位置的预测分布。输入 Embedding 和输出 LM Head 使用同一块权重，state_dict 项目数量不能直接作为独立参数量。",
+        "每层使用 Pre-Norm 残差结构，包含带 RoPE 的因果 Grouped Query Attention 和 SwiGLU。8 个 Query 头共享 4 组 Key/Value，当前代码通过 repeat K/V 后调用 PyTorch SDPA。该实现便于教学，但不等于专门优化的原生 GQA 内核。",
+        "训练只使用 340 或 768 的序列长度。配置中的 32,768 是位置接口上限，不是长上下文能力证据。当前生成循环没有 KV cache，每一步会重新计算上下文，速度不能直接代表同规模优化推理引擎。"
+      ],
+      "table": {
+        "headers": ["结构项", "固定配置"],
+        "rows": [["词表与隐藏维度", "6400 与 768"], ["Decoder 层数", "8"], ["Query 头与 KV 头", "8 与 4，每头 96 维"], ["SwiGLU 中间维度", "2432"], ["位置编码", "RoPE，theta 1000000"], ["独立语言参数", "63912192，输入输出权重共享"]],
+        "widths": [0.42, 0.58]
+      },
+      "sources": ["src/minimind_lab/llm/model.py", "configs/llm/pretrain-cuda.yaml"]
+    },
+    {
+      "id": "M03",
+      "title": "数据划分与监督位置",
+      "summary": "问题和模态特征作为上下文参与计算，只有指定 labels 参与损失。预训练与 SFT 的 loss 不能不加区分地横向比较。",
+      "paragraphs": [
+        "文本预训练逐条读取 JSONL，以字节偏移支持随机访问。每条加入 BOS 和 EOS，截断后右侧 padding 到固定长度，不把多条短文本拼接成一条。模型用当前位置的 logits 预测下一个位置的 labels，padding labels 设为 -100 而不计分。",
+        "SFT 先应用 Tokenizer 的 chat template，再定位 assistant 回答及回合终止符，其余 labels 设为 -100。user、system 和视觉占位符虽不直接计分，但回答仍通过注意力依赖它们，允许训练的接口参数也能收到梯度。",
+        "文本训练排除尾部 2,048 条固定留出样本。QIVD 以 seed 48 和样本 ID 的 SHA-256 排序，固定为 2,400 条训练、250 条验证和 250 条测试。样本级分离不自动保证语义去重，也不等于按拍摄来源分组测试。"
+      ],
+      "table": {
+        "headers": ["输入位置", "预训练 labels", "SFT labels"],
+        "rows": [["普通文本", "非 padding token 参与", "按对话角色判断"], ["user 或 system 内容", "不适用对话角色划分", "-100"], ["assistant 回答与终止符", "不适用对话角色划分", "保留目标 token"], ["图像或视频占位", "不适用", "-100"], ["padding", "-100", "-100"]],
+        "widths": [0.32, 0.34, 0.34]
+      },
+      "sources": ["src/minimind_lab/data/pretrain.py", "src/minimind_lab/data/sft.py", "src/minimind_lab/data/video.py"]
+    },
+    {
+      "id": "M04",
+      "title": "图像特征接入语言模型",
+      "summary": "冻结的 SigLIP2 产生每张图 64 个 patch 特征。Projector 映射后替换对应文本位置的 embedding。",
+      "paragraphs": [
+        "256×256 图像经 SigLIP2 形成 64×768 的视觉特征。Projector 依次使用 LayerNorm、Linear、GELU 和 Linear，把这些特征转换到语言表示空间。单图文本预留 64 个 image token 位置，模型把对应 embedding 换成投影后的向量，而不是只向语言模型输入一个图像标签字符串。",
+        "双图按输入顺序替换 128 个位置。占位 token 数必须匹配真实图像数量，错误即报错。单图 Parquet 中多标记或无标记的记录经过显式筛选，这属于数据质量修复，不能默默跳过后仍声称使用了全部原始行。",
+        "Alignment 只训练 Projector。SFT 进一步训练语言模型第 0 和第 7 个 Decoder Block，中间层、Embedding、最终 Norm 和输出头仍冻结。固定错图与双图顺序测试用于检查回答是否真的利用视觉条件。"
+      ],
+      "table": {
+        "headers": ["处理位置", "张量或约束"],
+        "rows": [["每张图的编码", "64 个 patch，每个 768 维"], ["单图占位", "64 个 ID 12"], ["双图占位", "128 个 ID 12，保持图像顺序"], ["对齐训练", "只更新 Projector"], ["视觉 SFT", "Projector 和第 0、7 个 Block"]],
+        "widths": [0.35, 0.65]
+      },
+      "sources": ["src/minimind_lab/vlm/model.py", "src/minimind_lab/data/vlm.py", "reports/vlm-data-filter.md"]
+    },
+    {
+      "id": "M05",
+      "title": "视频时序表示与压缩",
+      "summary": "空间池化把每帧压缩为一个向量，帧位置与两层 Temporal Transformer 编码顺序，再输出 16 个视频 token。",
+      "paragraphs": [
+        "每段视频均匀抽取 8 帧并保留首尾。冻结 SigLIP2 对每帧提取 64 个 patch。可训练的空间 query 对每帧做注意力池化，形成 8 个帧向量，再加入帧位置编码。两层非因果 Temporal Transformer 可以同时观察整段视频，文本解码仍使用因果注意力。",
+        "16 个可训练 query 对时序输出做交叉注意力重采样，再经过 Projector，替换语言序列中 16 个 video token 的 embedding。固定 16-token 接口控制了语言上下文开销，但空间池化和稀疏抽帧可能丢失小物体或短暂事件。",
+        "冻结视觉编码器使我们可以缓存 patch 特征，避免每轮重复解码与视觉前向。缓存不包含答案，也没有训练视觉编码器。时间模块的存在只说明模型能够表达顺序，是否实际学会时间推理必须由正常帧与倒序帧的测试判断。"
+      ],
+      "table": {
+        "headers": ["处理位置", "张量形状"],
+        "rows": [["SigLIP2 patch", "B × 8 × 64 × 768"], ["空间注意力池化", "B × 8 × 768"], ["帧位置与 Temporal Encoder", "B × 8 × 768"], ["16 个 query 重采样", "B × 16 × 768"], ["视频接口", "替换 16 个 ID 13 的 embedding"]],
+        "widths": [0.48, 0.52]
+      },
+      "sources": ["src/minimind_lab/video/model.py", "src/minimind_lab/data/video.py", "configs/video/alignment-cuda.yaml"]
+    },
+    {
+      "id": "M06",
+      "title": "训练记录与恢复机制",
+      "summary": "micro-step 与 optimizer update 分开记录。模型、优化器、随机状态与数据顺序共同决定恢复后的训练。",
+      "paragraphs": [
+        "micro-batch 控制一次前向和反向的样本数，gradient accumulation 把多次梯度合成一次更新。日志 step 表示 micro-step，有效 batch 是 micro-batch 与累积次数的乘积。最后一组若不足完整累积次数，代码会对梯度重新标定后更新，避免低估该组梯度。",
+        "恢复文件包含模型、AdamW 状态、配置、步数、历史日志、CPU 和 CUDA RNG，以及活跃与暂停时间。数据流按 seed 加 epoch 确定置换，保存发生在 optimizer 边界，先写临时文件，再原子替换。只保存模型权重无法恢复相同优化过程。",
+        "正式 run 固定代码与输入文件指纹，每阶段开始前核验，结束后按 SHA-256 归档。默认 CUDA 训练没有承诺逐位确定性。BF16 探针的确定性恢复测试只证明该测试设置，不是所有正式 CUDA 运行的通用保证。"
+      ],
+      "table": {
+        "headers": ["记录字段", "报告解释"],
+        "rows": [["loss", "记录 micro-batch 的均值"], ["padded tokens per second", "包括 padding 的名义吞吐"], ["CUDA allocated 与 reserved", "PyTorch 张量分配与缓存保留分开"], ["活跃与暂停耗时", "暂停不计入训练活跃时间"], ["resume 与 final checkpoint", "恢复状态与推理权重分开保留"]],
+        "widths": [0.44, 0.56]
+      },
+      "sources": ["scripts/train_pretrain.py", "src/minimind_lab/training/evidence.py", "docs/experiment-evidence.md"]
+    },
+    {
+      "id": "M07",
+      "title": "评估协议与结论范围",
+      "summary": "固定评估同时检查回答质量、条件利用和语言能力退化。训练 loss 下降只说明优化目标变化。",
+      "paragraphs": [
+        "LLM Pretrain 与 SFT 使用同一个文本留出集计算 token 加权 NLL、PPL 和 BPB，并对同一组固定提示生成回答。BPB 的字节分母来自解码后的有效文本，不能解释为原始 JSONL 文件的压缩率。固定提示中有基础补全而非纯 chat 格式，因此也不能把它当成全面的指令遵循基准。",
+        "VLM 对正确图、固定错图和双图顺序做对照，并重新评估语言主干。视频分支对 QIVD 测试集、160 条受控时序样本和倒序帧进行评估。关键词召回和 token F1 都有局限，需结合逐样本输出与失败案例解释。",
+        "当前 CUDA 生成耗时在输出转 CPU 前结束，没有显式设备同步，不能用来发表严格硬件速度结论。最终若比较速度，需要另做有预热、同步与重复次数的计时实验，并与原固定能力评估分开记录。"
+      ],
+      "table": {
+        "headers": ["评估对象", "固定协议"],
+        "rows": [["语言回归", "2048 条留出文本与 4 条固定提示"], ["VLM 条件利用", "6 单图与 1 双图，错图和顺序对照"], ["QIVD", "250 条 loss，100 条生成评分"], ["受控时序", "160 条正常与倒序评估"], ["最终结论", "展示失败与退化，保留逐样本来源"]],
+        "widths": [0.32, 0.68]
+      },
+      "sources": ["docs/evaluation.md", "src/minimind_lab/evaluation/language.py", "scripts/run_mps_pipeline.py"]
+    },
+    {
+      "id": "M08",
+      "title": "真实运行证据示例",
+      "summary": "截图记录正式预训练及恢复审计。\n记录只证明当时的运行状态。\n六阶段完成情况和模型能力仍需最终证据。",
+      "paragraphs": [
+        "证据 E001 是 macOS Terminal 中真实 SSH 运行界面的窗口截图，记录于 2026 年 10 月 24 日 08 时 05 分 UTC，显示 micro-step 9,860 和 step 4,000 恢复审计。截图与日志都绑定相同 run ID，原始截图不作结果内容改写。",
+        "截图显示的是当时的记录，不代表阅读报告时的最新步数。后续还需保存最终训练与评估截图，并用原始日志生成曲线。真实截图和日志生成图应在图注中明确区分。"
+      ],
+      "image": {
+        "path": "reports/evidence/mm64-cuda-20261024T075332Z/E001-terminal-startup.png",
+        "sha256": "db0101c1ad1b31bff5df9775ccb33cec96b4f1253201404196186e708a501373",
+        "caption": "E001 真实终端窗口截图 2026 年 10 月 24 日 08 时 05 分 UTC 预训练进行中"
+      },
+      "sources": ["reports/evidence/mm64-cuda-20261024T075332Z/README.md", "reports/formal-run-mm64-cuda-20261024.md"]
+    }
+  ]
+}

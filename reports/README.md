@@ -19,5 +19,6 @@ checkpoint、日志、评估 JSON 和 QIVD manifest，再生成 `final-results.m
 - [真实截图与待补证据索引](evidence/mm64-cuda-20261024T075332Z/README.md)
 - [step 12,000 早期诊断与失败案例](cuda-pretrain-step12000-diagnostic.md)
 - [三模型设计、实现与结论边界](../docs/design-implementation.md)
+- [PPTX 与 DOCX 同源内容和生成准备](../reporting/README.md)（内部方法样稿，不是最终报告）
 
 其他 MPS 报告属于历史运行，不作为本次 CUDA 六阶段完成的证据。

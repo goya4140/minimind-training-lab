@@ -5,6 +5,7 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .ruff_cache/
+.report-build/
 
 # Local datasets, checkpoints and generated artifacts
 data/raw/
