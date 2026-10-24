@@ -2,10 +2,18 @@
 import copy
 import unittest
 
-from training_curves import aggregate
+from training_curves import aggregate, nonnegative_plot_upper
 
 
 class CurveAggregationTests(unittest.TestCase):
+    def test_flat_high_series_has_headroom(self):
+        upper = nonnegative_plot_upper([44400, 44794, 44794])
+        self.assertGreaterEqual(upper, 44794 * 1.079)
+
+    def test_zero_and_missing_plot_series_have_valid_limits(self):
+        for values in ([], [0, 0], [float("nan")]):
+            self.assertEqual(nonnegative_plot_upper(values), 1.0)
+
     def setUp(self):
         base = {
             "run_id": "synthetic-unit-only", "loss": 3.0, "learning_rate": 0.01,

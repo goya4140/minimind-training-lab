@@ -26,6 +26,12 @@ def digest(path: Path) -> str:
         return hashlib.file_digest(handle, "sha256").hexdigest()
 
 
+def nonnegative_plot_upper(values) -> float:
+    """Keep zero visible and give almost-flat, high-valued series real headroom."""
+    finite = [value for value in values if math.isfinite(value)]
+    return max(finite, default=0.0) * 1.08 or 1.0
+
+
 def aggregate(history: list[dict], *, run_id: str, checkpoint_step: int, bin_width: int) -> list[dict]:
     if bin_width < 1 or not history:
         raise ValueError("Nonempty history and positive bin width required")
@@ -197,7 +203,7 @@ def plot(args) -> None:
         ax.set_title(title, loc="left", fontsize=15, pad=15)
         ax.set_xlabel("Micro-step (not optimizer update)")
         ax.set_ylabel(ylabel)
-        ax.set_ylim(bottom=0)
+        ax.set_ylim(0, nonnegative_plot_upper(row[field] for row in rows))
         ax.set_xlim(0, meta["last_observed_step"] * 1.04)
         ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{int(v):,}"))
         ax.grid(axis="y", color="#E3E7EA", linewidth=0.7)
@@ -237,7 +243,9 @@ def plot(args) -> None:
     fig.savefig(target, dpi=180, bbox_inches="tight")
     plt.close(fig)
     outputs.append({"file": target.name, "sha256": digest(target), "metric": "cuda-memory"})
+    shutil.copy2(Path(__file__), args.output / "renderer-tool.py")
     receipt = {"source_sha256": digest(source_path), "csv_sha256": digest(csv_path),
+               "renderer_tool_sha256": digest(Path(__file__)),
                "matplotlib": matplotlib.__version__, "figures": outputs, "status": meta["status"]}
     (args.output / "figure-manifest.json").write_text(json.dumps(receipt, indent=2) + "\n")
     print(json.dumps({"output": str(args.output), "figures": len(outputs), "status": meta["status"]}))
