@@ -22,6 +22,15 @@ def digest(path):
         return hashlib.file_digest(handle, "sha256").hexdigest()
 
 
+def validate_gpu_selection(run_manifest: dict, selected: str | None) -> str:
+    expected = run_manifest.get("runtime", {}).get("cuda_visible_devices")
+    if not isinstance(expected, str) or not expected.strip():
+        raise ValueError("The immutable run has no explicit authorized GPU binding")
+    if selected != expected:
+        raise ValueError("CUDA_VISIBLE_DEVICES must exactly match the immutable run GPU binding")
+    return expected
+
+
 def retain_cases(module, output: Path):
     original = module.generation_summary
     receipts = []
@@ -76,8 +85,8 @@ def main():
     checkpoint = (root / entries[0]["archive"]).resolve()
     if not checkpoint.is_relative_to(run / "stages" / stage) or digest(checkpoint) != entries[0]["sha256"]:
         raise ValueError("Archived checkpoint binding failed")
-    if not os.environ.get("CUDA_VISIBLE_DEVICES"):
-        raise ValueError("Explicitly select the authorized GPU with CUDA_VISIBLE_DEVICES")
+    run_manifest = json.loads((run / "manifest.json").read_text())
+    authorized_gpu = validate_gpu_selection(run_manifest, os.environ.get("CUDA_VISIBLE_DEVICES"))
     script = root / "scripts/evaluate_video_omni.py"
     output = run / "supplemental-evaluations" / args.eval_id
     output.mkdir(parents=True, exist_ok=False)
@@ -86,7 +95,7 @@ def main():
                 "checkpoint": str(checkpoint.relative_to(root)), "checkpoint_sha256": digest(checkpoint),
                 "evaluator_sha256": digest(script), "retention_tool_sha256": digest(__file__),
                 "baseline_evaluation_unchanged": True, "max_new_tokens": 48,
-                "cuda_visible_devices": os.environ["CUDA_VISIBLE_DEVICES"],
+                "cuda_visible_devices": authorized_gpu,
                 "caveat": "Reversed predictions are scored against original references, not reversed-video truth."}
 
     def save():

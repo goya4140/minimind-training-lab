@@ -11,6 +11,19 @@ spec.loader.exec_module(replay)
 
 
 class RetentionTests(unittest.TestCase):
+    def test_gpu_must_match_formal_run(self):
+        manifest = {"runtime": {"cuda_visible_devices": "1"}}
+        self.assertEqual(replay.validate_gpu_selection(manifest, "1"), "1")
+        for selected in (None, "", "0", "0,1", "1,0", " 1", "1 "):
+            with self.subTest(selected=selected), self.assertRaises(ValueError):
+                replay.validate_gpu_selection(manifest, selected)
+
+    def test_missing_run_gpu_binding_is_not_permission_to_use_any_gpu(self):
+        for manifest in ({}, {"runtime": {}}, {"runtime": {"cuda_visible_devices": ""}},
+                         {"runtime": {"cuda_visible_devices": None}}):
+            with self.subTest(manifest=manifest), self.assertRaises(ValueError):
+                replay.validate_gpu_selection(manifest, "1")
+
     def test_keeps_every_case_without_changing_summary(self):
         with tempfile.TemporaryDirectory() as temporary:
             output = Path(temporary)
