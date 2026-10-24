@@ -57,7 +57,8 @@ manifest、逐样本 JSONL、参考答案、实际渲染提示、token IDs、EOS
 
 LLM Pretrain 与 SFT 最终归档权重已完成该诊断，见[逐题解读](../../reports/cuda-llm-final-chat-diagnostic.md)，
 两者严格参考约束通过率均为 0/8；真实截图和完整服务器输出均已留存。
-VLM SFT 与 Video-Omni SFT 尚待阶段完成，不能用工具测试或早期探针替代最终结果。
+VLM SFT 最终语言主干也已完成相同诊断，严格0/8，见[结果与来源](../../reports/cuda-vlm-sft-final.md)。
+Video-Omni SFT 尚待阶段完成，不能用工具测试或早期探针替代最终结果。
 
 2026-10-25 在修复 run `mm64-cuda-vlmfix-v3-20261024T170500Z` 的首次补充推理之前，
 逐字节继承父 run 的同一协议与来源勘误；`evaluation_protocol_registered` 与
