@@ -61,3 +61,27 @@
 
 [VLM SFT](E002-vlm-sft-final/README.md)与[Video Alignment](E002-video-alignment-final/README.md)
 各包含5张最终曲线、CSV及来源/图像校验信息，均不是运行截图。
+
+## E002h：Video SFT 最终日志图表
+
+[5张最终曲线、120桶CSV和完整来源定义](E002-video-sft-final/README.md)已逐桶复算、逐图检查。
+这是日志生成图而非终端截图；不能以loss末点较低推断视频理解改善。
+
+## E011：最终视频评估真实终端截图
+
+![已归档视频评估的真实查看窗口](E011-video-final-evaluation-terminal.png)
+
+- 类型：macOS Terminal真实窗口原图，无重绘或像素修改；不是输入视频帧图。
+- 查看UTC：2026-10-24 18:34:53.531249；PNG保存UTC：18:34:59.612710。
+- PNG：2424×1844，1,159,219 bytes；SHA-256：
+  `c35ae146a900530be0b2168cd6368bb897fefb6ee99680b31451edd08768c245`。
+- 内容：视频SFT归档评估SHA、QIVD正常/倒序loss、两套生成集合的EM/F1/变化率，
+  以及原评估各集合第一条保存样例的完整正常/倒序回答；不是按高分挑选。
+- 工具：`reporting/review_video_evidence.py`，只读检查阶段完成、唯一归档、路径包含性和SHA，
+  再显示原文；`capture_run_evidence.applescript`新增`video-evaluation`模式，保留原有模式。
+- 已视觉检查：运行身份、来源哈希、表格、问题、回答及限制说明完整可读；未见裁切、连接参数、密码或token。
+  SSH结束后才截图，窗口标题显示本地sleep，不显示远端连接信息。
+- 读取器6项synthetic测试覆盖合法查看、篡改、未完成阶段、非法run ID、归档越界和错误样本数；
+  reporting共49项测试通过。它们验证工具行为，不代表模型能力测试通过。
+- 此截图是已保存评估的查看，不是新推理，也不能代替原视频输入帧展示或完整项目验收。
+  260条完整回答来自另有身份的[独立重放与逐条核验](../../video-full-output-replay-integrity-20261025.json)。

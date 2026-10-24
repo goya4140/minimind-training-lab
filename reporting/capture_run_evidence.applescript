@@ -8,9 +8,15 @@ on run argv
     set remoteCommand to "cd " & quoted form of remoteRoot & " && PYTHONPATH=src .venv/bin/python scripts/review_terminal_evidence.py --run-id " & quoted form of runID & " && nvidia-smi --query-gpu=index,memory.used,memory.free,utilization.gpu --format=csv"
     set evidenceTitle to "MiniMind repaired run evidence"
     if (count of argv) > 5 then
-        if item 6 of argv is not "vlm-evaluation" then error "Unsupported evidence view"
-        set remoteCommand to "cd " & quoted form of remoteRoot & " && .venv/bin/python reporting/review_vlm_evidence.py --run-id " & quoted form of runID
-        set evidenceTitle to "MiniMind fixed VLM evaluation"
+        if item 6 of argv is "vlm-evaluation" then
+            set remoteCommand to "cd " & quoted form of remoteRoot & " && .venv/bin/python reporting/review_vlm_evidence.py --run-id " & quoted form of runID
+            set evidenceTitle to "MiniMind fixed VLM evaluation"
+        else if item 6 of argv is "video-evaluation" then
+            set remoteCommand to "cd " & quoted form of remoteRoot & " && .venv/bin/python reporting/review_video_evidence.py --run-id " & quoted form of runID
+            set evidenceTitle to "MiniMind fixed video evaluation"
+        else
+            error "Unsupported evidence view"
+        end if
     end if
     -- Let SSH finish before capture, leaving local sleep as the window process.
     -- This keeps connection arguments out of Terminal's active-process title.

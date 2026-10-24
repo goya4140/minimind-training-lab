@@ -102,4 +102,9 @@ EM、参考包含、bag-of-token F1和倒序变化标记，复核类别均值及
 
 全量JSONL及其工具、manifest保留于本run的
 `supplemental-evaluations/video-full-output-replay-final-20261025/`，不上传GitHub。
-曲线逐图检查、真实视频输入输出展示和最终综合审计尚需完成；不以本页代替它们。
+[最终5张曲线、CSV与来源](evidence/mm64-cuda-vlmfix-v3-20261024T170500Z/E002-video-sft-final/README.md)
+已完成120桶独立复算和逐张视觉检查。真实视频输入输出展示和最终综合审计仍需完成。
+
+[E011真实终端截图](evidence/mm64-cuda-vlmfix-v3-20261024T170500Z/README.md#e011最终视频评估真实终端截图)
+展示归档评估指标和两套集合各第一条完整回答，已检查可读性及敏感信息。
+它是只读查看原结果的实际窗口，不是重新运行推理，也不是输入视频帧的展示。
