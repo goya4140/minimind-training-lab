@@ -43,7 +43,7 @@ MiniMind LLM (Decoder-only, 64M)
 ```
 
 设计详情：[`docs/architecture.md`](docs/architecture.md)  
-实现与指标口径解读：[`docs/design-implementation.md`](docs/design-implementation.md)  
+实现与指标口径解读：[`docs/design-implementation.md`](docs/design-implementation.md)
 训练策略：[`docs/training-strategy.md`](docs/training-strategy.md)  
 评估协议：[`docs/evaluation.md`](docs/evaluation.md)
 冻结组件：[`docs/external-components.md`](docs/external-components.md)
