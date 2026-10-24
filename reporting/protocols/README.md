@@ -55,5 +55,12 @@ OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 \
 manifest、逐样本 JSONL、参考答案、实际渲染提示、token IDs、EOS 行为和 summary。
 完整输出只留服务器，GitHub 只提交精简案例与结果说明。
 
-目前仅完成 12,000 步早期快照的执行器验证。四个完整阶段的补充评估均未完成；不将测试通过
-或早期结果计作最终报告完成。
+LLM Pretrain 与 SFT 最终归档权重已完成该诊断，见[逐题解读](../../reports/cuda-llm-final-chat-diagnostic.md)，
+两者严格参考约束通过率均为 0/8；真实截图和完整服务器输出均已留存。
+VLM SFT 与 Video-Omni SFT 尚待阶段完成，不能用工具测试或早期探针替代最终结果。
+
+2026-10-25 在修复 run `mm64-cuda-vlmfix-v3-20261024T170500Z` 的首次补充推理之前，
+逐字节继承父 run 的同一协议与来源勘误；`evaluation_protocol_registered` 与
+`evaluation_protocol_provenance_corrected` 事件同时记录父 run、原注册时间和文件指纹。
+这不是看到 LLM 结果后重新出题。继承过程中核验父事件、父文件、当前工具目录文件与新 run
+留存文件的 SHA 全部一致，且新 run 源码指纹检查通过；没有更改训练、原固定评估或生成设置。

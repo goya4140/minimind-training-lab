@@ -72,6 +72,12 @@ Projector 开始，避免把不同数据构造策略的轨迹混作一次无变�
 保留 manifest、source.tar、六阶段配置、继承事件、原始日志、逐阶段归档和实际评估。继承 LLM
 的曲线与补充评估必须引用父 run 的原始身份；新多模态阶段使用本 run 的身份。
 
+已在本 run 的 `supplemental-protocols/` 继承父 run 冻结的 `chat-diagnostic-v1.json` 和来源勘误，
+文件与父注册事件的 SHA 一致，在首次多模态补充对话推理前登记。两个 LLM 最终结果仍引用
+[父 run 评估](cuda-llm-final-chat-diagnostic.md)，不重新标成修复 run 的产物；
+后续 VLM/Video 对话诊断抽取语言主干，不输入视觉内容，不替代视觉性能评估。
+固定 VLM 验证切分、关键词代理与图序指标的限制见[评估口径](../docs/evaluation.md)。
+
 不设置周期监控，不停止其他项目。PyTorch 进程显存、整卡显存与其他进程占用不是同一口径；
 截图中的整卡数字不能全部归因于本模型，也不能用于严格的独占硬件吞吐对比。
 
