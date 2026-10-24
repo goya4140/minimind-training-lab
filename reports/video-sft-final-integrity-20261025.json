@@ -1,0 +1,23 @@
+{
+  "run_id": "mm64-cuda-vlmfix-v3-20261024T170500Z",
+  "kind": "final-stage-resume-integrity-audit",
+  "stage": "video-omni-sft",
+  "audited_at_utc": "2026-10-24T18:30:26.754078+00:00",
+  "checkpoint": "artifacts/runs/mm64-cuda-vlmfix-v3-20261024T170500Z/stages/video-omni-sft/video-omni-sft-cuda.resume.pt",
+  "checkpoint_bytes": 615091563,
+  "checkpoint_sha256": "53d67f18f4bb01b4dcdeadb7e2b9c9d048dc6523cb035d42dadf5dc792fcd32d",
+  "state_tensors": 136,
+  "state_parameters": 84017664,
+  "all_finite": true,
+  "resume_step": 4800,
+  "optimizer_boundary": true,
+  "optimizer_state_entries": 67,
+  "optimizer_state_tensors": 201,
+  "optimizer_all_finite": true,
+  "history_records": 241,
+  "training_seconds": 260.4720368385315,
+  "suspended_seconds": 0.0,
+  "rng_state_bytes": 5056,
+  "config_matches": true,
+  "training_complete": true
+}

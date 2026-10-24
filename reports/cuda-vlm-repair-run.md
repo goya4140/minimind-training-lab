@@ -1,6 +1,7 @@
 # CUDA 修复运行：VLM 视觉槽位与只读阶段继承
 
-状态：**VLM Alignment/SFT 与固定 VLM 评估、Video Alignment 均已完成并归档；Video SFT 已启动，完整实验尚未完成。**
+状态：**六阶段训练和原固定评估均已完成并归档；260条视频输出独立重放与逐样本评分复核完成，视觉证据及综合解读仍需完善。**
+见[Video SFT最终结果与负面证据](cuda-video-sft-final.md)及[六阶段归档血缘审计](six-stage-final-lineage-20261025.json)。
 视频对齐阶段正常/倒序验证loss几乎相同，见[阶段报告](cuda-video-alignment-final.md)，不据微小正差宣称时序能力。
 VLM 的关键词正差不代表可靠视觉理解，详见[最终 SFT 评估与失败解读](cuda-vlm-sft-final.md)。
 最终 Alignment 验证 loss 为 2.781993868，详见[阶段结果、审计和曲线](cuda-vlm-alignment-final.md)。

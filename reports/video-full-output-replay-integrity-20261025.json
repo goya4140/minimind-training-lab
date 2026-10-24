@@ -1,0 +1,63 @@
+{
+  "run_id": "mm64-cuda-vlmfix-v3-20261024T170500Z",
+  "eval_id": "video-full-output-replay-final-20261025",
+  "audited_at_utc": "2026-10-24T18:32:25.364194+00:00",
+  "manifest_sha256": "72d2f92b7a061d8d8321b7c765fbf6ad8d86bbb45240225a99aec4df7414f18a",
+  "summary_sha256": "19b47a9b7fb7f6186c178d66c139112673f7d8ba166bf55d2855670292a519dc",
+  "datasets": [
+    {
+      "dataset": "qivd",
+      "cases": 100,
+      "sha256": "0ae5de2598322cdf92abfc2cf80c3cab19ed658e1ef78d421a76f1fd71630850",
+      "scores_recomputed": true,
+      "aggregate_metrics_match_original_baseline": true,
+      "metrics": {
+        "normalized_exact_match": 0.0,
+        "reversed_frame_exact_match": 0.0,
+        "contains_reference": 0.18,
+        "reversed_frame_contains_reference": 0.18,
+        "token_f1": 0.08794588744588745,
+        "reversed_frame_token_f1": 0.08794588744588745,
+        "completion_change_rate_on_reversal": 0.0
+      },
+      "raw_text_equal_normal_reversed": 100,
+      "categories": {
+        "action attributes": 2,
+        "action counting": 5,
+        "action detection": 13,
+        "action understanding": 5,
+        "object attributes": 24,
+        "object counting": 13,
+        "object detection": 6,
+        "object referencing": 27,
+        "object understanding": 3,
+        "scene understanding": 1,
+        "subjective": 1
+      }
+    },
+    {
+      "dataset": "controlled_temporal",
+      "cases": 160,
+      "sha256": "518518e928c4e0ee2c53b3256ae35b89ddcc356f634135cbe743e4900d6fe497",
+      "scores_recomputed": true,
+      "aggregate_metrics_match_original_baseline": true,
+      "metrics": {
+        "normalized_exact_match": 0.0,
+        "reversed_frame_exact_match": 0.0,
+        "contains_reference": 0.2625,
+        "reversed_frame_contains_reference": 0.2625,
+        "token_f1": 0.1277777777777778,
+        "reversed_frame_token_f1": 0.1277777777777778,
+        "completion_change_rate_on_reversal": 0.0
+      },
+      "raw_text_equal_normal_reversed": 160,
+      "categories": {
+        "event-order": 40,
+        "motion-horizontal": 40,
+        "motion-vertical": 40,
+        "size-change": 40
+      }
+    }
+  ],
+  "limits": "Independent replay, not original lost outputs. Original-reference reverse scoring. Does not prove temporal understanding or semantic correctness."
+}

@@ -1,6 +1,6 @@
 # CUDA Video-Omni Temporal Alignment：阶段结果
 
-该阶段已完成并归档，Video SFT 已启动；最终视频性能评估尚未完成。
+该阶段已完成并归档；后续Video SFT及原固定评估也已完成，见[最终视频结果](cuda-video-sft-final.md)。
 run `mm64-cuda-vlmfix-v3-20261024T170500Z`，训练 commit
 `9eafe5a548df7d5eae7ce2efe420e512a52d647e`。
 

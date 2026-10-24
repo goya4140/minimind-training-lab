@@ -1,0 +1,92 @@
+{
+  "run_id": "mm64-cuda-vlmfix-v3-20261024T170500Z",
+  "training_commit": "9eafe5a548df7d5eae7ce2efe420e512a52d647e",
+  "stages": [
+    {
+      "stage": "llm-pretrain",
+      "status": "archive-verified",
+      "archive_files_verified": 5,
+      "inherited": true,
+      "original_training_run_id": "mm64-cuda-20261024T075332Z",
+      "artifact_sha256": {
+        "artifacts/checkpoints/llm-64m-pretrain-cuda.pt": "5d93e0b34336130dc7395e6fb9fc0028c969cdce0c417b92aa8e1818d8724d60",
+        "artifacts/checkpoints/llm-64m-pretrain-cuda.resume.pt": "a087b33de93ccaea52bb18748c3893e2df9313c5b79ac1f848e77fc6d8eafa79",
+        "artifacts/logs/llm-64m-pretrain-cuda.json": "5b555a8ac2c9d9d575c43b048ee7deeb2cffff599b3d5252dc0646fe9c331d25",
+        "artifacts/logs/llm-64m-pretrain-cuda.console.log": "22caafad89a6a9ddc45e9233dca39af4a0db5fde59d5cb90e5976e6f3a7e58d1",
+        "artifacts/eval/llm-pretrain-final.json": "3b50f4d17c98e5f4eafc7505bc4ded226d7ff1c4aef068cf2a191480bf59739b"
+      }
+    },
+    {
+      "stage": "llm-sft",
+      "status": "archive-verified",
+      "archive_files_verified": 5,
+      "inherited": true,
+      "original_training_run_id": "mm64-cuda-20261024T075332Z",
+      "artifact_sha256": {
+        "artifacts/checkpoints/llm-64m-sft-cuda.pt": "61aff7c70d0e6d110b07d5a92f82e2ba0e7667aba6468404a94be585861910a4",
+        "artifacts/checkpoints/llm-64m-sft-cuda.resume.pt": "88afc98991c4364d1b8b932bffdc1c9fff4f71ef35075c457d869deca45a00ab",
+        "artifacts/logs/llm-64m-sft-cuda.json": "45afee1ef0e2e1d5752f11e469ca4915cd6e642d9e7af95cedfccbd345daf2d4",
+        "artifacts/logs/llm-64m-sft-cuda.console.log": "c1732f960b0dfc61522b034f323ef2b3f703a08c99a854cd14b601c22d1999e8",
+        "artifacts/eval/llm-sft-final.json": "23392375dbff726f87ae697d1a8b4044b0f1856c75b4f57e24fc71380d3bf235"
+      }
+    },
+    {
+      "stage": "vlm-alignment",
+      "status": "archive-verified",
+      "archive_files_verified": 4,
+      "inherited": false,
+      "original_training_run_id": "mm64-cuda-vlmfix-v3-20261024T170500Z",
+      "artifact_sha256": {
+        "artifacts/checkpoints/vlm-alignment-cuda.pt": "a621ced8c2a10f69e90ad2553533bfd1b7a81fca042ad05e81b43742f4227934",
+        "artifacts/checkpoints/vlm-alignment-cuda.resume.pt": "07f163cedbb320928a8a3ece33334af11215ea476ed705bd16e182379b1df6f4",
+        "artifacts/logs/vlm-vision-alignment-cuda.json": "24719969478973e90d27bdee4c8e05655c642e2b2b96f74be9320c5168c08472",
+        "artifacts/logs/vlm-vision-alignment-cuda.console.log": "b3ce083d2c408adb8d90e094759ab7b672d3b51d3efb02f9f6f79c44cd149c39"
+      }
+    },
+    {
+      "stage": "vlm-sft",
+      "status": "archive-verified",
+      "archive_files_verified": 5,
+      "inherited": false,
+      "original_training_run_id": "mm64-cuda-vlmfix-v3-20261024T170500Z",
+      "artifact_sha256": {
+        "artifacts/checkpoints/vlm-sft-cuda.pt": "13c23d6aa16c789d3910cf7a46de12be35e0fd2bc94bab908899f3f3f47ee332",
+        "artifacts/checkpoints/vlm-sft-cuda.resume.pt": "a50869adec6322d31ff1117b14a2ab43b8c971f7ef933408d63f95eb6933835c",
+        "artifacts/logs/vlm-sft-cuda.json": "05c2a792654b830a22352dde81df7a7f145745933405cf2c1cb897eb02509e14",
+        "artifacts/logs/vlm-sft-cuda.console.log": "efa4bd318c561c058f50198fcf29adfabe848c432085c985dced0e26a8927173",
+        "artifacts/eval/vlm-final.json": "28d86765fa195ba4d9a55693b0060d8da944ddf7183b270858ccb3d829431c38"
+      }
+    },
+    {
+      "stage": "video-omni-alignment",
+      "status": "archive-verified",
+      "archive_files_verified": 4,
+      "inherited": false,
+      "original_training_run_id": "mm64-cuda-vlmfix-v3-20261024T170500Z",
+      "artifact_sha256": {
+        "artifacts/checkpoints/video-omni-alignment-cuda.pt": "35737d932697cfd1ab1b7f733af1212f0ffbbfaaf621da6dc743e59ade807176",
+        "artifacts/checkpoints/video-omni-alignment-cuda.resume.pt": "31cb03a83f862191da9a5ca0f7d0baddac3a50159462c75833222e25bfddafba",
+        "artifacts/logs/video-omni-alignment-cuda.json": "89e60fef420aa486724fe7ad3a33b7b9faf94348e8d4cc4c88c8f94d49ac26a4",
+        "artifacts/logs/video-omni-alignment-cuda.console.log": "f606a2e7e50077a95d3be1ca0345196523df5214bfcdf7bbe412ac189e95ca91"
+      }
+    },
+    {
+      "stage": "video-omni-sft",
+      "status": "archive-verified",
+      "archive_files_verified": 5,
+      "inherited": false,
+      "original_training_run_id": "mm64-cuda-vlmfix-v3-20261024T170500Z",
+      "artifact_sha256": {
+        "artifacts/checkpoints/video-omni-sft-cuda.pt": "2f320a04ecfee4cb46863b3698cb680cce41407bfb93990e28c028680a9876b8",
+        "artifacts/checkpoints/video-omni-sft-cuda.resume.pt": "53d67f18f4bb01b4dcdeadb7e2b9c9d048dc6523cb035d42dadf5dc792fcd32d",
+        "artifacts/logs/video-omni-sft-cuda.json": "00073fc3ed0820f589d054c5fc4179f1e14e690486ac5529c6922c27d83be235",
+        "artifacts/logs/video-omni-sft-cuda.console.log": "ded5af49e2868c86fe9701a26feeabef363a50d42f61df178bba5f1de54ac87a",
+        "artifacts/eval/video-omni-final.json": "8c054eaa60a032c24c9fee56682bb610166ec948fcba91c94e0b24bd83b56d96"
+      }
+    }
+  ],
+  "six_stage_archives_verified": true,
+  "pipeline_completion_event": true,
+  "goal_completion_proven": false,
+  "limits": "Archive bytes and parent lineage only. Does not audit tensor/RNG/config contents, semantic metrics, data leakage, screenshots, full per-sample retention or final deliverables. Automatically generated final-results.md requires independent interpretation review."
+}
