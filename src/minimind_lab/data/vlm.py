@@ -115,7 +115,9 @@ class ParquetVLMDataset(Dataset):
     ) -> None:
         from datasets import Dataset as HFDataset
 
-        self.dataset = HFDataset.from_parquet(str(path))
+        # Shared repair workspaces must reuse the same underlying Parquet cache,
+        # not materialize another image-byte Arrow copy per symlink pathname.
+        self.dataset = HFDataset.from_parquet(str(Path(path).resolve()))
         valid_indices, self.data_quality = single_image_valid_indices(path)
         if self.data_quality["excluded"]:
             self.dataset = self.dataset.select(valid_indices)
