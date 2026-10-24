@@ -5,6 +5,8 @@
 六阶段训练与三模型评估全部完成后，运行 `python scripts/build_final_report.py` 会严格检查所需
 checkpoint、日志、评估 JSON 和 QIVD manifest，再生成 `final-results.md` 与本地 artifact manifest；
 缺少任一证据时命令会失败，避免发布半成品结果。
+自动生成的表格与能力判据仍须经[独立证据和解释复核](../reporting/final-evidence-review.md)，
+不能把模板运行成功当成整个学习项目验收通过。
 
 仓库提交经过提炼的结果、公开截图与图表，以及 GitHub 学习报告。用户最新要求已取消 DOCX/PPTX
 制作与交付；已有样稿仅作内部历史记录，不作为后续任务或交付文件。
