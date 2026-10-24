@@ -34,14 +34,22 @@ VLM 同时报告 validation loss 和固定图像关键词召回。关键词召�
 QIVD held-out test 报告：normalized exact match、reference containment、bag-of-token F1、按类别 F1。
 主观长答案常有多种合理说法，所以 exact match 很严格；token F1 较宽松，但也会奖励只复述关键词的答案。
 
-受控时序集提供可因果解释的消融：同一个视频倒序后，移动方向、尺寸变化和事件先后的正确答案会反转。
-因此：
+受控时序集让顺序扰动更容易解释：同一个视频倒序后，移动方向、尺寸变化和事件先后的正确答案会
+反转。但当前脚本给倒序回答打分时仍使用**原视频答案**，所以两列不是各自正确答案下的准确率：
 
 ```text
-normal score > reversed score  → 支持模型利用了时间顺序
-normal score ≈ reversed score  → 可能只看静态帧或语言先验
-normal score < reversed score  → 训练/评估异常或未建立稳定时序能力
+normal score > reversed score  → 原答案在正常视频下更受支持；还需核对倒序回答是否正确
+normal score ≈ reversed score  → 不能确认时序能力；也可能是两次都错或评分不敏感
+normal score < reversed score  → 检查逐样本错误与偏置；不能仅凭差值判定工程故障
 ```
+
+例如“red square”和“blue circle”的首事件对换后答案不同，但若回答同时包含两组词，词袋 F1 仍
+可能相同。反过来，倒序后回答变化也可能是错误或不稳定，而非理解了事件先后。必须同时看正常输入
+正确率、逐对回答、任务类别与参考含义，不能用单个分差替代行为验证。
+
+原固定视频汇总只保存前 12 条回答。为满足完整复核要求，另有
+[全量证据重放](../reporting/video-evidence-replay.md)，保留 100 条 QIVD 与 160 条受控样例全部回答；
+其结果使用独立 eval ID，不能声称来自原先未留存的那次生成。
 
 正式报告只接受完整协议：4 个固定语言提示、7 个 VLM 案例、250 条 QIVD test loss、前 100 条
 QIVD 生成，以及 160 条受控时序正常/倒序生成。缩短样本数的调试运行不能冒充最终评估。
