@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "status": "final-stage",
+  "run_id": "mm64-cuda-vlmfix-v3-20261024T170500Z",
+  "training_commit": "9eafe5a548df7d5eae7ce2efe420e512a52d647e",
+  "stage": "vlm-alignment",
+  "experiment": "vlm-vision-alignment-cuda",
+  "checkpoint": "artifacts/runs/mm64-cuda-vlmfix-v3-20261024T170500Z/stages/vlm-alignment/vlm-alignment-cuda.resume.pt",
+  "checkpoint_sha256": "07f163cedbb320928a8a3ece33334af11215ea476ed705bd16e182379b1df6f4",
+  "checkpoint_bytes": 270305369,
+  "checkpoint_step": 30000,
+  "target_microsteps": 30000,
+  "run_manifest_sha256": "30d69180705333d4f83e1bdab49a934a65466f60aff594d0639f3a3dfb579757",
+  "curve_data_sha256": "78c7ee1f2dd563e68587c7892d4578bf72cda8e1af762258ef69ba7ab8076c49",
+  "history_sha256": "39286d4dff81708b22dc9fcd4993a40da5a5a266ac5bde4ca0fe64b940fec26a",
+  "curve_tool_sha256": "310dcd5996b5624c7db5a748514bf88abd7d7b2681b145ba4946aa147a66e597",
+  "raw_history_retention": "Server only; publish binned CSV and figures, never history-records.json",
+  "history_records": 1501,
+  "bins": 150,
+  "bin_width_microsteps": 200,
+  "first_observed_step": 1,
+  "last_observed_step": 30000,
+  "first_recorded_at_utc": "2026-10-24T17:00:30.902907+00:00",
+  "last_recorded_at_utc": "2026-10-24T17:35:55.881643+00:00",
+  "segments": [
+    "16e48445d4ae"
+  ],
+  "definitions": {
+    "loss_mean": "Unweighted mean of logged microbatch losses within fixed microstep bins; not token-weighted validation loss or every training batch",
+    "learning_rate_last": "Last logged optimizer LR in the bin",
+    "grad_norm_median": "Median last-update gradient norms observed at logged microsteps",
+    "padded_tokens_per_second_median": "Median of logged segment-average padded throughput; includes padding and unsupervised context, not instantaneous supervised-token throughput",
+    "cuda_memory": "Last PyTorch allocated/reserved/process-peak values in each bin, GiB; not nvidia-smi device total",
+    "bin_policy": "Fixed from full configured budget, including partial final bin; gaps remain gaps, never zero-filled"
+  },
+  "limits": "Single run and partial-stage evidence unless final-stage. Loss decline alone does not prove model capability. This exporter does not certify the whole experiment.",
+  "export_environment": {
+    "torch": "2.8.0+cu128",
+    "yaml": "6.0.2"
+  }
+}

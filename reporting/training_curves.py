@@ -20,6 +20,12 @@ FIELDS = (
     "cuda_allocated_bytes", "cuda_reserved_bytes", "cuda_peak_allocated_bytes", "training_seconds",
 )
 
+STAGE_EXPERIMENTS = {
+    "llm-pretrain": "llm-64m-pretrain-cuda", "llm-sft": "llm-64m-sft-cuda",
+    "vlm-alignment": "vlm-vision-alignment-cuda", "vlm-sft": "vlm-sft-cuda",
+    "video-omni-alignment": "video-omni-alignment-cuda", "video-omni-sft": "video-omni-sft-cuda",
+}
+
 
 def digest(path: Path) -> str:
     with path.open("rb") as handle:
@@ -95,12 +101,7 @@ def export(args) -> None:
     if not {"step", "config", "optimizer", "history", "torch_rng_state"} <= state.keys():
         raise ValueError("Use a trusted complete resume checkpoint, not model-only weights")
     config = state["config"]
-    experiments = {
-        "llm-pretrain": "llm-64m-pretrain-cuda", "llm-sft": "llm-64m-sft-cuda",
-        "vlm-alignment": "vlm-alignment-cuda", "vlm-sft": "vlm-sft-cuda",
-        "video-omni-alignment": "video-omni-alignment-cuda", "video-omni-sft": "video-omni-sft-cuda",
-    }
-    if experiments.get(args.stage) != config["experiment"]["name"]:
+    if STAGE_EXPERIMENTS.get(args.stage) != config["experiment"]["name"]:
         raise ValueError("Stage label does not match checkpoint experiment")
     configs = [
         yaml.safe_load((run_dir / "configs" / name.removeprefix("configs/")).read_text())

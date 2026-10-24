@@ -27,7 +27,8 @@ checkpoint、日志、评估 JSON 和 QIVD manifest，再生成 `final-results.m
 - [三模型设计、实现与结论边界](../docs/design-implementation.md)
 - [预训练 step 164,000 恢复点完整性审计](pretrain-midpoint-integrity-20261024.json)（中间状态，非能力评估）
 - [VLM Alignment 截断故障与精确复现](cuda-vlm-slot-truncation-failure.md)（原运行失败证据）
-- [当前 CUDA 修复运行与继承关系](cuda-vlm-repair-run.md)（VLM Alignment 已启动，完整实验未完成）
+- [当前 CUDA 修复运行与继承关系](cuda-vlm-repair-run.md)（Alignment 已完成，SFT 运行中，完整实验未完成）
+- [VLM Alignment 最终阶段结果](cuda-vlm-alignment-final.md)（30,000 步完成，验证 loss、最终恢复审计、5 张曲线与真实转换截图）
 - [VLM 修复运行 step 23,000 恢复点审计](vlm-repair-progress-integrity-20261025.json)（中间恢复完整性，不是能力或最终完成证明）
 - [历史文件样稿与仍有效的曲线和对话诊断工具](../reporting/README.md)（DOCX/PPTX 已取消）
 

@@ -16,3 +16,24 @@
 已视觉检查：运行身份、时间、数字、脚注和 GPU 表格可读，未发现遮挡或敏感凭据。
 这是启动后的中间记录，不证明已经越过原故障步、完成训练或建立视觉能力。
 完整继承关系与故障说明见[修复运行登记](../../cuda-vlm-repair-run.md)。
+
+## E009：Alignment 末步与 SFT 启动记录
+
+![VLM 两阶段转换的真实终端记录](E009-vlm-stage-transition-terminal.png)
+
+- 类型：macOS Terminal 真实窗口原图，无重绘、无像素修改；不是能力评估截图。
+- 终端查看 UTC：2026-10-24 17:41:42.076458；PNG 保存 UTC：17:41:46.859572。
+- 内容：Alignment 最终日志 30,000 步 / 7,500 更新，及 SFT step 4,600 / 575 更新；
+  后者指标时间为 17:41:41.425537 UTC、segment `adb6e3485fcc`。
+- PNG：2424×1844，1,275,416 bytes；SHA-256：
+  `dd6050677451246ba5c5b7e2663a33d21d820f38138bbacc273ad85e322dc225`。
+- 工具沿用上面的 `capture_run_evidence.applescript`，只读查看已记录指标并查询 GPU，
+  未重新训练或修改结果。已检查：身份、时间、数值、脚注完整，未出现密码、token 或连接参数。
+- 全卡显存同时包括其他进程，不能把 GPU1 的 15,572 MiB 全归因于本模型；GPU0 非本项目。
+- 截图仅显示训练记录；Alignment 的最终完成还需结合[阶段验证、审计与归档](../../cuda-vlm-alignment-final.md)。
+  SFT 当时仍在运行，不能把该截图当作整个 VLM 或六阶段完成证据。
+
+## E002e：Alignment 最终日志图表
+
+[5 张最终曲线与来源](E002-vlm-alignment-final/README.md)是最终归档 history 生成图，
+与上述真实截图分开登记。

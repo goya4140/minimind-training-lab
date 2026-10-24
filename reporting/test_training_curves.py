@@ -1,11 +1,23 @@
 """Synthetic fixtures test transformation rules, never supply experiment results."""
 import copy
 import unittest
+from pathlib import Path
 
-from training_curves import aggregate, nonnegative_plot_upper
+from training_curves import STAGE_EXPERIMENTS, aggregate, nonnegative_plot_upper
 
 
 class CurveAggregationTests(unittest.TestCase):
+    def test_stage_names_match_actual_cuda_configs(self):
+        root = Path(__file__).resolve().parents[1]
+        paths = {"llm-pretrain": "llm/pretrain", "llm-sft": "llm/sft",
+                 "vlm-alignment": "vlm/alignment", "vlm-sft": "vlm/sft",
+                 "video-omni-alignment": "video/alignment", "video-omni-sft": "video/sft"}
+        for stage, path in paths.items():
+            names = [line.split(":", 1)[1].strip() for line in
+                     (root / f"configs/{path}-cuda.yaml").read_text().splitlines()
+                     if line.startswith("  name:")]
+            self.assertEqual(names, [STAGE_EXPERIMENTS[stage]])
+
     def test_flat_high_series_has_headroom(self):
         upper = nonnegative_plot_upper([44400, 44794, 44794])
         self.assertGreaterEqual(upper, 44794 * 1.079)

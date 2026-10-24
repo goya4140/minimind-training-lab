@@ -1,0 +1,23 @@
+{
+  "run_id": "mm64-cuda-vlmfix-v3-20261024T170500Z",
+  "kind": "final-stage-resume-integrity-audit",
+  "stage": "vlm-alignment",
+  "audited_at_utc": "2026-10-24T17:41:06.852821+00:00",
+  "checkpoint": "artifacts/runs/mm64-cuda-vlmfix-v3-20261024T170500Z/stages/vlm-alignment/vlm-alignment-cuda.resume.pt",
+  "checkpoint_bytes": 270305369,
+  "checkpoint_sha256": "07f163cedbb320928a8a3ece33334af11215ea476ed705bd16e182379b1df6f4",
+  "state_tensors": 97,
+  "state_parameters": 65094912,
+  "all_finite": true,
+  "resume_step": 30000,
+  "optimizer_boundary": true,
+  "optimizer_state_entries": 6,
+  "optimizer_state_tensors": 18,
+  "optimizer_all_finite": true,
+  "history_records": 1501,
+  "training_seconds": 2125.526780128479,
+  "suspended_seconds": 0.0,
+  "rng_state_bytes": 5056,
+  "config_matches": true,
+  "training_complete": true
+}
