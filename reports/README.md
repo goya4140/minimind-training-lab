@@ -17,6 +17,7 @@ checkpoint、日志、评估 JSON 和 QIVD manifest，再生成 `final-results.m
 ## 当前 CUDA 实验证据
 
 - [正式 run 登记](formal-run-mm64-cuda-20261024.md)
+- [CUDA LLM 两阶段结果总览与学习解读](cuda-llm-final-overview.md)（训练预算、分布内验证、统一文本回归与真实回答分开解释）
 - [真实截图与待补证据索引](evidence/mm64-cuda-20261024T075332Z/README.md)
 - [step 12,000 早期诊断与失败案例](cuda-pretrain-step12000-diagnostic.md)
 - [LLM 最终检查点的固定对话诊断](cuda-llm-final-chat-diagnostic.md)（两阶段严格 0/8，包含格式失败与事实错误的区别）
