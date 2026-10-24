@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "protocol_id": "chat-diagnostic-v1",
+  "purpose": "Supplemental fixed chat-format instruction diagnostic, separate from original held-out language regression",
+  "data_role": "Human-authored diagnostic examples, not an external or semantically deduplicated benchmark",
+  "frozen_before_final_stage_outputs": true,
+  "generation": {"max_new_tokens": 80, "temperature": 0.0, "stop_at_tokenizer_eos": true, "precision": "float32", "kv_cache": false},
+  "score_definition": "One binary reference-constrained score per case; macro mean over all eight fixed cases. Exact cases strip only leading/trailing whitespace. JSON cases require a valid object with exactly the reference keys and string values, reject duplicate keys, NaN and markdown fences. A failed match can reflect formatting or an unlisted valid paraphrase, not necessarily lack of semantic ability.",
+  "limits": "Eight examples are too few for a broad instruction-following claim. No sampling uncertainty or external generalization claim. Do not tune training, prompts or accepted answers after observing outputs and still call this the same fixed protocol.",
+  "cases": [
+    {"id": "C01", "category": "factual_short_answer", "prompt": "中国的首都是哪里？只输出城市名，不要解释。", "scorer": "exact", "references": ["北京", "北京市"]},
+    {"id": "C02", "category": "arithmetic", "prompt": "计算 2 加 3。只输出结果的阿拉伯数字，不要解释。", "scorer": "exact", "references": ["5"]},
+    {"id": "C03", "category": "verbatim_copy", "prompt": "请原样输出下面这一行，不要增加任何文字：\n蓝色河岸 Q7", "scorer": "exact", "references": ["蓝色河岸 Q7"]},
+    {"id": "C04", "category": "translation", "prompt": "把英文单词 cat 翻译成中文，只输出译文。", "scorer": "exact", "references": ["猫", "猫咪"]},
+    {"id": "C05", "category": "sorting_and_format", "prompt": "将 8、2、5 从小到大排序。只输出数字，用英文逗号分隔，不要空格。", "scorer": "exact", "references": ["2,5,8"]},
+    {"id": "C06", "category": "json_format", "prompt": "只输出一个 JSON 对象，包含两个字段：city 的值是 北京，country 的值是 中国。不要输出 Markdown 代码块或解释。", "scorer": "json_object", "reference_object": {"city": "北京", "country": "中国"}},
+    {"id": "C07", "category": "sentiment_label", "prompt": "句子“这部电影很好看”表达的是正面还是负面情感？只输出“正面”或“负面”。", "scorer": "exact", "references": ["正面"]},
+    {"id": "C08", "category": "context_retrieval", "prompt": "已知：小林的号码是 73，小周的号码是 26。小周的号码是多少？只输出阿拉伯数字。", "scorer": "exact", "references": ["26"]}
+  ]
+}
