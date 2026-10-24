@@ -1,0 +1,33 @@
+{
+  "source_sha256": "b8803abeffdaf0a0ba09bae4742e8837efbc652ab50e18ca3d39eb719340908e",
+  "csv_sha256": "fc4debd6fdfcfc4d07754167175033ca04244762478d22f658d1d4981b91b410",
+  "matplotlib": "3.10.5",
+  "figures": [
+    {
+      "file": "loss_mean.png",
+      "sha256": "b739f7e2d20c616dac1c18146c9b1acf5ebb15549a22ecd4748e141283383cdb",
+      "metric": "loss_mean"
+    },
+    {
+      "file": "learning_rate_last.png",
+      "sha256": "c3f6b8ec622e9a724d3974b8a1ff66ad373bd0e46e8cecf8fd98b4b90aea1e64",
+      "metric": "learning_rate_last"
+    },
+    {
+      "file": "grad_norm_median.png",
+      "sha256": "21bad9da3c39a2a98d78f4f4dbfe2189bc14bf0870469572c3e12257f0b24aac",
+      "metric": "grad_norm_median"
+    },
+    {
+      "file": "padded_tokens_per_second_median.png",
+      "sha256": "4a71ed022c1896d100aff60730ed56cc1572c66b717ccafaff3c4985828ce952",
+      "metric": "padded_tokens_per_second_median"
+    },
+    {
+      "file": "cuda-memory.png",
+      "sha256": "fb0bb69d21bc5104816d83cde50961edb8b826a9eab2564b3c73ea6ab802665a",
+      "metric": "cuda-memory"
+    }
+  ],
+  "status": "intermediate-not-final"
+}

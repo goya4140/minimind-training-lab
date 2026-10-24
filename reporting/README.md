@@ -64,3 +64,24 @@ ARTIFACT_RUNTIME_PYTHON="$RUNTIME_PYTHON" \
 
 这些只验证方法样稿的实现与排版，不验证最终实验结论，也不构成目标完成。
 最终完整报告新增结果后必须重新渲染全部页面，不能沿用此次 QA 声明。
+
+## 曲线导出
+
+`training_curves.py` 的 `export` 从同一打开的恢复文件读取 SHA-256 与 history，避免与后台原子
+checkpoint 替换竞争。验证 run ID、固定配置和 history 顺序后，保留服务器完整 history，
+仅将分桶 CSV、精简 metadata 和图表用于公开材料。`plot` 验证 CSV 哈希后使用服务器已存在的
+Matplotlib 输出静态 PNG，不安装依赖。该工具需要 Python 3.11 或更新版本。
+
+```bash
+.venv/bin/python reporting/training_curves.py export \
+  --run-dir artifacts/runs/mm64-cuda-20261024T075332Z \
+  --checkpoint artifacts/checkpoints/llm-64m-pretrain-cuda.resume.pt \
+  --stage llm-pretrain --output artifacts/runs/mm64-cuda-20261024T075332Z/curves/new-source
+.venv/bin/python reporting/training_curves.py plot \
+  --source artifacts/runs/mm64-cuda-20261024T075332Z/curves/new-source \
+  --output artifacts/runs/mm64-cuda-20261024T075332Z/curves/new-figures
+python -m unittest discover -s reporting -p 'test_training_curves.py' -v
+```
+
+默认始终标为 intermediate-not-final。最终图表还需 `--final`，以对应阶段已完成事件及归档的
+完整预算 resume 文件为依据，不接受正在训练的全局恢复文件。图表生成不启动周期性监控。
