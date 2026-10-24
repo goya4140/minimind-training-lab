@@ -12,6 +12,8 @@ checkpoint、日志、评估 JSON 和 QIVD manifest，再生成 `final-results.m
 制作与交付；已有样稿仅作内部历史记录，不作为后续任务或交付文件。
 原始 checkpoint、数据、optimizer state、逐步 console log 与完整评估 JSON 保持在服务器忽略目录，
 不发布到 GitHub。六阶段完整实验与仓库结果解读尚未完成，不以本索引代替完成证据。
+[服务器证据保留策略](../docs/evidence-retention.md)明确当前/失败 run、固定快照、完整预测与权重的保留范围，
+以及空间不足时必须先确认的清理边界；未配置自动清理或异机备份。
 
 最终本地产物表会记录六阶段 checkpoint 的文件大小与 SHA-256，方便确认本机证据对应关系；表中出现
 哈希不表示 checkpoint 文件会被提交或发布。
