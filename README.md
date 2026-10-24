@@ -21,6 +21,7 @@ optimizer state 和逐步原始日志均不上传 GitHub；仓库只记录足以
 并完成260条视频独立重放留存，无周期性监控。
 请先读[三模型综合学习报告](reports/cuda-three-model-synthesis.md)：设计、实现、六阶段训练、
 真实截图/曲线、评估和失败解读。工程完成不等于指令遵循、视觉理解或时序推理已经达标。
+[最终证据审计](reports/cuda-final-evidence-audit.md)列出逐项复核、来源限制与未交付的文件范围，不隐藏操作偏差。
 原始记录见[正式实验登记](reports/formal-run-mm64-cuda-20261024.md)。
 环境、数据和测试流程见 [`docs/cuda-training.md`](docs/cuda-training.md)。
 下表为当前CUDA实验；[旧MPS历史](docs/progress.md#历史-mps-环境基线非当前-cuda-服务器)单独保留，不混用结果。

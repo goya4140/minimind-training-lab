@@ -28,6 +28,11 @@ cd /root/autodl-tmp/wlh_goya/MiniMind/experiments/vlm-slot-v3
 四项多模态阶段当时尚未归档，返回 2；`goal_completion_proven` 始终为 false。
 模型张量、optimizer/RNG/config 审计仍由训练验证器和独立恢复审计提供，此工具不替代它们。
 
+后续实际状态已推进：六阶段全部归档，独立视频全量重放完成。
+[最终证据审计](../reports/cuda-final-evidence-audit.md)记录本轮2,916个输入全SHA、六个恢复文件
+（含CPU/CUDA RNG结构）、32条chat/14个VLM条件/520个视频条件回答的复算，以及限制和操作偏差。
+上段返回2是早期历史执行，不是当前仍有四阶段未完成。
+
 ## 固定模板需要人工解释的地方
 
 - 模板用正确图关键词召回高于反事实来输出“视觉依赖已建立”。这是有限词面代理，

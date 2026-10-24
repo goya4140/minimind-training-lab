@@ -1,0 +1,73 @@
+{
+  "audited_at_utc": "2026-10-24T18:50:41.522149+00:00",
+  "run_id": "mm64-cuda-vlmfix-v3-20261024T170500Z",
+  "kind": "final-fixed-generated-output-review",
+  "chat": [
+    {
+      "stage": "llm-pretrain",
+      "eval_id": "chat-v1-llm-pretrain-final-20261025",
+      "cases": 8,
+      "strict_passes": 0,
+      "eos_stops": 2,
+      "manifest_sha256": "e095bbcc097e912a1495a5e5d0519334e5cc7c3cb2b277213d41e46616487721",
+      "predictions_sha256": "ca62c66ab5c298912c08e3fc6adfd1b73b44b076377744b8d946598256551573",
+      "protocol_sha256": "af230c71f939b0c663a6dbfa681d1046c6d34c9fe89c5e8c7f94e4c2b6ccb98c",
+      "evaluator_sha256": "a24ba6d9917eb8a9f6410d9ea4a9605ef34d444659a073795a64f3271945c7f2"
+    },
+    {
+      "stage": "llm-sft",
+      "eval_id": "chat-v1-llm-sft-final-20261025",
+      "cases": 8,
+      "strict_passes": 0,
+      "eos_stops": 3,
+      "manifest_sha256": "6c753f5a493137e2dfc93fea5ebfb3b976cf54d404872af7551b77d157c78530",
+      "predictions_sha256": "3a0e486b277d8f380f5ce1771c937a687d88ac7148acd9071cc77d0a8bf48498",
+      "protocol_sha256": "af230c71f939b0c663a6dbfa681d1046c6d34c9fe89c5e8c7f94e4c2b6ccb98c",
+      "evaluator_sha256": "a24ba6d9917eb8a9f6410d9ea4a9605ef34d444659a073795a64f3271945c7f2"
+    },
+    {
+      "stage": "vlm-sft",
+      "eval_id": "chat-v1-vlm-sft-final-20261025",
+      "cases": 8,
+      "strict_passes": 0,
+      "eos_stops": 3,
+      "manifest_sha256": "8f93fa769060d27fae80b0f9f07d96a7204e47807f031da5cbee88897672489e",
+      "predictions_sha256": "1fb75c61aa6187d4b2cd0970474e3bd04d0b32e8d83586d1ddca5bb0209e95a5",
+      "protocol_sha256": "af230c71f939b0c663a6dbfa681d1046c6d34c9fe89c5e8c7f94e4c2b6ccb98c",
+      "evaluator_sha256": "a24ba6d9917eb8a9f6410d9ea4a9605ef34d444659a073795a64f3271945c7f2"
+    },
+    {
+      "stage": "video-omni-sft",
+      "eval_id": "chat-v1-video-sft-final-20261025",
+      "cases": 8,
+      "strict_passes": 0,
+      "eos_stops": 2,
+      "manifest_sha256": "e76dbd82e838be142a1a7c1aba97aeb6b90d010b13198be76eb90b8c3551e161",
+      "predictions_sha256": "72579ab7a7e86a04f148f7fa7c05c02a7d85b3ee304022a042b8fea391d5d37a",
+      "protocol_sha256": "af230c71f939b0c663a6dbfa681d1046c6d34c9fe89c5e8c7f94e4c2b6ccb98c",
+      "evaluator_sha256": "a24ba6d9917eb8a9f6410d9ea4a9605ef34d444659a073795a64f3271945c7f2"
+    }
+  ],
+  "vlm": {
+    "cases": 7,
+    "answers_scored": 14,
+    "prompts_sha256": "00522a599bab08ca2729ae6c18f3810a850b9fcffed6b674a15ea243826df54e",
+    "normal_macro_recall": 0.32142857142857145,
+    "counterfactual_macro_recall": 0.17857142857142858
+  },
+  "video": [
+    {
+      "dataset": "qivd",
+      "cases": 100,
+      "answers_scored": 200,
+      "predictions_sha256": "0ae5de2598322cdf92abfc2cf80c3cab19ed658e1ef78d421a76f1fd71630850"
+    },
+    {
+      "dataset": "controlled_temporal",
+      "cases": 160,
+      "answers_scored": 320,
+      "predictions_sha256": "518518e928c4e0ee2c53b3256ae35b89ddcc356f634135cbe743e4900d6fe497"
+    }
+  ],
+  "limits": "Checks retained text identity, scoring and provenance only; no new inference, semantic correctness, causal attribution, or document completion."
+}
