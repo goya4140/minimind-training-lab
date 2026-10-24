@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "status": "final-stage",
+  "run_id": "mm64-cuda-20261024T075332Z",
+  "training_commit": "53f9b9f46560bee446d1c74e89cac991b71a8053",
+  "stage": "llm-pretrain",
+  "experiment": "llm-64m-pretrain-cuda",
+  "checkpoint": "artifacts/runs/mm64-cuda-20261024T075332Z/stages/llm-pretrain/llm-64m-pretrain-cuda.resume.pt",
+  "checkpoint_sha256": "a087b33de93ccaea52bb18748c3893e2df9313c5b79ac1f848e77fc6d8eafa79",
+  "checkpoint_bytes": 771394411,
+  "checkpoint_step": 317048,
+  "target_microsteps": 317048,
+  "run_manifest_sha256": "27ca3ca97f2cd0ff0e14a7837ac51049ab78f8173777dfb0574fdc41c257d943",
+  "curve_data_sha256": "5835b0b9cd77155f4db2440001a4fc67341bfff45d2b5e2484336ddb4a085140",
+  "history_sha256": "d37342975ae19860430ca24818e459eac7dbe2fa5a34e05e6598ea487a4a1fb9",
+  "curve_tool_sha256": "34c2c4c9a402367a32aadce5eda770fced9ddea0b1751dadfe8c1b531d63e741",
+  "raw_history_retention": "Server only; publish binned CSV and figures, never history-records.json",
+  "history_records": 15853,
+  "bins": 159,
+  "bin_width_microsteps": 2000,
+  "first_observed_step": 1,
+  "last_observed_step": 317040,
+  "first_recorded_at_utc": "2026-10-24T07:55:29.709624+00:00",
+  "last_recorded_at_utc": "2026-10-24T13:18:04.235328+00:00",
+  "segments": [
+    "78e0487e86d7"
+  ],
+  "definitions": {
+    "loss_mean": "Unweighted mean of logged microbatch losses within fixed microstep bins; not token-weighted validation loss or every training batch",
+    "learning_rate_last": "Last logged optimizer LR in the bin",
+    "grad_norm_median": "Median last-update gradient norms observed at logged microsteps",
+    "padded_tokens_per_second_median": "Median of logged segment-average padded throughput; includes padding and unsupervised context, not instantaneous supervised-token throughput",
+    "cuda_memory": "Last PyTorch allocated/reserved/process-peak values in each bin, GiB; not nvidia-smi device total",
+    "bin_policy": "Fixed from full configured budget, including partial final bin; gaps remain gaps, never zero-filled"
+  },
+  "limits": "Single run and partial-stage evidence unless final-stage. Loss decline alone does not prove model capability. This exporter does not certify the whole experiment.",
+  "export_environment": {
+    "torch": "2.8.0+cu128",
+    "yaml": "6.0.2"
+  }
+}

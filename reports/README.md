@@ -20,6 +20,7 @@ checkpoint、日志、评估 JSON 和 QIVD manifest，再生成 `final-results.m
 - [真实截图与待补证据索引](evidence/mm64-cuda-20261024T075332Z/README.md)
 - [step 12,000 早期诊断与失败案例](cuda-pretrain-step12000-diagnostic.md)
 - [LLM 最终检查点的固定对话诊断](cuda-llm-final-chat-diagnostic.md)（两阶段严格 0/8，包含格式失败与事实错误的区别）
+- [LLM Pretrain 最终训练曲线](evidence/mm64-cuda-20261024T075332Z/E002-llm-pretrain-final/README.md)与 [LLM SFT 最终训练曲线](evidence/mm64-cuda-20261024T075332Z/E002-llm-sft-final/README.md)（真实 history 导出，各 5 图，附 CSV 和校验信息）
 - [三模型设计、实现与结论边界](../docs/design-implementation.md)
 - [预训练 step 164,000 恢复点完整性审计](pretrain-midpoint-integrity-20261024.json)（中间状态，非能力评估）
 - [VLM Alignment 截断故障与精确复现](cuda-vlm-slot-truncation-failure.md)（原运行失败证据）
