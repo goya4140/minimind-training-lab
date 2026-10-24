@@ -6,7 +6,7 @@
 2. **VLM**：图像 + 文本输入 → 文本输出；
 3. **Video-Omni**：视频 + 文本问题输入 → 文本输出，重点学习跨帧时序建模。
 
-最终交付包括模型代码、训练配置、日志解读、定量评估、定性样例和可复现命令。数据集、模型权重、
+最终交付包括模型代码、训练配置、日志解读、定量评估、定性样例、可复现命令，以及中文 PPTX、DOCX 学习报告。数据集、模型权重、
 optimizer state 和逐步原始日志均不上传 GitHub；仓库只记录足以学习和审阅训练全过程的内容。
 
 第一次接触模型训练的读者，请从 [`handbook/README.md`](handbook/README.md) 开始。
@@ -43,6 +43,7 @@ MiniMind LLM (Decoder-only, 64M)
 ```
 
 设计详情：[`docs/architecture.md`](docs/architecture.md)  
+实现与指标口径解读：[`docs/design-implementation.md`](docs/design-implementation.md)  
 训练策略：[`docs/training-strategy.md`](docs/training-strategy.md)  
 评估协议：[`docs/evaluation.md`](docs/evaluation.md)
 冻结组件：[`docs/external-components.md`](docs/external-components.md)
