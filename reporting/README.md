@@ -85,3 +85,10 @@ python -m unittest discover -s reporting -p 'test_training_curves.py' -v
 
 默认始终标为 intermediate-not-final。最终图表还需 `--final`，以对应阶段已完成事件及归档的
 完整预算 resume 文件为依据，不接受正在训练的全局恢复文件。图表生成不启动周期性监控。
+
+## 补充对话诊断
+
+[固定协议与命令](protocols/README.md)将 chat-template 指令行为与原统一文本回归分开。
+执行器保存逐样本参考、实际提示、预测、token、EOS 与评分原因，只有阶段完成且归档哈希匹配
+才允许标为非 probe。早期测试强制 CPU；独立 eval ID 不覆盖，来源描述勘误单独保留，
+不改写已冻结的题目、规则或既有结果。此补充项不更改训练流水线，也不启动后台监控。

@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "protocol_id": "chat-diagnostic-v1",
+  "protocol_sha256": "af230c71f939b0c663a6dbfa681d1046c6d34c9fe89c5e8c7f94e4c2b6ccb98c",
+  "corrected_field": "data_role",
+  "corrected_data_role": "Project-authored, assistant-drafted fixed diagnostic examples and explicit references; not human participant data, an external benchmark, or a semantically deduplicated held-out corpus",
+  "reason": "The frozen v1 descriptor Human-authored inaccurately described authorship. The assistant drafted these examples for this project.",
+  "unchanged": ["all eight prompts", "references", "scoring rules", "generation settings", "existing predictions", "existing scores"],
+  "handling": "Keep the original frozen protocol and completed manifests intact. Attach this provenance correction separately and use the corrected role in future manifests and report interpretation. This is not a new capability evaluation or a reason to rerun old outputs."
+}

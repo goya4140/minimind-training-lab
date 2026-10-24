@@ -108,6 +108,15 @@ def evaluate(args) -> None:
                   and e.get("protocol_id") == protocol["protocol_id"]}
     if registered != {sha256(protocol_path)}:
         raise ValueError("Protocol must match one unambiguous immutable registration event")
+    correction_path = run_dir / "supplemental-protocols/chat-diagnostic-v1-provenance.json"
+    correction = json.loads(correction_path.read_text())
+    if correction["protocol_sha256"] != sha256(protocol_path):
+        raise ValueError("Provenance correction is for another protocol fingerprint")
+    correction_hashes = {e["correction_sha256"] for e in events
+                         if e.get("kind") == "evaluation_protocol_provenance_corrected"
+                         and e.get("protocol_id") == protocol["protocol_id"]}
+    if correction_hashes != {sha256(correction_path)}:
+        raise ValueError("Provenance correction must be frozen and registered")
     allowed_stages = {"llm-pretrain", "llm-sft", "vlm-sft", "video-omni-sft"}
     if args.stage not in allowed_stages:
         raise ValueError("Supplemental chat comparisons use the four designated language checkpoints")
@@ -156,6 +165,7 @@ def evaluate(args) -> None:
     output = run_dir / "supplemental-evaluations" / args.eval_id
     output.mkdir(parents=True, exist_ok=False)
     shutil.copy2(protocol_path, output / "protocol.json")
+    shutil.copy2(correction_path, output / "protocol-provenance.json")
     shutil.copy2(Path(__file__), output / "evaluator.py")
     provenance = {
         "schema": 1, "status": "running", "started_at_utc": now(), "eval_id": args.eval_id,
@@ -168,7 +178,8 @@ def evaluate(args) -> None:
         "tokenizer_files": [{"path": item["path"], "sha256": item["sha256"]} for item in manifest["data_files"]
                             if item["path"].startswith(language_config["tokenizer"]["path"] + "/")],
         "timing_scope": "Greedy single-request latency, explicit CUDA synchronization, includes EOS decision; no warmup or repetition, not a hardware benchmark",
-        "generation": protocol["generation"], "data_role": protocol["data_role"], "limits": protocol["limits"],
+        "generation": protocol["generation"], "data_role": correction["corrected_data_role"],
+        "protocol_provenance_sha256": sha256(output / "protocol-provenance.json"), "limits": protocol["limits"],
     }
     write_json(output / "manifest.json", provenance)
     evidence.event("supplemental_evaluation_started", eval_id=args.eval_id, protocol_sha256=provenance["protocol_sha256"],

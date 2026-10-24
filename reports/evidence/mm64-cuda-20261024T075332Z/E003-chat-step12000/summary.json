@@ -1,0 +1,57 @@
+{
+  "cases": 8,
+  "passed": 0,
+  "reference_constrained_pass_rate": 0.0,
+  "per_case": [
+    {
+      "id": "C01",
+      "category": "factual_short_answer",
+      "score": 0,
+      "reason": "unmatched_reference"
+    },
+    {
+      "id": "C02",
+      "category": "arithmetic",
+      "score": 0,
+      "reason": "unmatched_reference"
+    },
+    {
+      "id": "C03",
+      "category": "verbatim_copy",
+      "score": 0,
+      "reason": "unmatched_reference"
+    },
+    {
+      "id": "C04",
+      "category": "translation",
+      "score": 0,
+      "reason": "unmatched_reference"
+    },
+    {
+      "id": "C05",
+      "category": "sorting_and_format",
+      "score": 0,
+      "reason": "unmatched_reference"
+    },
+    {
+      "id": "C06",
+      "category": "json_format",
+      "score": 0,
+      "reason": "invalid_or_nonunique_json"
+    },
+    {
+      "id": "C07",
+      "category": "sentiment_label",
+      "score": 0,
+      "reason": "unmatched_reference"
+    },
+    {
+      "id": "C08",
+      "category": "context_retrieval",
+      "score": 0,
+      "reason": "unmatched_reference"
+    }
+  ],
+  "probe_only": true,
+  "not_a_general_instruction_benchmark": true
+}
