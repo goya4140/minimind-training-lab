@@ -21,6 +21,7 @@ checkpoint、日志、评估 JSON 和 QIVD manifest，再生成 `final-results.m
 - [step 12,000 早期诊断与失败案例](cuda-pretrain-step12000-diagnostic.md)
 - [三模型设计、实现与结论边界](../docs/design-implementation.md)
 - [预训练 step 164,000 恢复点完整性审计](pretrain-midpoint-integrity-20261024.json)（中间状态，非能力评估）
+- [VLM Alignment 截断故障与精确复现](cuda-vlm-slot-truncation-failure.md)（流水线已停止，修复未完成）
 - [历史文件样稿与仍有效的曲线和对话诊断工具](../reporting/README.md)（DOCX/PPTX 已取消）
 
 其他 MPS 报告属于历史运行，不作为本次 CUDA 六阶段完成的证据。
