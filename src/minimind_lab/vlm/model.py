@@ -79,7 +79,7 @@ class MiniMindVLM(nn.Module):
             if image_features.size(2) != self.config.image_token_length:
                 raise ValueError("vision encoder token count does not match image_token_length")
             embeddings = text_embeddings[batch_index].clone()
-            embeddings[positions] = image_features[batch_index, :count].flatten(0, 1)
+            embeddings[positions] = image_features[batch_index, :count].flatten(0, 1).to(embeddings.dtype)
             output.append(embeddings)
         return torch.stack(output)
 

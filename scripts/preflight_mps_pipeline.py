@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import sys
@@ -136,18 +137,24 @@ def inspect_stage(name: str, runner: str, config_path: str, prior_outputs: set[P
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--profile", choices=["mps", "cuda"], default="mps")
+    args = parser.parse_args()
     stages = []
     outputs: set[Path] = set()
     for name, runner, config in STAGES:
+        config = config.replace("-mps", f"-{args.profile}")
         result, _ = inspect_stage(name, runner, config, outputs)
         stages.append(result)
     report = {
         "mps_available": torch.backends.mps.is_available(),
+        "cuda_available": torch.cuda.is_available(),
+        "profile": args.profile,
         "all_resources_present": all(not stage["missing"] for stage in stages),
         "stages": stages,
     }
     print(json.dumps(report, ensure_ascii=False, indent=2))
-    if not report["mps_available"] or not report["all_resources_present"]:
+    if not report[f"{args.profile}_available"] or not report["all_resources_present"]:
         sys.exit(1)
 
 

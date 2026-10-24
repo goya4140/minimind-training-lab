@@ -63,7 +63,11 @@ def load_config(path: str | Path) -> dict:
         return yaml.safe_load(handle)
 
 
-def seed_everything(seed: int) -> None:
+def seed_everything(seed: int, deterministic: bool = False) -> None:
+    if deterministic:
+        os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
+        torch.use_deterministic_algorithms(True)
+        torch.backends.cudnn.benchmark = False
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -147,9 +151,18 @@ def acquire_run_lock(path: str | Path) -> TextIO:
 
 
 def environment_info(device: torch.device) -> dict[str, str]:
-    return {
+    result = {
         "platform": platform.platform(),
         "python": platform.python_version(),
         "torch": torch.__version__,
         "device": str(device),
     }
+    if device.type == "cuda":
+        result.update(
+            cuda=str(torch.version.cuda),
+            gpu=torch.cuda.get_device_name(device),
+            gpu_capability=str(torch.cuda.get_device_capability(device)),
+            peak_allocated_bytes=str(torch.cuda.max_memory_allocated(device)),
+            peak_reserved_bytes=str(torch.cuda.max_memory_reserved(device)),
+        )
+    return result

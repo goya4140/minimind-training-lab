@@ -54,7 +54,8 @@ def rope_frequencies(
 def apply_rope(x: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor) -> torch.Tensor:
     # x: [batch, heads, sequence, head_dim]
     even, odd = x[..., 0::2], x[..., 1::2]
-    cos, sin = cos[None, None, :, :], sin[None, None, :, :]
+    cos = cos[None, None, :, :].to(x.dtype)
+    sin = sin[None, None, :, :].to(x.dtype)
     return torch.stack((even * cos - odd * sin, odd * cos + even * sin), dim=-1).flatten(-2)
 
 

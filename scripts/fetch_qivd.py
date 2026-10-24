@@ -10,6 +10,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -25,7 +26,7 @@ from minimind_lab.data.integrity import (
 
 REPO = QIVD_REPOSITORY
 REVISION = QIVD_REVISION
-BASE_URL = f"https://huggingface.co/datasets/{REPO}/resolve/{REVISION}/"
+BASE_URL = f"{os.environ.get('HF_ENDPOINT', 'https://huggingface.co').rstrip('/')}/datasets/{REPO}/resolve/{REVISION}/"
 ROOT_FILES = QIVD_ROOT_FILES
 
 
@@ -76,7 +77,7 @@ def upstream_video_files() -> dict[str, dict[str, int | str]]:
 
     entries = {}
     for item in HfApi().list_repo_tree(
-        REPO, path_in_repo="videos", recursive=False, expand=True, revision=REVISION, repo_type="dataset"
+        REPO, path_in_repo="videos", recursive=False, expand=False, revision=REVISION, repo_type="dataset"
     ):
         if getattr(item, "lfs", None) is not None and str(item.path).startswith("videos/"):
             entries[item.path] = {"bytes": item.lfs.size, "sha256": item.lfs.sha256}
@@ -90,6 +91,7 @@ def main() -> None:
     parser.add_argument("--output", default="data/raw/qivd")
     parser.add_argument("--retries", type=int, default=12)
     parser.add_argument("--base-delay", type=float, default=5.0)
+    parser.add_argument("--workers", type=int, default=1)
     args = parser.parse_args()
     root = ROOT / args.output
     root.mkdir(parents=True, exist_ok=True)
@@ -110,7 +112,7 @@ def main() -> None:
     expected = upstream_video_files()
     if set(video_files) != set(expected):
         raise RuntimeError("QIVD metadata video paths do not match the pinned upstream tree")
-    for index, relative_path in enumerate(video_files, start=1):
+    def fetch_video(relative_path):
         upstream = expected[relative_path]
         download_file(
             relative_path,
@@ -120,9 +122,10 @@ def main() -> None:
             expected_size=int(upstream["bytes"]),
             expected_sha256=str(upstream["sha256"]),
         )
-        if index == 1 or index % 50 == 0:
-            completed = sum((root / path).is_file() for path in video_files)
-            print(json.dumps({"completed": completed, "total": len(video_files)}), flush=True)
+    with ThreadPoolExecutor(max_workers=args.workers) as executor:
+        for index, _ in enumerate(executor.map(fetch_video, video_files), start=1):
+            if index == 1 or index % 50 == 0:
+                print(json.dumps({"verified": index, "total": len(video_files)}), flush=True)
 
     manifest = verified_dataset_manifest(
         root,

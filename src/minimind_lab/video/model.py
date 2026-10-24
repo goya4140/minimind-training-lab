@@ -110,7 +110,7 @@ class MiniMindVideoOmni(nn.Module):
                     f"expected {self.config.num_video_tokens}"
                 )
             embeddings = text_embeddings[batch_index].clone()
-            embeddings[positions] = video_features[batch_index]
+            embeddings[positions] = video_features[batch_index].to(embeddings.dtype)
             output.append(embeddings)
         return torch.stack(output)
 

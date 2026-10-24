@@ -1,5 +1,10 @@
 # 项目进度与证据
 
+2026-10-24 更新：用户已删除本地旧权重，项目迁到服务器
+`/root/autodl-tmp/wlh_goya/MiniMind`，计划重新训练全部六阶段。下面的 MPS 里程碑属于历史实验。
+当前服务器正式训练未启动，待用户确认；无持续监控。新环境与命令见
+[`docs/cuda-training.md`](cuda-training.md)。
+
 ## 环境基线
 
 - 主机：Apple M4 Pro，20-core GPU，48 GiB unified memory；
@@ -23,7 +28,7 @@
 `artifacts/` 下生成的日志和评估输出默认不提交；经过审核的结果将提炼到 `reports/` 并提交。
 
 流水线长期无人值守运行，状态观测与告警规则见 [`docs/monitoring.md`](monitoring.md)：
-`scripts/monitor_pipeline.py` 每小时检测一次阶段切换、日志停滞、进程存活与 loss 合法性，
+`scripts/monitor_pipeline.py` 可用于检测阶段切换、日志停滞、进程存活与 loss 合法性，
 事件历史写入 `artifacts/monitor-events.jsonl`。
 
 ## 已运行实验

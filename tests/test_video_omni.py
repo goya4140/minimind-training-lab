@@ -47,6 +47,17 @@ def test_video_omni_forward_and_loss_are_finite():
     assert torch.isfinite(output["loss"])
 
 
+def test_bfloat16_video_features_are_injected_without_losing_gradients():
+    model = MiniMindVideoOmni(config(), FakeVision())
+    ids = torch.tensor([[20, 13, 13, 13, 21]])
+    features = torch.randn(1, 3, 64, dtype=torch.bfloat16, requires_grad=True)
+    output = model.inject_video_features(ids, model.language_model.embed_tokens(ids), features)
+    assert output.dtype == torch.float32
+    output.sum().backward()
+    assert features.grad is not None
+    assert features.grad.eq(1).all()
+
+
 def test_cached_patch_features_match_direct_adapter_path():
     model = MiniMindVideoOmni(config(), FakeVision())
     input_ids = torch.randint(20, 259, (1, 12))

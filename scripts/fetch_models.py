@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import os
 import time
 import urllib.request
 from pathlib import Path
@@ -49,7 +50,8 @@ def download_file(repo: str, revision: str, name: str, target: Path, size: int, 
         return
     target.parent.mkdir(parents=True, exist_ok=True)
     temporary = target.with_suffix(target.suffix + ".part")
-    url = f"https://huggingface.co/{repo}/resolve/{revision}/{name}"
+    endpoint = os.environ.get("HF_ENDPOINT", "https://huggingface.co").rstrip("/")
+    url = f"{endpoint}/{repo}/resolve/{revision}/{name}"
     if temporary.exists() and temporary.stat().st_size > size:
         temporary.unlink()
     attempts = 0

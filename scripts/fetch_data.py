@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import os
 import time
 import urllib.request
 from pathlib import Path
@@ -55,7 +56,8 @@ def fetch(spec: dict) -> None:
         print(f"already verified: {target}")
         return
     temporary = target.with_suffix(target.suffix + ".part")
-    url = f"https://huggingface.co/datasets/{spec['repo']}/resolve/{spec['revision']}/{spec['name']}"
+    endpoint = os.environ.get("HF_ENDPOINT", "https://huggingface.co").rstrip("/")
+    url = f"{endpoint}/datasets/{spec['repo']}/resolve/{spec['revision']}/{spec['name']}"
     if temporary.exists() and temporary.stat().st_size > spec["size"]:
         temporary.unlink()
     attempts = 0

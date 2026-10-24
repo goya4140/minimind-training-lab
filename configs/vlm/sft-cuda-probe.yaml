@@ -1,0 +1,37 @@
+experiment:
+  name: vlm-sft-cuda-probe-v2
+  seed: 42
+  device: cuda
+  deterministic: true
+model:
+  alignment_checkpoint: artifacts/checkpoints/vlm-alignment-cuda-probe-v2.pt
+  vision_encoder: assets/models/siglip2-base-p32-256-ve
+  vocab_size: 6400
+  hidden_size: 768
+  num_hidden_layers: 8
+  num_attention_heads: 8
+  num_key_value_heads: 4
+  intermediate_size: 2432
+  max_position_embeddings: 32768
+  image_hidden_size: 768
+  image_token_id: 12
+  image_token_length: 64
+tokenizer:
+  path: assets/tokenizer
+data:
+  path: data/raw/sft_i2t.parquet
+  sequence_length: 768
+  image_size: 256
+  validation_samples: 2
+training:
+  stage: projector-and-llm-boundary-layers
+  steps: 8
+  batch_size: 2
+  gradient_accumulation_steps: 2
+  learning_rate: 5.0e-06
+  weight_decay: 0.1
+  grad_clip: 1.0
+  log_interval: 1
+  save_interval: 4
+  checkpoint_path: artifacts/checkpoints/vlm-sft-cuda-probe-v2.pt
+  precision: bfloat16

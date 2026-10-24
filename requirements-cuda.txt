@@ -1,0 +1,18 @@
+# Core versions validated on the server; PyTorch uses the official cu128 index.
+--extra-index-url https://download.pytorch.org/whl/cu128
+torch==2.8.0+cu128
+numpy==2.3.2
+pyyaml==6.0.2
+transformers==4.57.6
+datasets==3.6.0
+numexpr==2.14.2
+pillow==11.3.0
+av==16.1.0
+pytest==8.4.2
+ruff==0.17.2
+huggingface-hub==0.36.2
+tokenizers==0.22.2
+fsspec==2025.3.0
+dill==0.3.8
+multiprocess==0.70.16
+pyarrow==24.0.0

@@ -105,6 +105,8 @@ def training_history(checkpoint_path: str) -> list[dict]:
 
 def local_artifact_entry(name: str, relative_path: str) -> dict:
     path = ROOT / relative_path
+    if "-cuda" in path.name:
+        name = path.name
     return {"name": name, "path": relative_path, "bytes": path.stat().st_size, "sha256": sha256(path)}
 
 
@@ -136,13 +138,17 @@ def training_config_row(stage: str, relative_path: str) -> str:
 
 
 def main() -> None:
+    global REQUIRED, STAGE_CONFIGS
     parser = argparse.ArgumentParser(description="Build the evidence-backed final handbook report.")
     parser.add_argument(
         "--check",
         action="store_true",
         help="Validate every required artifact without writing the final report.",
     )
+    parser.add_argument("--profile", choices=["mps", "cuda"], default="mps")
     args = parser.parse_args()
+    REQUIRED = {name: path.replace("-mps", f"-{args.profile}") for name, path in REQUIRED.items()}
+    STAGE_CONFIGS = {name: path.replace("-mps", f"-{args.profile}") for name, path in STAGE_CONFIGS.items()}
     missing = {name: path for name, path in REQUIRED.items() if not (ROOT / path).is_file()}
     if missing:
         print(json.dumps({"ready": False, "missing": missing}, ensure_ascii=False, indent=2))
@@ -185,7 +191,7 @@ def main() -> None:
         local_artifact_entry("video-omni-final.json", REQUIRED["Video evaluation"]),
         local_artifact_entry("qivd.json", REQUIRED["QIVD manifest"]),
     ]
-    artifacts_by_name = {artifact["name"]: artifact for artifact in local_artifacts}
+    artifacts_by_name = {artifact["name"].replace("-cuda", "-mps"): artifact for artifact in local_artifacts}
     checkpoint_artifacts = {
         "llm_pretrain": artifacts_by_name["llm-64m-pretrain-mps.pt"],
         "llm_sft": artifacts_by_name["llm-64m-sft-mps.pt"],
@@ -249,7 +255,8 @@ def main() -> None:
         "# MiniMind Training Lab — 最终训练与评估结果",
         "",
         (
-            f"证据对应提交：`{commit}`。硬件：Apple M4 Pro / MPS。六阶段记录的训练总耗时："
+            f"证据对应提交：`{commit}`。硬件：{logs['llm_pretrain']['environment'].get('gpu', 'Apple M4 Pro')} / "
+            f"{logs['llm_pretrain']['environment']['device']}。六阶段记录的训练总耗时："
             f"**{duration(total_training_seconds)}**（另排除系统休眠/暂停 "
             f"**{duration(total_suspended_seconds)}**）。报告生成前工作区："
             f"**{'dirty' if source_dirty else 'clean'}**。"

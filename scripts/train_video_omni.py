@@ -57,6 +57,7 @@ def save_resume(
             "training_seconds": training_seconds,
             "suspended_seconds": suspended_seconds,
             "torch_rng_state": torch.get_rng_state(),
+            "cuda_rng_state": torch.cuda.get_rng_state_all() if torch.cuda.is_available() else None,
         },
         temporary,
     )
@@ -104,11 +105,12 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=True)
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--stop-after", type=int, help="Exit after saving this optimizer-boundary step (probe only).")
     args = parser.parse_args()
     config = load_config(args.config)
     training = config["training"]
     run_lock = acquire_run_lock((ROOT / training["checkpoint_path"]).with_suffix(".lock"))
-    seed_everything(config["experiment"]["seed"])
+    seed_everything(config["experiment"]["seed"], config["experiment"].get("deterministic", False))
     device = resolve_device(config["experiment"]["device"])
 
     model_values = dict(config["model"])
@@ -167,6 +169,8 @@ def main() -> None:
         optimizer.load_state_dict(resume["optimizer"])
         optimizer_to(optimizer, device)
         torch.set_rng_state(resume["torch_rng_state"])
+        if device.type == "cuda" and resume.get("cuda_rng_state") is not None:
+            torch.cuda.set_rng_state_all(resume["cuda_rng_state"])
         start_step, history = resume["step"], resume["history"]
         prior_training_seconds = float(resume.get("training_seconds", 0))
         prior_suspended_seconds = float(resume.get("suspended_seconds", 0))
@@ -220,6 +224,9 @@ def main() -> None:
                 timer.training_seconds,
                 timer.suspended_seconds,
             )
+            if args.stop_after == step:
+                run_lock.close()
+                return
 
     training_seconds = timer.training_seconds
     val_loss, reversed_val_loss = validation_losses(model, validation, training["batch_size"], device)

@@ -6,6 +6,7 @@ import json
 import math
 import os
 import sys
+from contextlib import nullcontext
 from pathlib import Path
 
 import torch
@@ -64,6 +65,7 @@ def save_resume(
             "training_seconds": training_seconds,
             "suspended_seconds": suspended_seconds,
             "torch_rng_state": torch.get_rng_state(),
+            "cuda_rng_state": torch.cuda.get_rng_state_all() if torch.cuda.is_available() else None,
         },
         temporary,
     )
@@ -88,10 +90,11 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=True)
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--stop-after", type=int, help="Exit after saving this optimizer-boundary step (probe only).")
     args = parser.parse_args()
     config = load_config(args.config)
     run_lock = acquire_run_lock((ROOT / config["training"]["checkpoint_path"]).with_suffix(".lock"))
-    seed_everything(config["experiment"]["seed"])
+    seed_everything(config["experiment"]["seed"], config["experiment"].get("deterministic", False))
     device = resolve_device(config["experiment"]["device"])
     tokenizer = AutoTokenizer.from_pretrained(ROOT / config["tokenizer"]["path"], local_files_only=True)
     dataset = JsonlSFTDataset(
@@ -130,6 +133,8 @@ def main() -> None:
         optimizer.load_state_dict(resume["optimizer"])
         optimizer_to(optimizer, device)
         torch.set_rng_state(resume["torch_rng_state"])
+        if device.type == "cuda" and resume.get("cuda_rng_state") is not None:
+            torch.cuda.set_rng_state_all(resume["cuda_rng_state"])
         start_step, history = resume["step"], resume["history"]
         prior_training_seconds = float(resume.get("training_seconds", 0))
         prior_suspended_seconds = float(resume.get("suspended_seconds", 0))
@@ -140,7 +145,9 @@ def main() -> None:
     last_grad_norm = None
     for step in range(start_step + 1, total_steps + 1):
         input_ids, labels = batch_stream.batch(step)
-        loss = model(input_ids.to(device), labels.to(device))["loss"] / accumulation
+        use_amp = device.type == "cuda" and training.get("precision") == "bfloat16"
+        with torch.autocast("cuda", dtype=torch.bfloat16) if use_amp else nullcontext():
+            loss = model(input_ids.to(device), labels.to(device))["loss"] / accumulation
         if not torch.isfinite(loss):
             raise RuntimeError(f"non-finite loss at step {step}")
         loss.backward()
@@ -177,6 +184,9 @@ def main() -> None:
                 timer.suspended_seconds,
             )
             print(f"saved resume checkpoint: {resume_path}", flush=True)
+            if args.stop_after == step:
+                run_lock.close()
+                return
     training_elapsed = timer.training_seconds
     val_loss = validation_loss(model, validation_loader, device)
     checkpoint_path = ROOT / training["checkpoint_path"]

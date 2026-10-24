@@ -53,6 +53,17 @@ def test_alignment_freezes_everything_except_projector():
     assert all(name.startswith("vision_projector.") for name in trainable)
 
 
+def test_bfloat16_image_features_are_injected_without_losing_gradients():
+    model = MiniMindVLM(config(), FakeVisionEncoder(tokens=4, hidden=48))
+    ids = torch.tensor([[20, 12, 12, 12, 12, 21]])
+    features = torch.randn(1, 4, 64, dtype=torch.bfloat16, requires_grad=True)
+    output = model.inject_image_features(ids, model.language_model.embed_tokens(ids), features)
+    assert output.dtype == torch.float32
+    output.sum().backward()
+    assert features.grad is not None
+    assert features.grad.eq(1).all()
+
+
 def test_instruction_stage_unfreezes_boundary_layers():
     model = MiniMindVLM(config(), FakeVisionEncoder(tokens=4, hidden=48))
     model.set_instruction_trainable()

@@ -120,16 +120,26 @@ def verify_stage(config: str) -> None:
 
 
 def main() -> None:
+    global EVALUATIONS
     parser = argparse.ArgumentParser(description="Resume the complete MiniMind MPS training and evaluation chain.")
     parser.add_argument("--poll-seconds", type=float, default=30.0)
+    parser.add_argument("--profile", choices=["mps", "cuda"], default="mps")
     args = parser.parse_args()
-    pipeline_lock = acquire_run_lock(ROOT / "artifacts/checkpoints/pipeline-mps.lock")
-    print(json.dumps({"pipeline": "mps", "stages": [item[0] for item in STAGES]}, ensure_ascii=False), flush=True)
+    stages = [(stage, runner, config.replace("-mps", f"-{args.profile}")) for stage, runner, config in STAGES]
+    if args.profile == "cuda":
+        EVALUATIONS = {
+            stage: (output, [part.replace("-mps", "-cuda") for part in command])
+            for stage, (output, command) in EVALUATIONS.items()
+        }
+        for stage in ("vlm-sft", "video-omni-sft"):
+            EVALUATIONS[stage][1].extend(["--language-config", "configs/llm/pretrain-cuda.yaml"])
+    pipeline_lock = acquire_run_lock(ROOT / f"artifacts/checkpoints/pipeline-{args.profile}.lock")
+    print(json.dumps({"pipeline": args.profile, "stages": [item[0] for item in stages]}, ensure_ascii=False), flush=True)
 
-    for stage, runner, config in STAGES:
+    for stage, runner, config in stages:
         if stage == "video-omni-alignment":
             run(
-                ["scripts/fetch_qivd.py"],
+                ["scripts/verify_qivd_local.py" if args.profile == "cuda" else "scripts/fetch_qivd.py"],
                 console_log=ROOT / "artifacts/logs/qivd-integrity.console.log",
             )
             run(
@@ -157,8 +167,8 @@ def main() -> None:
         verify_stage(config)
         evaluate_if_needed(stage, output)
 
-    run(["scripts/build_final_report.py"])
-    print("MPS training, evaluation, and handbook reporting complete", flush=True)
+    run(["scripts/build_final_report.py", "--profile", args.profile])
+    print(f"{args.profile.upper()} training, evaluation, and handbook reporting complete", flush=True)
     pipeline_lock.close()
 
 

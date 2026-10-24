@@ -31,6 +31,16 @@ def test_tied_embeddings():
     assert model.embed_tokens.weight.data_ptr() == model.lm_head.weight.data_ptr()
 
 
+def test_rope_preserves_bfloat16_dtype():
+    from minimind_lab.llm.model import apply_rope, rope_frequencies
+
+    values = torch.randn(2, 4, 16, 16, dtype=torch.bfloat16)
+    cos, sin = rope_frequencies(16, 16, 1_000_000.0, torch.device("cpu"))
+    output = apply_rope(values, cos, sin)
+    assert output.dtype == torch.bfloat16
+    assert torch.isfinite(output).all()
+
+
 def test_byte_tokenizer_round_trip():
     tokenizer = ByteTokenizer()
     text = "MiniMind 学习"

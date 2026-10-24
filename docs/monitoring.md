@@ -68,8 +68,8 @@ cd /Users/wlh/Documents/【实践】minimind
 
 ## 定时运行
 
-监控已配置为每小时自动执行一次，由 `scripts/monitor_pipeline.py` 提供数据。
-定时任务本身只做观测，不修改训练过程；是否在里程碑处补写报告由运行时判断决定。
+当前按用户要求不启用周期性监控。`scripts/monitor_pipeline.py` 保留为手动诊断工具；
+需要时再单次执行，不会随 CUDA 训练入口自动启动。
 
 手动查看最近事件：
 

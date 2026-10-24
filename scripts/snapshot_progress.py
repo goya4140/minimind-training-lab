@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import argparse
 import json
 import math
 import os
@@ -48,9 +49,13 @@ def duration(seconds: float | None) -> str:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--profile", choices=["mps", "cuda"], default="mps")
+    args = parser.parse_args()
     rows = []
     prior_complete = True
     for stage, _, config_path in STAGES:
+        config_path = config_path.replace("-mps", f"-{args.profile}")
         with (ROOT / config_path).open(encoding="utf-8") as handle:
             config = yaml.safe_load(handle)
         experiment = config["experiment"]["name"]
@@ -88,7 +93,7 @@ def main() -> None:
     lines = [
         "# 正式训练进度快照",
         "",
-        f"生成时间：{datetime.now(UTC).isoformat()}。数据来自本机 Git 忽略日志；不包含权重或训练数据。",
+        f"生成时间：{datetime.now(UTC).isoformat()}。Profile：{args.profile}。数据来自本机 Git 忽略日志。",
         "",
         "| Stage | Status | Micro-step | Progress | First loss | Recent mean loss | Seconds/step | ETA |",
         "|---|---|---:|---:|---:|---:|---:|---:|",
