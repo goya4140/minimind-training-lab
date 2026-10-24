@@ -13,6 +13,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--eval-id", required=True)
+    parser.add_argument("--case", default="C07", choices=[f"C{i:02d}" for i in range(1, 9)])
     args = parser.parse_args()
     for value in (args.run_id, args.eval_id):
         if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,79}", value):
@@ -40,9 +41,11 @@ def main():
     for row in predictions:
         print(f"{row['id']}  {row['category']:<24} {row['scoring']['score']:>3}     "
               f"{row['stopped_at_eos']!s:<7}    {len(row['completion_token_ids'])}")
-    sample = next(row for row in predictions if row["id"] == "C07")
-    print("C07 expected:", " / ".join(sample["references"]))
-    print("C07 actual completion (entire saved text):")
+    sample = next(row for row in predictions if row["id"] == args.case)
+    reference = " / ".join(sample["references"]) if "references" in sample else json.dumps(sample["reference_object"], ensure_ascii=False)
+    print(args.case, "prompt:", sample["prompt"])
+    print(args.case, "expected:", reference)
+    print(args.case, "actual completion (entire saved text):")
     print(sample["completion"].replace("\x1b", "\\x1b"))
     print("Reason:", sample["scoring"]["reason"])
     print("A failed strict match can reflect repetition/format, not absence of relevant words.")

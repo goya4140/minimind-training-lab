@@ -6,12 +6,15 @@ on run argv
     set evaluationID to item 3 of argv
     set remoteHost to item 4 of argv
     set remotePort to item 5 of argv
-    set remoteCommand to "cd /root/autodl-tmp/wlh_goya/MiniMind && clear && .venv/bin/python reporting/review_chat_evidence.py --run-id " & quoted form of runID & " --eval-id " & quoted form of evaluationID & "; sleep 12"
-    set shellCommand to "ssh -t -p " & quoted form of remotePort & " -o BatchMode=yes -o ConnectTimeout=15 " & quoted form of remoteHost & " " & quoted form of remoteCommand
+    set caseID to "C07"
+    if (count of argv) > 5 then set caseID to item 6 of argv
+    set remoteCommand to "cd /root/autodl-tmp/wlh_goya/MiniMind && .venv/bin/python reporting/review_chat_evidence.py --run-id " & quoted form of runID & " --eval-id " & quoted form of evaluationID & " --case " & quoted form of caseID
+    -- Clear locally, then let SSH exit before capture to avoid connection-title exposure.
+    set shellCommand to "clear && ssh -p " & quoted form of remotePort & " -o BatchMode=yes -o ConnectTimeout=15 " & quoted form of remoteHost & " " & quoted form of remoteCommand & "; sleep 12"
     tell application "Terminal"
         set evidenceTab to do script shellCommand
         set evidenceWindow to front window
-        set custom title of evidenceTab to "MiniMind early chat diagnostic"
+        set custom title of evidenceTab to "MiniMind chat diagnostic evidence"
         set title displays custom title of evidenceTab to true
         set title displays shell path of evidenceTab to false
         set title displays device name of evidenceTab to false

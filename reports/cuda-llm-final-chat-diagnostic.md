@@ -75,4 +75,5 @@ evaluator：`a24ba6d9917eb8a9f6410d9ea4a9605ef34d444659a073795a64f3271945c7f2`�
 
 复现命令见 [工具说明](../reporting/README.md) 与 `reporting/chat_diagnostic.py --help`。
 新执行必须使用新 eval ID，不覆盖上述目录；不能把 step 12,000 的早期探针当作最终结果。
-本页尚未附最终对话真实截图；待补截图不会替代原始预测文件和上述指纹。
+已补齐[两个最终阶段的真实终端截图及来源索引](evidence/mm64-cuda-20261024T075332Z/E003-chat-final/README.md)，
+展示完整逐题评分表和相同 C01 的完整实际回答。截图不替代原始预测文件和上述指纹。
