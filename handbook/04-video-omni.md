@@ -19,7 +19,7 @@ flowchart LR
 
 ## 三个关键模块
 
-1. Spatial query-attention：对一帧的 patch token 做可学习汇聚，比简单 mean pooling 更能保留物体位置；
+1. Spatial query-attention：对一帧的patch token做可学习汇聚，相比固定mean pooling提供可学习选择，但不保证实际保留更多位置信息；
 2. Temporal Transformer：加入 learned frame position 后在 8 帧之间做 self-attention；
 3. Query resampler：用 16 个 learned query 提取固定数量的视频 token，让 LLM 输入长度稳定。
 
@@ -37,7 +37,10 @@ flowchart LR
 - 正常 token F1 与倒序 token F1；
 - 回答变化率和逐类结果。
 
-若 normal-minus-reversed 不为正，必须得出“尚未建立时序敏感性”，不能因为文本看起来流畅就说成功。
+不能仅按normal-minus-reversed的正负号判定能力：差值可能是数值误差，倒序也未必改变静态问题真值。
+必须结合真实帧、参考语义、逐样本回答和任务类别。本次CUDA的100条QIVD与160条受控样例
+正常/倒序回答全部不变，没有提供有效帧序利用证据；不能因架构有时序模块或文本流畅就说成功。
+见[四类实际8帧与回答](../reports/evidence/mm64-cuda-vlmfix-v3-20261024T170500Z/E005-controlled-video-final/README.md)。
 
 验证架构与基准：
 

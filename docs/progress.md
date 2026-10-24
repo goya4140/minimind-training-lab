@@ -4,7 +4,8 @@
 `/root/autodl-tmp/wlh_goya/MiniMind`，计划重新训练全部六阶段。下面的 MPS 里程碑属于历史实验。
 2026-10-25 更新：原 run 的 LLM Pretrain/SFT 已完成，VLM Alignment 因槽位截断失败。
 当前有效修复 run 为 `mm64-cuda-vlmfix-v3-20261024T170500Z`，VLM Alignment 已完成 30,000 步并归档，
-VLM SFT 也已完成30,000步并归档固定评估；Video Alignment已完成7,200步并归档，Video SFT已启动；
+VLM SFT也已完成30,000步并归档固定评估；Video Alignment/SFT已完成7,200/4,800步及固定评估；
+260条视频独立重放、评分复算和受控输入帧展示完成，见[综合学习报告](../reports/cuda-three-model-synthesis.md)。
 见[视频对齐结果](../reports/cuda-video-alignment-final.md)。
 见[Alignment 结果](../reports/cuda-vlm-alignment-final.md)与[VLM SFT 评估/失败分析](../reports/cuda-vlm-sft-final.md)。
 不重复语言模型训练；见[修复运行登记](../reports/cuda-vlm-repair-run.md)。无持续监控。
@@ -56,7 +57,7 @@ VLM SFT 也已完成30,000步并归档固定评估；Video Alignment已完成7,2
 | `llm-64m-sft-mps` **最终** | Apple M4 Pro / MPS | 40,000 步；分布内 val loss 0.8632 / PPL 2.3707；耗时 5 小时 1 分 58 秒 | [`reports/llm-sft-final.md`](../reports/llm-sft-final.md) |
 | `llm-64m-sft-mps` 语言回归 | CPU + MPS 各一次 | 预训练同语料：val loss 1.8328 → 1.9089，PPL 6.2515 → 6.7457（+7.94%） | [`reports/llm-sft-final.md`](../reports/llm-sft-final.md) |
 
-## 当前运行
+## 历史MPS运行记录（非当前CUDA）
 
 阶段 ① 与 ② 已完成。2026-10-09 修复 VLM 标记异常后恢复阶段 ③，后续阶段由流水线接力。
 

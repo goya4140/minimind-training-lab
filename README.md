@@ -16,18 +16,21 @@ optimizer state 和逐步原始日志均不上传 GitHub；仓库只记录足以
 
 2026-10-24：因本地空间不足，旧权重已删除，项目迁至服务器
 `/root/autodl-tmp/wlh_goya/MiniMind` 从零进行 CUDA 重训。正式 run `mm64-cuda-20261024T075332Z`
-已完成 LLM Pretrain/SFT，随后 VLM 截断失败。当前已启动独立
-[修复运行](reports/cuda-vlm-repair-run.md)，继承精确 LLM 归档并重新进行多模态阶段，无周期性监控。
+已完成 LLM Pretrain/SFT，随后 VLM 截断失败。独立
+[修复运行](reports/cuda-vlm-repair-run.md)继承精确 LLM 归档，现已完成四个多模态阶段和固定评估，
+并完成260条视频独立重放留存，无周期性监控。
+请先读[三模型综合学习报告](reports/cuda-three-model-synthesis.md)：设计、实现、六阶段训练、
+真实截图/曲线、评估和失败解读。工程完成不等于指令遵循、视觉理解或时序推理已经达标。
 原始记录见[正式实验登记](reports/formal-run-mm64-cuda-20261024.md)。
 环境、数据和测试流程见 [`docs/cuda-training.md`](docs/cuda-training.md)。
-下表保留旧 MPS 实验的历史完成情况，不代表服务器已有正式权重。
+下表为当前CUDA实验；[旧MPS历史](docs/progress.md#历史-mps-环境基线非当前-cuda-服务器)单独保留，不混用结果。
 
 <!-- STATUS_START -->
 | 阶段 | 架构 | 训练 | 评估 |
 |---|---|---|---|
-| LLM | ✅ 原生 PyTorch 主干（63,912,192 参数正式配置） | ✅ 预训练 317,048 步与 SFT 40,000 步完成 | ✅ 完整 held-out 与语言回归已记录 |
-| VLM | ✅ Early-fusion 与冻结策略已实现 | 数据标记筛选已修复；服务器重训待启动 | ✅ 固定 6 单图 + 1 双图评估入口就绪 |
-| Video-Omni | ✅ 帧编码器 + 时序适配器 + LLM 已实现 | ⏳ QIVD 已完成上游哈希核验，等待 LLM SFT | ✅ 留出集、倒序帧消融与分类型评估就绪 |
+| LLM | 原生63,912,192参数语言主干 | Pretrain 317,048＋SFT 40,000步完成 | 同语料PPL 6.2227→6.7796；严格诊断0/8 |
+| VLM | 冻结SigLIP2＋Projector＋语言首尾层适配 | Alignment/SFT各30,000步完成 | 7题关键词差不代表语义正确；保留幻觉与图序失败 |
+| Video-Omni | 空间池化＋时序Transformer＋16-query接口 | Alignment 7,200＋SFT 4,800步完成 | 250条test loss、100＋160条生成；正常/倒序回答未变 |
 <!-- STATUS_END -->
 
 状态以 [`docs/progress.md`](docs/progress.md) 中的证据为准。

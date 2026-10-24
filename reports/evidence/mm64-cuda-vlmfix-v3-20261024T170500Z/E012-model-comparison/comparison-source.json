@@ -1,0 +1,146 @@
+{
+  "schema": 1,
+  "run_id": "mm64-cuda-vlmfix-v3-20261024T170500Z",
+  "training": [
+    {
+      "stage": "llm-pretrain",
+      "microsteps": 317048,
+      "active_training_seconds": 19355.405830144882,
+      "original_training_run_id": "mm64-cuda-20261024T075332Z"
+    },
+    {
+      "stage": "llm-sft",
+      "microsteps": 40000,
+      "active_training_seconds": 2208.060883283615,
+      "original_training_run_id": "mm64-cuda-20261024T075332Z"
+    },
+    {
+      "stage": "vlm-alignment",
+      "microsteps": 30000,
+      "active_training_seconds": 2125.526780128479,
+      "original_training_run_id": "mm64-cuda-vlmfix-v3-20261024T170500Z"
+    },
+    {
+      "stage": "vlm-sft",
+      "microsteps": 30000,
+      "active_training_seconds": 2105.5727846622467,
+      "original_training_run_id": "mm64-cuda-vlmfix-v3-20261024T170500Z"
+    },
+    {
+      "stage": "video-omni-alignment",
+      "microsteps": 7200,
+      "active_training_seconds": 379.2863266468048,
+      "original_training_run_id": "mm64-cuda-vlmfix-v3-20261024T170500Z"
+    },
+    {
+      "stage": "video-omni-sft",
+      "microsteps": 4800,
+      "active_training_seconds": 260.4720368385315,
+      "original_training_run_id": "mm64-cuda-vlmfix-v3-20261024T170500Z"
+    }
+  ],
+  "language": [
+    {
+      "stage": "llm-pretrain",
+      "nll": 1.828206596333964,
+      "ppl": 6.222716802361959,
+      "bpb": 0.9269906226350786,
+      "predicted_tokens": 670079,
+      "utf8_bytes": 1906560
+    },
+    {
+      "stage": "llm-sft",
+      "nll": 1.9139241329189325,
+      "ppl": 6.779640879464957,
+      "bpb": 0.9704536277292414,
+      "predicted_tokens": 670079,
+      "utf8_bytes": 1906560
+    },
+    {
+      "stage": "vlm-sft",
+      "nll": 1.9352567641912009,
+      "ppl": 6.9258221302131995,
+      "bpb": 0.9812703205391126,
+      "predicted_tokens": 670079,
+      "utf8_bytes": 1906560
+    },
+    {
+      "stage": "video-omni-sft",
+      "nll": 1.9204992572027881,
+      "ppl": 6.824364732166346,
+      "bpb": 0.9737875389874201,
+      "predicted_tokens": 670079,
+      "utf8_bytes": 1906560
+    }
+  ],
+  "video": [
+    {
+      "dataset": "QIVD",
+      "generated_samples": 100,
+      "normal_f1": 0.08794588744588745,
+      "reversed_f1": 0.08794588744588745,
+      "normalized_change_rate": 0.0
+    },
+    {
+      "dataset": "Controlled temporal",
+      "generated_samples": 160,
+      "normal_f1": 0.1277777777777778,
+      "reversed_f1": 0.1277777777777778,
+      "normalized_change_rate": 0.0
+    }
+  ],
+  "sources": [
+    {
+      "stage": "llm-pretrain",
+      "archive": "artifacts/runs/mm64-cuda-vlmfix-v3-20261024T170500Z/stages/llm-pretrain/llm-64m-pretrain-cuda.json",
+      "sha256": "5b555a8ac2c9d9d575c43b048ee7deeb2cffff599b3d5252dc0646fe9c331d25"
+    },
+    {
+      "stage": "llm-sft",
+      "archive": "artifacts/runs/mm64-cuda-vlmfix-v3-20261024T170500Z/stages/llm-sft/llm-64m-sft-cuda.json",
+      "sha256": "45afee1ef0e2e1d5752f11e469ca4915cd6e642d9e7af95cedfccbd345daf2d4"
+    },
+    {
+      "stage": "vlm-alignment",
+      "archive": "artifacts/runs/mm64-cuda-vlmfix-v3-20261024T170500Z/stages/vlm-alignment/vlm-vision-alignment-cuda.json",
+      "sha256": "24719969478973e90d27bdee4c8e05655c642e2b2b96f74be9320c5168c08472"
+    },
+    {
+      "stage": "vlm-sft",
+      "archive": "artifacts/runs/mm64-cuda-vlmfix-v3-20261024T170500Z/stages/vlm-sft/vlm-sft-cuda.json",
+      "sha256": "05c2a792654b830a22352dde81df7a7f145745933405cf2c1cb897eb02509e14"
+    },
+    {
+      "stage": "video-omni-alignment",
+      "archive": "artifacts/runs/mm64-cuda-vlmfix-v3-20261024T170500Z/stages/video-omni-alignment/video-omni-alignment-cuda.json",
+      "sha256": "89e60fef420aa486724fe7ad3a33b7b9faf94348e8d4cc4c88c8f94d49ac26a4"
+    },
+    {
+      "stage": "video-omni-sft",
+      "archive": "artifacts/runs/mm64-cuda-vlmfix-v3-20261024T170500Z/stages/video-omni-sft/video-omni-sft-cuda.json",
+      "sha256": "00073fc3ed0820f589d054c5fc4179f1e14e690486ac5529c6922c27d83be235"
+    },
+    {
+      "stage": "llm-pretrain",
+      "archive": "artifacts/runs/mm64-cuda-vlmfix-v3-20261024T170500Z/stages/llm-pretrain/llm-pretrain-final.json",
+      "sha256": "3b50f4d17c98e5f4eafc7505bc4ded226d7ff1c4aef068cf2a191480bf59739b"
+    },
+    {
+      "stage": "llm-sft",
+      "archive": "artifacts/runs/mm64-cuda-vlmfix-v3-20261024T170500Z/stages/llm-sft/llm-sft-final.json",
+      "sha256": "23392375dbff726f87ae697d1a8b4044b0f1856c75b4f57e24fc71380d3bf235"
+    },
+    {
+      "stage": "vlm-sft",
+      "archive": "artifacts/runs/mm64-cuda-vlmfix-v3-20261024T170500Z/stages/vlm-sft/vlm-final.json",
+      "sha256": "28d86765fa195ba4d9a55693b0060d8da944ddf7183b270858ccb3d829431c38"
+    },
+    {
+      "stage": "video-omni-sft",
+      "archive": "artifacts/runs/mm64-cuda-vlmfix-v3-20261024T170500Z/stages/video-omni-sft/video-omni-final.json",
+      "sha256": "8c054eaa60a032c24c9fee56682bb610166ec948fcba91c94e0b24bd83b56d96"
+    }
+  ],
+  "exporter_sha256": "0c88230d28b48cd9be71f1b24d7869b8f33d2a4cd660deb4dfc2941ae1a891aa",
+  "limits": "Single training trajectory, no repeat-run uncertainty or causal attribution. Equal token/byte counts are checked, not semantic corpus deduplication. Video F1 is lexical, reverse scores use original references. Figures are data plots, not screenshots."
+}

@@ -42,6 +42,7 @@ Video-Omni 不从 VLM SFT 继续训练。这里的能力是待检验目标，不
 本仓库不会上传训练数据和权重。代码、配置、实验摘要与生成样例在 GitHub；数据、checkpoint、
 optimizer state 和完整逐步日志保留在本机。这样既遵守数据许可，也让学习材料保持轻量。
 
-当前 CUDA 的已完成结果与解释见 [LLM 两阶段总览](../reports/cuda-llm-final-overview.md)、
-[VLM Alignment 阶段结果](../reports/cuda-vlm-alignment-final.md)及[冻结策略实测](../reports/cuda-vlm-freezing-audit.md)。
-VLM SFT 和视频完整实验尚未完成；历史 MPS 示例与本次 CUDA 证据分开引用。
+当前CUDA六阶段训练及固定评估均已完成，统一阅读入口为
+[三模型综合学习报告](../reports/cuda-three-model-synthesis.md)，包含设计/实现、可比指标、实际输入输出和负面结论。
+进一步见[LLM](../reports/cuda-llm-final-overview.md)、[VLM](../reports/cuda-vlm-sft-final.md)、
+[Video](../reports/cuda-video-sft-final.md)；历史MPS示例与本次CUDA证据分开引用。
