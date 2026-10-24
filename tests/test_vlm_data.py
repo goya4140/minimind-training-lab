@@ -2,9 +2,67 @@ import json
 from pathlib import Path
 
 import torch
+import pytest
 
 from minimind_lab.data import collate_vlm, normalize_vlm_conversations
-from minimind_lab.data.vlm import single_image_valid_indices
+from minimind_lab.data.vlm import single_image_valid_indices, truncate_vlm_tokens
+
+
+def crop(ids, labels, length=12, images=1, slots=4):
+    return truncate_vlm_tokens(ids, labels, sequence_length=length, image_token_id=12,
+                               image_count=images, image_token_length=slots, pad_token_id=0)
+
+
+def test_safe_visual_prefix_is_unchanged_and_padding_is_masked():
+    ids = [1] + [12] * 4 + [2, 3, 4]
+    labels = [-100] * 6 + [3, 4]
+    assert crop(ids, labels) == (ids + [0] * 4, labels + [-100] * 4)
+    ids += list(range(100, 120)); labels += list(range(100, 120))
+    assert crop(ids, labels) == (ids[:12], labels[:12])
+
+
+def test_long_user_prefix_does_not_cut_visual_block_or_answer():
+    ids = list(range(100, 130)) + [12] * 4 + [40, 41, 42, 43]
+    labels = [-100] * 34 + [40, 41, 42, 43]
+    actual, targets = crop(ids, labels)
+    assert len(actual) == len(targets) == 12
+    assert actual.count(12) == 4
+    assert targets[-4:] == [40, 41, 42, 43]
+    assert [targets[i] for i, x in enumerate(actual) if x == 12] == [-100] * 4
+
+
+def test_partial_visual_prefix_boundary_is_repaired():
+    ids = list(range(100, 110)) + [12] * 4 + [40, 41]
+    labels = [-100] * 14 + [40, 41]
+    actual, targets = crop(ids, labels)
+    assert actual.count(12) == 4 and targets[-2:] == [40, 41]
+
+
+def test_two_images_preserve_order_and_full_slot_count():
+    ids = [101, 12, 12, 102, 103, 104, 105, 106, 107, 12, 12, 108, 109]
+    labels = [-100] * 11 + [108, 109]
+    actual, targets = crop(ids, labels, length=10, images=2, slots=2)
+    assert actual.count(12) == 4
+    assert targets[-2:] == [108, 109]
+    cursor = 0
+    for token in actual:
+        cursor = ids.index(token, cursor) + 1
+
+
+def test_visual_complete_but_answer_beyond_prefix_is_repaired():
+    ids = [12] * 4 + list(range(100, 140))
+    labels = [-100] * 35 + ids[35:]
+    actual, targets = crop(ids, labels)
+    assert actual.count(12) == 4 and any(x != -100 for x in targets[1:])
+    assert all(label in labels or label == -100 for label in targets)
+
+
+def test_invalid_slots_budget_or_no_answer_are_rejected():
+    for ids, labels, length in [([12] * 3 + [5], [-100] * 3 + [5], 12),
+                                ([12] * 4 + [5], [-100] * 4 + [5], 4),
+                                ([12] * 4 + [5], [-100] * 5, 12)]:
+        with pytest.raises(ValueError):
+            crop(ids, labels, length=length)
 
 
 def test_single_image_filter_keeps_order_and_excludes_missing_or_duplicate_markers(tmp_path):

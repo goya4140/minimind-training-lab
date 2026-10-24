@@ -64,6 +64,45 @@ def normalize_vlm_conversations(
     return messages, tools
 
 
+def truncate_vlm_tokens(input_ids: list[int], labels: list[int], *, sequence_length: int,
+                        image_token_id: int, image_count: int, image_token_length: int,
+                        pad_token_id: int) -> tuple[list[int], list[int]]:
+    """Keep normal prefixes unchanged; repair only unsafe visual/answer crops.
+
+    The repair retains every visual slot and one contiguous window of nonvisual
+    tokens near the first answer after the last image. Labels retain their
+    original positions/meaning rather than being rediscovered after cropping.
+    """
+    if len(input_ids) != len(labels) or sequence_length < 2 or image_count < 1:
+        raise ValueError("Invalid VLM token/label lengths or image count")
+    visual = [i for i, token in enumerate(input_ids) if token == image_token_id]
+    expected = image_count * image_token_length
+    if len(visual) != expected or image_token_length < 1:
+        raise ValueError("Full VLM sequence must contain exactly all expected image slots")
+    if expected >= sequence_length:
+        raise ValueError("Sequence budget must leave room beyond image slots for answer supervision")
+    prefix = list(range(min(sequence_length, len(input_ids))))
+    safe = (sum(input_ids[i] == image_token_id for i in prefix) == expected
+            and any(labels[i] != -100 and input_ids[i] != image_token_id for i in prefix[1:]))
+    selected = prefix
+    if not safe:
+        nonvisual = [i for i, token in enumerate(input_ids) if token != image_token_id]
+        budget = sequence_length - expected
+        targets = [j for j, i in enumerate(nonvisual) if labels[i] != -100 and i > visual[-1]]
+        if not targets:
+            raise ValueError("VLM sample has no assistant target after its last image")
+        start = max(0, min(targets[0] - budget // 2, len(nonvisual) - budget))
+        selected = sorted(visual + nonvisual[start:start + budget])
+    ids = [input_ids[i] for i in selected]
+    targets = [labels[i] if input_ids[i] != image_token_id else -100 for i in selected]
+    padding = sequence_length - len(ids)
+    ids += [pad_token_id] * padding
+    targets += [-100] * padding
+    if not any(label != -100 for label in targets[1:]):
+        raise ValueError("VLM crop has no next-token assistant supervision")
+    return ids, targets
+
+
 class ParquetVLMDataset(Dataset):
     def __init__(
         self,
@@ -80,11 +119,14 @@ class ParquetVLMDataset(Dataset):
         valid_indices, self.data_quality = single_image_valid_indices(path)
         if self.data_quality["excluded"]:
             self.dataset = self.dataset.select(valid_indices)
-        print(json.dumps({"vlm_data_quality": self.data_quality, "path": str(path)}), flush=True)
+        print(json.dumps({"vlm_data_quality": self.data_quality, "path": str(path),
+                          "truncation_policy": "full-visual-slots-answer-window-v2"}), flush=True)
         self.tokenizer = tokenizer
         self.image_processor = image_processor
         self.sequence_length = sequence_length
         self.image_placeholder = image_token * image_token_length
+        self.image_token_id = tokenizer.convert_tokens_to_ids(image_token)
+        self.image_token_length = image_token_length
         self.assistant_start_ids = tokenizer(f"{tokenizer.bos_token}assistant\n", add_special_tokens=False).input_ids
         self.turn_end_ids = tokenizer(f"{tokenizer.eos_token}\n", add_special_tokens=False).input_ids
 
@@ -100,13 +142,16 @@ class ParquetVLMDataset(Dataset):
             conversations = json.loads(conversations)
         messages, tools = normalize_vlm_conversations(conversations, self.image_placeholder)
         prompt = self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=False, tools=tools)
-        input_ids = self.tokenizer(prompt).input_ids[: self.sequence_length]
-        input_ids += [self.tokenizer.pad_token_id] * (self.sequence_length - len(input_ids))
-        labels = assistant_token_labels(input_ids, self.assistant_start_ids, self.turn_end_ids, self.sequence_length)
-
         image_bytes = row["image_bytes"]
         if not isinstance(image_bytes, list):
             image_bytes = [image_bytes]
+        full_ids = self.tokenizer(prompt).input_ids
+        full_labels = assistant_token_labels(full_ids, self.assistant_start_ids, self.turn_end_ids, len(full_ids))
+        input_ids, labels = truncate_vlm_tokens(
+            full_ids, full_labels, sequence_length=self.sequence_length,
+            image_token_id=self.image_token_id, image_count=len(image_bytes),
+            image_token_length=self.image_token_length, pad_token_id=self.tokenizer.pad_token_id,
+        )
         images = [Image.open(io.BytesIO(value)).convert("RGB") for value in image_bytes]
         pixel_values = self.image_processor(images=images, return_tensors="pt")["pixel_values"]
         return (
