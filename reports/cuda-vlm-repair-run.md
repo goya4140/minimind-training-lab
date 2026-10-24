@@ -58,6 +58,26 @@ Projector 开始，避免把不同数据构造策略的轨迹混作一次无变�
 885、`resumed_from_step=0`。这只是当时的运行记录，不是持续更新的进度或最终能力评估。
 真实终端截图与哈希见 [E008 证据索引](evidence/mm64-cuda-vlmfix-v3-20261024T170500Z/README.md)。
 
+### 新训练恢复点完整性核验（非最终结果）
+
+2026-10-24 17:27:32 UTC 对 step 23,000 恢复点执行 CPU 只读审计，
+先硬链接固定训练器原子保存的 inode，避免加载期间路径被新检查点替换。
+[完整审计摘要](vlm-repair-progress-integrity-20261025.json)记录：
+
+- 97 个模型 state tensors、65,094,912 个去重存储参数全部有限；此处是保存的语言主干与投影组件，
+  不包括单独复用的冻结 SigLIP2 外部资产，不能当作包含视觉编码器的总模型参数量。
+- optimizer 的 6 个 state entries / 18 个张量全部有限，处于完整更新边界；配置与固定 YAML 一致，
+  RNG 存在，恢复文件含 1,151 条有序 history，活跃训练累计 1,606.394 秒。
+- history 只属于新 run、单一训练 segment / PID，`resumed_from_step` 全部为 0；
+  第 23,000 步记录 5,750 次更新，未从旧失败运行的 optimizer 接续。
+- 恢复文件 270,208,409 bytes，SHA-256：
+  `38221de510972ed49ab1241a7df74014a646b902fbbebcb598fb4adb2f114ab6`。
+  原始快照与 audit 保留本 run 的 `audits/alignment-progress-20261024T172800Z/`。
+
+这一核验没有实际重启训练，也不是 CUDA 逐位恢复一致性测试或阶段完成证据，未改变训练进程和 GPU。
+当时尚未到旧失败的 microstep 26,896，因此不能凭此次审计声称已经跨过历史故障点；
+精确旧故障批次的修复由前述独立 CUDA 探针证明，完整新阶段仍待训练结束。
+
 ## 资源与保留
 
 服务器直连 GitHub 克隆未完成，因此使用本地 Git bundle 经 SSH 部署同一 commit，核对 HEAD

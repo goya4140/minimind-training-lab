@@ -26,6 +26,7 @@ checkpoint、日志、评估 JSON 和 QIVD manifest，再生成 `final-results.m
 - [预训练 step 164,000 恢复点完整性审计](pretrain-midpoint-integrity-20261024.json)（中间状态，非能力评估）
 - [VLM Alignment 截断故障与精确复现](cuda-vlm-slot-truncation-failure.md)（原运行失败证据）
 - [当前 CUDA 修复运行与继承关系](cuda-vlm-repair-run.md)（VLM Alignment 已启动，完整实验未完成）
+- [VLM 修复运行 step 23,000 恢复点审计](vlm-repair-progress-integrity-20261025.json)（中间恢复完整性，不是能力或最终完成证明）
 - [历史文件样稿与仍有效的曲线和对话诊断工具](../reporting/README.md)（DOCX/PPTX 已取消）
 
 其他 MPS 报告属于历史运行，不作为本次 CUDA 六阶段完成的证据。
