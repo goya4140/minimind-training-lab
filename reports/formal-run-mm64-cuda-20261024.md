@@ -3,6 +3,7 @@
 状态（2026-10-24 16:37 UTC 后核验）：**LLM Pretrain/SFT 已完成；VLM Alignment 因图像槽位
 截断失败，流水线已停止。完整实验与报告尚未完成。** 复现原因、恢复点和已归档 LLM 指标见
 [VLM 截断故障记录](cuda-vlm-slot-truncation-failure.md)。下文早期记录保留其原时间与解释范围。
+后续独立[修复运行](cuda-vlm-repair-run.md)已启动；本原始 run 不覆盖、不改标为修复后成功。
 
 | 项目 | 记录 |
 |---|---|

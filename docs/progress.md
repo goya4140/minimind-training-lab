@@ -2,14 +2,16 @@
 
 2026-10-24 更新：用户已删除本地旧权重，项目迁到服务器
 `/root/autodl-tmp/wlh_goya/MiniMind`，计划重新训练全部六阶段。下面的 MPS 里程碑属于历史实验。
-当前服务器已启动 run `mm64-cuda-20261024T075332Z` 的 LLM 预训练，无持续监控。
+2026-10-25 更新：原 run 的 LLM Pretrain/SFT 已完成，VLM Alignment 因槽位截断失败。
+当前有效修复 run 为 `mm64-cuda-vlmfix-v3-20261024T170500Z`，已进入新的 VLM Alignment，
+不重复语言模型训练；见[修复运行登记](../reports/cuda-vlm-repair-run.md)。无持续监控。
 本次记录见[正式实验登记](../reports/formal-run-mm64-cuda-20261024.md)。新环境与命令见
 [`docs/cuda-training.md`](cuda-training.md)。
 
 交付范围更新：根据用户经侧边对话转达的最新要求，取消 DOCX/PPTX 制作和交付。继续六阶段训练、
 固定评估、实验日志、真实截图、图表与 GitHub 学习文档；已有文件样稿仅作内部历史保留。
 
-## 环境基线
+## 历史 MPS 环境基线（非当前 CUDA 服务器）
 
 - 主机：Apple M4 Pro，20-core GPU，48 GiB unified memory；
 - 本地加速：PyTorch MPS；
@@ -17,7 +19,7 @@
 - 策略：先在本机 MPS 完成 64M 正式训练与恢复验证；VLM/Video-Omni 如本机成本不可接受，
   再在不改变配置语义和评估协议的前提下迁移到 NVIDIA CUDA。
 
-## 里程碑
+## 历史 MPS 里程碑
 
 | ID | 交付 | 状态 | 完成证据 |
 |---|---|---|---|
