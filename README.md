@@ -14,8 +14,9 @@ optimizer state 和逐步原始日志均不上传 GitHub；仓库只记录足以
 ## 当前状态
 
 2026-10-24：因本地空间不足，旧权重已删除，项目迁至服务器
-`/root/autodl-tmp/wlh_goya/MiniMind` 准备从零进行 CUDA 重训。正式六阶段任务等待用户确认后启动，
-无周期性监控。环境、数据和测试流程见 [`docs/cuda-training.md`](docs/cuda-training.md)。
+`/root/autodl-tmp/wlh_goya/MiniMind` 从零进行 CUDA 重训。正式 run `mm64-cuda-20261024T075332Z`
+已启动 LLM 预训练，无周期性监控。见[本次正式实验登记](reports/formal-run-mm64-cuda-20261024.md)。
+环境、数据和测试流程见 [`docs/cuda-training.md`](docs/cuda-training.md)。
 下表保留旧 MPS 实验的历史完成情况，不代表服务器已有正式权重。
 
 <!-- STATUS_START -->

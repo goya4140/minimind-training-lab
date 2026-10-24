@@ -2,7 +2,8 @@
 
 2026-10-24 更新：用户已删除本地旧权重，项目迁到服务器
 `/root/autodl-tmp/wlh_goya/MiniMind`，计划重新训练全部六阶段。下面的 MPS 里程碑属于历史实验。
-当前服务器正式训练未启动，待用户确认；无持续监控。新环境与命令见
+当前服务器已启动 run `mm64-cuda-20261024T075332Z` 的 LLM 预训练，无持续监控。
+本次记录见[正式实验登记](../reports/formal-run-mm64-cuda-20261024.md)。新环境与命令见
 [`docs/cuda-training.md`](cuda-training.md)。
 
 ## 环境基线

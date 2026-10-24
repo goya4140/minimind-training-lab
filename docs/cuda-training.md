@@ -70,8 +70,10 @@ CUDA 正式流水线会先使用 `verify_qivd_local.py` 离线重算文件哈希
 只有用户确认后才执行：
 
 ```bash
-bash scripts/start_cuda_training.sh
+.venv/bin/python scripts/prepare_formal_run.py --run-id <run-id>
+bash scripts/start_cuda_training.sh --run-id <run-id>
 ```
 
 入口执行既有流水线的 `--profile cuda`，按顺序训练六阶段，校验恢复文件并运行固定完整评估，最后
 生成报告。它不创建自动守护或定时监控。长任务可在 tmux 中启动；任一阶段失败会停止并保留恢复点。
+正式运行的记录与代码固定规则见[实验与证据说明](experiment-evidence.md)。

@@ -1,0 +1,43 @@
+# 64M CUDA 正式实验登记
+
+状态：**LLM 预训练进行中，完整实验与报告尚未完成。**
+
+| 项目 | 记录 |
+|---|---|
+| Run ID | `mm64-cuda-20261024T075332Z` |
+| 代码 commit | `53f9b9f46560bee446d1c74e89cac991b71a8053` |
+| 快照创建时间 | 2026-10-24 07:54:30 UTC |
+| 流水线启动时间 | 2026-10-24 07:55:23 UTC（15:55:23 Asia/Shanghai） |
+| 硬件 | 物理 GPU 1，RTX PRO 6000 Blackwell Server Edition |
+| 输入指纹 | 2,916 个原始数据、感知组件、Tokenizer 和视频缓存文件 |
+| 目标阶段 | LLM Pretrain/SFT，VLM Alignment/SFT，Video-Omni Alignment/SFT |
+| 初始化 | 随机初始化语言主干；冻结公开预训练 SigLIP2 |
+| 模型能力结论 | 尚无最终证据，不作完成或能力提升声明 |
+
+六阶段配置固定在服务器 run 目录 `configs/`，完整源码固定在 `source.tar`。已通过 96 项测试，
+包含源码与依赖变更检测、同尺寸数据篡改检测、归档覆盖保护、指标口径及已有模型测试；该代码提交
+的 GitHub CI 也已通过。
+
+## 已留存证据
+
+- 服务器 run 目录保存 `manifest.json`、`events.jsonl`、`metrics/` 和完整 `pipeline.console.log`。
+- 公开截图与来源见[本次视觉证据索引](evidence/mm64-cuda-20261024T075332Z/README.md)。
+- 启动后原始指标已包含 UTC、segment、PID、恢复起点、有效 optimizer update 次数、名义 padded-token
+  吞吐、活跃耗时和当前进程 CUDA 显存。初期 loss 下降只作优化过程记录，不作模型能力结论。
+- 阶段完成后归档校验后的最终权重、恢复文件、阶段总结、实际日志和固定完整评估。
+
+## 首个恢复点审计
+
+step 4,000 已于完整 optimizer 边界落盘并通过只读审计：63,912,192 参数、91 个模型张量均有限；
+90 个 optimizer state entries、270 个 optimizer 张量均有限；配置匹配、history 201 条，累计活跃
+训练 245.09 秒，无暂停。快照 SHA-256 为
+`5d2271dadb21e51c42c9f94e52fcd719de39b41240434112e3fcc42838948cf6`。
+完整审计位于服务器 run 目录 `audits/first-resume.json`，并已写入事件记录。
+运行期间恢复文件持续覆盖，因此该哈希仅代表本次审计快照，不代表最终权重。
+
+## 仍需完成
+
+六阶段正式训练、固定完整评估、图像/视频消融、最终曲线与真实结果截图、具体设计实现解读，以及
+完成渲染 QA 的中文 PPTX 与 DOCX。实验记录规则见[实验与证据说明](../docs/experiment-evidence.md)。
+
+不启用周期性监控。训练期间保留后台流水线及其自身日志；后续工作以实际进程和落盘证据判断进度。
