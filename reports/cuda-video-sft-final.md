@@ -98,12 +98,14 @@ EM、参考包含、bag-of-token F1和倒序变化标记，复核类别均值及
 “You are holding a pair of pairs.”；F1为0.2222主要来自英文冠词等重叠，不代表识别正确。
 受控id146问圆形变大还是变小，参考“larger”，两种帧序均答“The circle is not smaller.”。
 这里短答案词评分得0，但“not smaller”本身也不严格等于“larger”（允许不变），要结合真实帧检查，
-不能为提升分数事后改参考或接受词。视频输入输出可视化仍待完成。
+不能为提升分数事后改参考或接受词。
+[实际受控视频8帧及正常／倒序回答](evidence/mm64-cuda-vlmfix-v3-20261024T170500Z/E005-controlled-video-final/README.md)
+现已按每类第一条固定规则展示并逐图检查，包含四类失败解读；不是生成图片或终端截图。
 
 全量JSONL及其工具、manifest保留于本run的
 `supplemental-evaluations/video-full-output-replay-final-20261025/`，不上传GitHub。
 [最终5张曲线、CSV与来源](evidence/mm64-cuda-vlmfix-v3-20261024T170500Z/E002-video-sft-final/README.md)
-已完成120桶独立复算和逐张视觉检查。真实视频输入输出展示和最终综合审计仍需完成。
+已完成120桶独立复算和逐张视觉检查。受控视频输入输出展示已完成，最终综合解读与审计仍需完善。
 
 [E011真实终端截图](evidence/mm64-cuda-vlmfix-v3-20261024T170500Z/README.md#e011最终视频评估真实终端截图)
 展示归档评估指标和两套集合各第一条完整回答，已检查可读性及敏感信息。

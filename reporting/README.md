@@ -5,7 +5,11 @@
 继续用于训练与评估证据整理。
 
 [视频全量证据重放](video-evidence-replay.md)补齐原固定视频汇总只保留 12 条回答的留存缺口；
-工具不改变训练或原评分，实际执行等待六阶段流水线完成。
+工具不改变训练或原评分；当前修复run已完成六阶段，已执行260条全量重放并独立复核评分，
+见[最终视频结果](../reports/cuda-video-sft-final.md)。
+`export_video_case_evidence.py`只读导出每类第一条受控视频的实际8帧及完整正常/倒序回答，
+不重新推理或生成视频；[4类案例与来源](../reports/evidence/mm64-cuda-vlmfix-v3-20261024T170500Z/E005-controlled-video-final/README.md)
+明确帧是输入、不是模型生成图，并说明原始指纹覆盖的限制。
 [独立最终证据复核](final-evidence-review.md)检查阶段归档与父 run 继承关系，明确自动报告模板
 不等于项目完成，轻量指标判据不替代实际回答与人工结论审查。
 `audit_vlm_freezing.py` 只读比较父 LLM、最终 Alignment 与已固定的 SFT 快照，
