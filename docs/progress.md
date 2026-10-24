@@ -5,6 +5,9 @@
 2026-10-25 更新：原 run 的 LLM Pretrain/SFT 已完成，VLM Alignment 因槽位截断失败。
 当前有效修复 run 为 `mm64-cuda-vlmfix-v3-20261024T170500Z`，已进入新的 VLM Alignment，
 不重复语言模型训练；见[修复运行登记](../reports/cuda-vlm-repair-run.md)。无持续监控。
+两个 LLM 最终检查点已完成冻结 8 题 CPU 对话诊断，严格评分均为 0/8；
+其中 SFT 部分回答内容相关但违反仅输出答案的约束。完整预测和哈希已留存，
+见[最终对话诊断](../reports/cuda-llm-final-chat-diagnostic.md)，不将小样本分数泛化为全部能力。
 本次记录见[正式实验登记](../reports/formal-run-mm64-cuda-20261024.md)。新环境与命令见
 [`docs/cuda-training.md`](cuda-training.md)。
 
