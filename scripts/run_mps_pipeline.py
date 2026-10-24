@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 import time
@@ -16,6 +17,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from preflight_mps_pipeline import STAGES, active_pid
 
 from minimind_lab.training import acquire_run_lock
+from minimind_lab.training.evidence import RunEvidence
 
 EVALUATIONS = {
     "llm-pretrain": (
@@ -124,7 +126,14 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Resume the complete MiniMind MPS training and evaluation chain.")
     parser.add_argument("--poll-seconds", type=float, default=30.0)
     parser.add_argument("--profile", choices=["mps", "cuda"], default="mps")
+    parser.add_argument("--run-id", default=None)
     args = parser.parse_args()
+    evidence = RunEvidence(ROOT, args.run_id) if args.run_id else None
+    if evidence:
+        os.environ["MINIMIND_RUN_ID"] = args.run_id
+        os.environ["MINIMIND_RUN_DIR"] = str(evidence.directory)
+        evidence.assert_sources_unchanged()
+        evidence.event("pipeline_started", pid=os.getpid(), profile=args.profile)
     stages = [(stage, runner, config.replace("-mps", f"-{args.profile}")) for stage, runner, config in STAGES]
     if args.profile == "cuda":
         EVALUATIONS = {
@@ -137,6 +146,9 @@ def main() -> None:
     print(json.dumps({"pipeline": args.profile, "stages": [item[0] for item in stages]}, ensure_ascii=False), flush=True)
 
     for stage, runner, config in stages:
+        if evidence:
+            evidence.assert_sources_unchanged()
+            evidence.event("stage_started", stage=stage, config=config)
         if stage == "video-omni-alignment":
             run(
                 ["scripts/verify_qivd_local.py" if args.profile == "cuda" else "scripts/fetch_qivd.py"],
@@ -165,12 +177,32 @@ def main() -> None:
         if not output.exists():
             raise RuntimeError(f"stage exited without final checkpoint: {stage}")
         verify_stage(config)
+        if evidence:
+            evidence.event("training_verified", stage=stage)
+            evidence.event("evaluation_started", stage=stage, required=stage in EVALUATIONS)
         evaluate_if_needed(stage, output)
+        if evidence:
+            experiment = yaml.safe_load((ROOT / config).read_text())["experiment"]["name"]
+            paths = [output, output.with_suffix(".resume.pt"), ROOT / f"artifacts/logs/{experiment}.json",
+                     ROOT / f"artifacts/logs/{experiment}.console.log"]
+            if stage in EVALUATIONS:
+                paths.append(ROOT / EVALUATIONS[stage][0])
+            evidence.archive(stage, paths)
+            evidence.event("stage_completed", stage=stage)
 
     run(["scripts/build_final_report.py", "--profile", args.profile])
+    if evidence:
+        evidence.event("training_evaluation_report_completed")
     print(f"{args.profile.upper()} training, evaluation, and handbook reporting complete", flush=True)
     pipeline_lock.close()
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except BaseException as error:
+        if os.environ.get("MINIMIND_RUN_ID"):
+            RunEvidence(ROOT, os.environ["MINIMIND_RUN_ID"]).event(
+                "pipeline_failed", error_type=type(error).__name__, error=str(error)[:2000]
+            )
+        raise

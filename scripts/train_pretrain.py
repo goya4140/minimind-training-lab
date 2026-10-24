@@ -28,6 +28,7 @@ from minimind_lab.training import (
     seed_everything,
     should_save_resume,
 )
+from minimind_lab.training.evidence import enrich_training_record
 from minimind_lab.training.utils import environment_info, write_json
 
 
@@ -149,7 +150,9 @@ def main() -> None:
             current_lr = learning_rate(step, training["steps"], training["learning_rate"])
             for group in optimizer.param_groups:
                 group["lr"] = current_lr
-            grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), training["grad_clip"])
+            grad_norm = torch.nn.utils.clip_grad_norm_(
+                model.parameters(), training["grad_clip"], error_if_nonfinite=True
+            )
             last_grad_norm = grad_norm.detach().item()
             optimizer.step()
             optimizer.zero_grad(set_to_none=True)
@@ -163,6 +166,9 @@ def main() -> None:
                 "seconds_per_step": timer.segment_seconds / completed_this_run,
                 "learning_rate": optimizer.param_groups[0]["lr"],
             }
+            enrich_training_record(
+                record, device=device, config=config, timer=timer, start_step=start_step, total_steps=training["steps"]
+            )
             history.append(record)
             print(json.dumps(record, ensure_ascii=False), flush=True)
         save_interval = training.get("save_interval", 0)

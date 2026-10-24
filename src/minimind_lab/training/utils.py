@@ -157,6 +157,8 @@ def environment_info(device: torch.device) -> dict[str, str]:
         "torch": torch.__version__,
         "device": str(device),
     }
+    if os.environ.get("MINIMIND_RUN_ID"):
+        result["run_id"] = os.environ["MINIMIND_RUN_ID"]
     if device.type == "cuda":
         result.update(
             cuda=str(torch.version.cuda),

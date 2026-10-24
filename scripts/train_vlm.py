@@ -28,6 +28,7 @@ from minimind_lab.training import (
     seed_everything,
     should_save_resume,
 )
+from minimind_lab.training.evidence import enrich_training_record
 from minimind_lab.training.utils import environment_info, write_json
 from minimind_lab.vlm import MiniMindVLM, VLMConfig
 
@@ -198,7 +199,9 @@ def main() -> None:
             for group in optimizer.param_groups:
                 group["lr"] = cosine_lr(step, total_steps, training["learning_rate"])
             last_grad_norm = float(
-                torch.nn.utils.clip_grad_norm_(model.parameters(), training.get("grad_clip", 1.0)).item()
+                torch.nn.utils.clip_grad_norm_(
+                    model.parameters(), training.get("grad_clip", 1.0), error_if_nonfinite=True
+                ).item()
             )
             optimizer.step()
             optimizer.zero_grad(set_to_none=True)
@@ -211,6 +214,9 @@ def main() -> None:
                 "seconds_per_step": timer.segment_seconds / (step - start_step),
                 "learning_rate": optimizer.param_groups[0]["lr"],
             }
+            enrich_training_record(
+                record, device=device, config=config, timer=timer, start_step=start_step, total_steps=total_steps
+            )
             history.append(record)
             print(json.dumps(record, ensure_ascii=False), flush=True)
         if should_save_resume(step, training.get("save_interval", 1000), accumulation):
