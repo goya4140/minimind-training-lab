@@ -33,6 +33,10 @@ cd /root/autodl-tmp/wlh_goya/MiniMind/experiments/vlm-slot-v3
 （含CPU/CUDA RNG结构）、32条chat/14个VLM条件/520个视频条件回答的复算，以及限制和操作偏差。
 上段返回2是早期历史执行，不是当前仍有四阶段未完成。
 
+随后[最终权重关系补充审计](../reports/final-weight-relations-20261025.json)逐项比较六阶段model-only
+与resume模型张量，并独立核对视频Alignment语言权重不变、视频SFT仅允许的组件发生变化。
+CPU工具`audit_final_weight_relations.py`不构建模型、不初始化CUDA；其3项synthetic测试不冒充真实张量审计。
+
 ## 固定模板需要人工解释的地方
 
 - 模板用正确图关键词召回高于反事实来输出“视觉依赖已建立”。这是有限词面代理，

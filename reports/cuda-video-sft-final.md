@@ -76,6 +76,11 @@ LLM SFT的同口径PPL为6.779640879465；视频扩展没有带来该通用文�
 136个模型state tensors、84,017,664个去重存储参数全部有限；optimizer67个entries、201个张量
 全部有限；history241条。保存参数包括冻结语言权重，不含独立外部SigLIP2，不能当作全系统总参数。
 
+[最终权重关系审计](final-weight-relations-20261025.json)进一步确认该阶段136项model-only张量
+与resume中的模型状态逐项相等。视频Alignment的91项语言权重与LLM SFT完全一致；视频SFT中
+39项时序模块、6项投影器、22项语言首尾层改变，69项其他语言权重保持一致。
+这补充实际冻结策略证据，不是逐步梯度追踪、外部视觉张量比较、实际重启或时序能力证明。
+
 服务器工作目录：`/root/autodl-tmp/wlh_goya/MiniMind/experiments/vlm-slot-v3`。
 下列文件保留于 `artifacts/runs/mm64-cuda-vlmfix-v3-20261024T170500Z/stages/video-omni-sft/`：
 
