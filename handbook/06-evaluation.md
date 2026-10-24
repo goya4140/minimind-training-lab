@@ -24,10 +24,29 @@
 LLM 必须保留 Pretrain 与 SFT 两份独立评估 JSON，并用同一文本留出集和固定提示比较。这样读者能
 直接观察“续写模型”变成“指令模型”时，PPL、回答格式与内容发生了什么变化。
 
+### PPL 的分母和“变化”如何计算
+
+固定文本 evaluator 先累计 `batch_mean_loss × 该批有效预测token数`，再除以全部有效 token 数，
+得到全局 NLL；`PPL=exp(NLL)`。PPL 可理解为几何平均概率尺度上的不确定性，
+不是“平均每次有多少个正确答案”，也不是事实正确率。可比性要求相同语料、Tokenizer、截断及 mask。
+
+当前 CUDA 实测 Pretrain PPL=6.222716802、SFT PPL=6.779640879：
+绝对差为约 0.556924077，相对增幅为 `100×(6.779640879/6.222716802−1)≈8.95%`。
+别把绝对差写成百分比，也别把这一变化推广到所有任务。
+训练结束摘要的 batch 平均 loss 与固定 evaluator 的 token 加权 NLL 不完全相同，
+SFT 自身对话验证集与通用文本回归集更不是同一数据；见[真实结果总览](../reports/cuda-llm-final-overview.md)。
+
+Distinct-2 低可能提示复读，但随机无意义输出也能有高多样性；严格短答 0 分可能来自多余解释，
+也可能真的答错。必须保留原始回答，区分“内容错误”“内容相关但格式错误”“截断/未 EOS”。
+项目另有[8 题固定 chat-template 诊断](../reporting/protocols/README.md)，不是外部 benchmark；
+不能将其严格通过率当作总体智能分数。
+
 ## VLM 指标
 
-VLM 同时报告 validation loss 和固定图像关键词召回。关键词召回只是轻量下限，不是完整 VQA benchmark；
+VLM 同时报告 validation loss 和固定图像关键词召回。关键词召回只是轻量词面代理，不是语义正确率下限或完整 VQA benchmark；
 因此还要保存原图问题、生成答案和失败样例，并重新检查纯文本能力是否退化。
+例如双图题即使先后关系说反，只要包含全部关键词仍可能得满分；回答对错图发生变化也可能是两次都错。
+图序理解必须结合对象与顺序的实际回答审阅，不由关键词差或回答变化率单独判定。
 
 ## Video-Omni 指标
 
@@ -63,4 +82,5 @@ QIVD 生成，以及 160 条受控时序正常/倒序生成。缩短样本数的
 - 指标为 0 或倒序消融失败时如实记录。
 
 完整协议在 [`docs/evaluation.md`](../docs/evaluation.md)，最终结果由
-[`scripts/build_final_report.py`](../scripts/build_final_report.py) 从本地证据自动生成。
+[`scripts/build_final_report.py`](../scripts/build_final_report.py) 从本地证据自动生成，但输出只是固定模板汇总，
+需完成[独立归档及结论复核](../reporting/final-evidence-review.md)，不能以脚本成功取代完整验收。

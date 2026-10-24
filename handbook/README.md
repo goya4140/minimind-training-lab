@@ -9,6 +9,8 @@
 三者不是三个互不相关的项目，而是同一个语言主干逐步获得视觉和时序能力。完成这条路线后，你应该能
 解释一个训练系统中的数据、token、forward、loss、gradient、optimizer、checkpoint 和 evaluation
 分别在做什么，也能根据日志判断一次实验是否可信。
+实际权重依赖在 LLM SFT 后分叉：VLM 和 Video-Omni 各自从同一个语言检查点扩展，
+Video-Omni 不从 VLM SFT 继续训练。这里的能力是待检验目标，不是已经达标的结果声明。
 
 ## 推荐阅读顺序
 
@@ -39,3 +41,7 @@
 
 本仓库不会上传训练数据和权重。代码、配置、实验摘要与生成样例在 GitHub；数据、checkpoint、
 optimizer state 和完整逐步日志保留在本机。这样既遵守数据许可，也让学习材料保持轻量。
+
+当前 CUDA 的已完成结果与解释见 [LLM 两阶段总览](../reports/cuda-llm-final-overview.md)、
+[VLM Alignment 阶段结果](../reports/cuda-vlm-alignment-final.md)及[冻结策略实测](../reports/cuda-vlm-freezing-audit.md)。
+VLM SFT 和视频完整实验尚未完成；历史 MPS 示例与本次 CUDA 证据分开引用。

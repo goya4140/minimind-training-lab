@@ -19,6 +19,15 @@ clip_grad_norm → optimizer.step → zero_grad
 若总 micro-step 数不能被 `N` 整除，最后不足 `N` 个的梯度仍需要执行一次 optimizer update，
 并按实际累积数重新缩放成均值。本项目的 trainer 显式处理这个尾部 batch。
 
+当前 CUDA 预训练 `batch=8, accumulation=32`，常规完整更新名义上合并 256 个样本；
+317,048 microsteps 需 `ceil(317048/32)=9,908` 次更新，不能写成 317,048 次参数更新。
+LLM SFT 则是 `4×4=16` 个样本、40,000 microsteps / 10,000 次更新。
+遇到 epoch 尾部小 batch 或最后不足累积窗口时，实际样本数可以低于名义值。
+
+还有一个容易忽略的区别：本实现先对每个微批的有效目标 token 求 mean loss，再平均这些微批的
+梯度。如果每个微批监督 token 数不同，它不严格等于将全部 token 合并后做全局 token 加权 mean。
+梯度累积解决的是显存与更新尺度问题，不会自动让“样本均值”“微批均值”“token 均值”完全相同。
+
 ## 学习率与梯度裁剪
 
 AdamW 更新参数，同时把 weight decay 与 gradient update 分开。Cosine schedule 让学习率从初始值
@@ -26,6 +35,9 @@ AdamW 更新参数，同时把 weight decay 与 gradient update 分开。Cosine 
 
 日志中的 `grad_norm` 需要结合 loss 观察：持续为 0 可能是 label mask 或冻结策略错误；突然变成极大值
 可能是数值不稳定；单次波动不等于训练失败。
+
+本项目 `clip_grad_norm_` 返回的是裁剪前范数；日志里 norm 大于阈值 1 不等于裁剪未执行。
+该字段还可能沿用最近一次 optimizer update 的值：未到更新边界的日志点不代表刚执行了新的裁剪。
 
 ## 可恢复 checkpoint
 
@@ -88,6 +100,11 @@ temporal adapter 和 projector，最终评估仍走原始 MP4，因此缓存不�
 每次训练检查 loss 是否 finite；最终 checkpoint 用
 [`scripts/verify_stage_artifact.py`](../scripts/verify_stage_artifact.py) 遍历 tensor，记录参数数量、字节数、
 SHA-256 与 NaN/Inf 结果。通过这个门禁只说明 artifact 完整，不说明模型能力合格。
+
+“冻结”也需要分证据层次：配置和 `requires_grad` 说明设计，实际快照比较说明参数状态。
+[VLM 第 10,000 步对照](../reports/cuda-vlm-freezing-audit.md)核对了全部 state keys，
+允许更新的 Projector 和首尾层发生变化，其他语言权重与 Alignment 完全相等。
+这不等于实际重启一致性测试、逐步梯度追踪或对未来所有快照的保证。
 
 最终报告生成器会再次计算六个 checkpoint 的字节数和 SHA-256，并要求与各阶段完成日志中的审计值
 完全一致。这样可以证明报告引用的正是通过门禁的文件，而不是验证完成后被替换的同名文件。
