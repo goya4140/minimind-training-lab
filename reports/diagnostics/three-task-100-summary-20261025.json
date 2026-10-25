@@ -1,0 +1,250 @@
+{
+  "eval_id": "three-task-100-v1-20261025",
+  "training_run_id": "mm64-cuda-vlmfix-v3-20261024T170500Z",
+  "reviewed_at_utc": "2026-10-25T04:27:21.586299+00:00",
+  "counts": {
+    "text": {
+      "samples": 100,
+      "correct": 34,
+      "incorrect": 66,
+      "uncertain": 0,
+      "correct_over_all": 0.34,
+      "assessable_samples": 100,
+      "correct_over_assessable": 0.34,
+      "normalized_reference_exact_matches": 0,
+      "eos_stops": 22,
+      "hit_128_token_cap": 78
+    },
+    "image": {
+      "samples": 100,
+      "correct": 4,
+      "incorrect": 83,
+      "uncertain": 13,
+      "correct_over_all": 0.04,
+      "assessable_samples": 87,
+      "correct_over_assessable": 0.04597701149425287,
+      "normalized_reference_exact_matches": 0,
+      "eos_stops": 49,
+      "hit_128_token_cap": 51
+    },
+    "video": {
+      "samples": 100,
+      "correct": 25,
+      "incorrect": 70,
+      "uncertain": 5,
+      "correct_over_all": 0.25,
+      "assessable_samples": 95,
+      "correct_over_assessable": 0.2631578947368421,
+      "normalized_reference_exact_matches": 2,
+      "eos_stops": 99,
+      "hit_128_token_cap": 1
+    }
+  },
+  "by_category": [
+    {
+      "task": "image",
+      "category": "natural_image_qa",
+      "samples": 100,
+      "correct": 4,
+      "incorrect": 83,
+      "uncertain": 13,
+      "correct_over_all": 0.04,
+      "assessable_samples": 87,
+      "correct_over_assessable": 0.04597701149425287
+    },
+    {
+      "task": "text",
+      "category": "arithmetic",
+      "samples": 20,
+      "correct": 0,
+      "incorrect": 20,
+      "uncertain": 0,
+      "correct_over_all": 0.0,
+      "assessable_samples": 20,
+      "correct_over_assessable": 0.0
+    },
+    {
+      "task": "text",
+      "category": "basic_knowledge",
+      "samples": 20,
+      "correct": 10,
+      "incorrect": 10,
+      "uncertain": 0,
+      "correct_over_all": 0.5,
+      "assessable_samples": 20,
+      "correct_over_assessable": 0.5
+    },
+    {
+      "task": "text",
+      "category": "context_retrieval",
+      "samples": 20,
+      "correct": 7,
+      "incorrect": 13,
+      "uncertain": 0,
+      "correct_over_all": 0.35,
+      "assessable_samples": 20,
+      "correct_over_assessable": 0.35
+    },
+    {
+      "task": "text",
+      "category": "instruction_format",
+      "samples": 20,
+      "correct": 0,
+      "incorrect": 20,
+      "uncertain": 0,
+      "correct_over_all": 0.0,
+      "assessable_samples": 20,
+      "correct_over_assessable": 0.0
+    },
+    {
+      "task": "text",
+      "category": "sentiment",
+      "samples": 20,
+      "correct": 17,
+      "incorrect": 3,
+      "uncertain": 0,
+      "correct_over_all": 0.85,
+      "assessable_samples": 20,
+      "correct_over_assessable": 0.85
+    },
+    {
+      "task": "video",
+      "category": "action attributes",
+      "samples": 6,
+      "correct": 4,
+      "incorrect": 2,
+      "uncertain": 0,
+      "correct_over_all": 0.6666666666666666,
+      "assessable_samples": 6,
+      "correct_over_assessable": 0.6666666666666666
+    },
+    {
+      "task": "video",
+      "category": "action counting",
+      "samples": 6,
+      "correct": 0,
+      "incorrect": 6,
+      "uncertain": 0,
+      "correct_over_all": 0.0,
+      "assessable_samples": 6,
+      "correct_over_assessable": 0.0
+    },
+    {
+      "task": "video",
+      "category": "action detection",
+      "samples": 18,
+      "correct": 8,
+      "incorrect": 8,
+      "uncertain": 2,
+      "correct_over_all": 0.4444444444444444,
+      "assessable_samples": 16,
+      "correct_over_assessable": 0.5
+    },
+    {
+      "task": "video",
+      "category": "action understanding",
+      "samples": 5,
+      "correct": 0,
+      "incorrect": 4,
+      "uncertain": 1,
+      "correct_over_all": 0.0,
+      "assessable_samples": 4,
+      "correct_over_assessable": 0.0
+    },
+    {
+      "task": "video",
+      "category": "object attributes",
+      "samples": 19,
+      "correct": 2,
+      "incorrect": 17,
+      "uncertain": 0,
+      "correct_over_all": 0.10526315789473684,
+      "assessable_samples": 19,
+      "correct_over_assessable": 0.10526315789473684
+    },
+    {
+      "task": "video",
+      "category": "object counting",
+      "samples": 12,
+      "correct": 4,
+      "incorrect": 8,
+      "uncertain": 0,
+      "correct_over_all": 0.3333333333333333,
+      "assessable_samples": 12,
+      "correct_over_assessable": 0.3333333333333333
+    },
+    {
+      "task": "video",
+      "category": "object detection",
+      "samples": 6,
+      "correct": 2,
+      "incorrect": 4,
+      "uncertain": 0,
+      "correct_over_all": 0.3333333333333333,
+      "assessable_samples": 6,
+      "correct_over_assessable": 0.3333333333333333
+    },
+    {
+      "task": "video",
+      "category": "object referencing",
+      "samples": 20,
+      "correct": 3,
+      "incorrect": 17,
+      "uncertain": 0,
+      "correct_over_all": 0.15,
+      "assessable_samples": 20,
+      "correct_over_assessable": 0.15
+    },
+    {
+      "task": "video",
+      "category": "object understanding",
+      "samples": 3,
+      "correct": 1,
+      "incorrect": 2,
+      "uncertain": 0,
+      "correct_over_all": 0.3333333333333333,
+      "assessable_samples": 3,
+      "correct_over_assessable": 0.3333333333333333
+    },
+    {
+      "task": "video",
+      "category": "ocr",
+      "samples": 1,
+      "correct": 0,
+      "incorrect": 1,
+      "uncertain": 0,
+      "correct_over_all": 0.0,
+      "assessable_samples": 1,
+      "correct_over_assessable": 0.0
+    },
+    {
+      "task": "video",
+      "category": "scene understanding",
+      "samples": 2,
+      "correct": 1,
+      "incorrect": 1,
+      "uncertain": 0,
+      "correct_over_all": 0.5,
+      "assessable_samples": 2,
+      "correct_over_assessable": 0.5
+    },
+    {
+      "task": "video",
+      "category": "subjective",
+      "samples": 2,
+      "correct": 0,
+      "incorrect": 0,
+      "uncertain": 2,
+      "correct_over_all": 0.0,
+      "assessable_samples": 0,
+      "correct_over_assessable": null
+    }
+  ],
+  "protocol_sha256": "51dd49fa27f73f00fa932587a464855a5cb0a64ac41633bf0cb04a2a9b90085d",
+  "predictions_sha256": "35b71505bc7f596729d35bc39af782c43bb0146512b36c75cea722731ec4c4e4",
+  "reviews_sha256": "44df94eac4195e5113e1724d06c325afca1a45c81b257d3789b4dd9437ae4eca",
+  "inference_manifest_sha256": "7341f1bb5c9c143d8bf7b28381ce402cd2ff529ac3bc303b73d808ed4602a1f4",
+  "summarizer_sha256": "2846af0530d607fed35fc212e8eb645011c6d8ca562093425a3b9e3586e02d53",
+  "judge": "Single project-assistant semantic review, not independent human or multi-judge validated accuracy",
+  "limits": "Different task sources/difficulty; no across-model ranking. Text is assistant-authored diagnostics. Images from previously used validation, video from previously observed QIVD test. Uncertain inputs retained, not resampled. No new training or answer-dependent prompt retries."
+}

@@ -12,6 +12,9 @@ optimizer state 和逐步原始日志均不上传 GitHub；仓库只记录足以
 
 第一次接触模型训练的读者，请从 [`handbook/README.md`](handbook/README.md) 开始。
 
+训练后新测：[三个最终模型各100条实际推理、正确率与失败案例](reports/three-task-100-diagnostic-20261025.md)。
+全部300条输入输出另有本地私有展示页；GitHub只公开精简统计与判定理由，明确单一AI评分和源标注质量限制。
+
 ## 当前状态
 
 2026-10-24：因本地空间不足，旧权重已删除，项目迁至服务器
